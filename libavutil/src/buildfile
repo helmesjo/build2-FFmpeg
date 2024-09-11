@@ -1,11 +1,68 @@
+using autoconf
+
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 #import xxxx_libs += libhello%lib{hello}
 
-lib{avutil}: libul{avutil}: {h c}{**} $impl_libs $intf_libs
+lib{avutil}: libul{avutil}: {h c}{** -avconfig -config} libavutil/h{avconfig} h{config} $impl_libs $intf_libs
 
 libs{avutil}: def{avutil}: include = ($c.target.system == 'win32-msvc')
 def{avutil}: libul{avutil}
+
+tgt_win32 = ($c.target.system == 'win32-msvc')
+
+libavutil/h{avconfig}: in{avconfig}
+{
+  autoconf.prefix = AV_
+}
+
+h{config}: in{config}
+{
+  autoconf.substitutions = HAVE_ALIGNED_MALLOC@HAVE__ALIGNED_MALLOC \
+                           HAVE_AS_ARCHEXT_DOTPROD_DIRECTIVE@HAVE_AS_ARCHEXT_DOTPROD \
+                           HAVE_AS_ARCHEXT_I8MM_DIRECTIVE@HAVE_AS_ARCHEXT_I8MM \
+                           HAVE_AS_FUNC@HAVE_AS_FUNC_DIRECTIVE \
+                           HAVE_EBP_AVAILABLE@HAVE_ASM_EBP \
+                           HAVE_EBX_AVAILABLE@HAVE_ASM_EBX \
+                           HAVE_FAST_FLOAT16@HAVE_F16C \
+                           HAVE_INTRINSICS_NEON@HAVE_NEON \
+                           HAVE_AS_OBJECT_ARCH@HAVE_AS_OBJECT_ARCH_DIRECTIVE \
+                           HAVE_PTHREADS@HAVE_PTHREAD \
+                           HAVE_SOCKLEN_T@socklen_t
+
+  HAVE_CDIO_PARANOIA_H = ($c.find_system_header("cdio/paranoia/paranoia.h") != [null])
+  HAVE_DEV_VIDEO_BKTR_IOCTL_BT848_H = ($c.find_system_header("bktr/ioctl_bt848.h") != [null])
+  HAVE_DEV_VIDEO_METEOR_IOCTL_METEOR_H = ($c.find_system_header("meteor/ioctl_bt848.h") != [null])
+  HAVE_ES2_GL_H = ($c.find_system_header("GLES2/gl2.h") != [null])
+  HAVE_GLXGETPROCADDRESS = ($c.find_system_header("GL/glx.h") != [null])
+  HAVE_GSM_H = ($c.find_system_header("gsm.h") != [null])
+  HAVE_OPENCV2_CORE_CORE_C_H = ($c.find_system_header("opencv2/core/core_c.h") != [null])
+  HAVE_OPENGL_GL3_H = ($c.find_system_header("OpenGL/gl3.h") != [null])
+  HAVE_OPENVINO2 = ($c.find_system_header("openvino/c/openvino.h") != [null])
+  HAVE_STRUCT_MFXCONFIGINTERFACE = ($c.find_system_header("mfx/mfxvideo.h") != [null])
+  HAVE_VAAPI_DRM = ($c.find_system_header("va/va_drm.h") != [null])
+  HAVE_VAAPI_WIN32 = ($c.find_system_header("va/va_win32.h") != [null])
+  HAVE_VAAPI_X11 = ($c.find_system_header("va/va_x11.h") != [null])
+  HAVE_VALGRIND_VALGRIND_H = ($c.find_system_header("valgrind/valgrind.h") != [null])
+  HAVE_VDPAU_X11 = ($c.find_system_header("vdpau/vdpau_x11.h") != [null])
+  HAVE_XMLLINT = ($c.find_system_header("libxml/parser.h") != [null])
+
+  HAVE_THREADS = 1
+  # Win32
+  HAVE_DPI_AWARENESS_CONTEXT = $tgt_win32
+  HAVE_GETMODULEHANDLE = $tgt_win32
+  HAVE_GETPROCESSAFFINITYMASK = $tgt_win32
+  HAVE_GETPROCESSMEMORYINFO = $tgt_win32
+  HAVE_GETPROCESSTIMES = $tgt_win32
+  HAVE_GETSTDHANDLE = $tgt_win32
+  HAVE_GETSYSTEMTIMEASFILETIME = $tgt_win32
+  HAVE_IDXGIOUTPUT5 = $tgt_win32
+  HAVE_IO_H = $tgt_win32
+  HAVE_KBHIT = $tgt_win32
+  HAVE_VIRTUALALLOC = $tgt_win32
+  HAVE_W32THREADS = $tgt_win32
+  HAVE_WGLGETPROCADDRESS = $tgt_win32
+}
 
 # Build options.
 #
