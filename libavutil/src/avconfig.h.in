@@ -1,2 +1,4 @@
+#pragma once
+
 #undef AV_HAVE_BIGENDIAN
 #undef AV_HAVE_FAST_UNALIGNED

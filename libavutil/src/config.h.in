@@ -1,3 +1,13 @@
+#pragma once
+
+#include "config_cpu.h"
+
+#undef FFMPEG_CONFIGURATION
+#undef FFMPEG_LICENSE
+
+#undef CONFIG_THIS_YEAR
+#define CONFIG_MEMORY_POISONING 0
+
 #undef HAVE_ACCESS
 #undef HAVE_ALIGNED_MALLOC
 #undef HAVE_ALIGNED_STACK
