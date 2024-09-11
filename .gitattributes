@@ -18,4 +18,5 @@
 #
 #*.png binary
 
+libavutils/src/compat symlink=dir
 libavutils/src/libavutil symlink=dir
