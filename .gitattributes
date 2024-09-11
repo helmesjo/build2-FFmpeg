@@ -20,3 +20,5 @@
 
 libavutils/src/compat symlink=dir
 libavutils/src/libavutil symlink=dir
+# TEMP! Remove when libavcodec exists as package.
+libavutils/src/libavcodec symlink=dir
