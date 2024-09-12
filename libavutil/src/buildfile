@@ -113,13 +113,15 @@ src_pfx = [dir_path] $src_root/src/
 c.poptions =+ "-I$out_pfx" "-I$src_pfx" -DHAVE_AV_CONFIG_H
 
 # System libraries
+sys_libs =
 switch $c.target.class, $c.target.system
 {
   case 'windows', 'win32-msvc'
-    c.libs += bcrypt.lib
+    sys_libs += bcrypt.lib
   case 'windows', 'mingw32'
-    c.libs += -lbcrypt
+    sys_libs += -lbcrypt
 }
+c.libs += $sys_libs
 
 # <stdatomic.h> compatibility
 use_compat_atomics = [bool] true # ($c.find_system_header("stdatomic.h") == [null]) # NEED TO CHECK $c.std > 17 (but handle case when not defined)
@@ -139,8 +141,9 @@ if ($c.target.system == 'mingw32')
 #
 lib{avutil}:
 {
-  c.export.poptions = "-I$out_pfx" "-I$src_pfx"
-  c.export.libs = $intf_libs
+  libavutil.pixelutils = $config.libavutil.pixelutils
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -DHAVE_AV_CONFIG_H
+  c.export.libs = $intf_libs $sys_libs
 }
 # workaround: <libavutil/md5.c> doesn't prefix with AV_
 libavutil/obj{md5}:
