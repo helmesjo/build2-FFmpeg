@@ -81,6 +81,11 @@ h{config}: in{config}
   HAVE_VDPAU_X11 = ($c.find_system_header("vdpau/vdpau_x11.h") != [null])
   HAVE_XMLLINT = ($c.find_system_header("libxml/parser.h") != [null])
 
+  # *nix
+  HAVE_LIBDRM_GETFB2 = ($c.find_system_header("drm/drm.h") != [null])
+  # FFmpeg incorrectly assumse that HAVE_BCRYPT implies it's _WIN32
+  HAVE_BCRYPT = ($c.find_system_header("bcrypt.h") != [null] && $tgt_win32)
+
   # Win32
   HAVE_DPI_AWARENESS_CONTEXT = $tgt_win32
   HAVE_GETMODULEHANDLE = $tgt_win32
