@@ -10,3 +10,7 @@ c{*}: extension = c
 # The test target for cross-testing (running tests under Wine, etc).
 #
 test.target = $c.target
+
+# Configuration Options
+config [bool] config.libavutil.pixelutils       ?= false
+config [bool] config.libavutil.memory_poisoning ?= false

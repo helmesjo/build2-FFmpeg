@@ -1,3 +1,10 @@
-import libs = libavutil%lib{avutil}
+import lib = libavutil%lib{avutil}
 
-exe{driver}: {h c}{**} $libs testscript{**}
+for t : tests/c{* -lzo}
+{
+  c = $($lib: libavutil.$name($t))
+  ./: exe{$name($t)}: $t $lib: include = ($c == [null] || $c)
+}
+
+c.poptions += -D_USE_MATH_DEFINES
+# exe{lzo}: tests/c{lzo}: include = ($c.find_system_header("lzo/lzo1x.h") != [null])
