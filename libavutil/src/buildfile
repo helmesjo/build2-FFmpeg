@@ -3,33 +3,43 @@ using autoconf
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 
+cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
 tgt_macos = [bool] ($c.target.system == 'darwin')
-c_coptions = [string] ($c.coptions != [null] ? $regex.merge($c.coptions, '(.+)', '\1 ') : '')
 
 lib{avutil}: libul{avutil}: \
-               libavutil/{h c}{* -avconfig -config -ffversion \
-                                 -*cuda* \
-                                 -hwcontext_* \
-                                 -native_* \
-                                 -*vulkan* \
-                                 -macos_* \
-                                 -tx_template.c \
-                               } \
+               libavutil/{h c}{* \
+                                -*cuda* \
+                                -hwcontext_* \
+                                -native_* \
+                                -*vulkan* \
+                                -macos_* \
+                                -tx_template.c \
+                              } \
                libavutil/h{avconfig ffversion} h{config} \
                $impl_libs $intf_libs
 
 # Architecture specific source
-switch $c.target.cpu: regex.match
-{
-  case 'i[3-6]86'
-    libul{avutil}: libavutil/x86/{h c}{*}
-  case 'aarch64'
-    libul{avutil}: libavutil/aarch64/{h c}{*}
-}
+# libavutils/aarch64
+# libavutils/arm
+# libavutils/avr32
+# libavutils/loongarch
+# libavutils/mips
+# libavutils/ppc
+# libavutils/riscv
+# libavutils/x86
+libul{avutil}: libavutil/arm/{h c}{**}: include = ($cpu == 'arm')
+libul{avutil}: libavutil/aarch64/{h c}{**}: include = ($cpu == 'aarch64')
+libul{avutil}: libavutil/x86/{h c}{**}: include = $regex.match($cpu, 'i[3-6]86')
 
+# OS specific source
 # Win32
-libul{avutil}: compat/windows/{h c}{*} compat/{h c}{w32*}: include = $tgt_win32
+libul{avutil}: \
+  compat/windows/{h c}{*} \
+  compat/{h c}{w32*} \
+  libavutil/{h c}{d3d*} \
+  libavutil/{h c}{dx*} \
+  : include = $tgt_win32
 
 # GCC
 

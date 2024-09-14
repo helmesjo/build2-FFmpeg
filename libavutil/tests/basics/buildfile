@@ -1,10 +1,14 @@
 import lib = libavutil%lib{avutil}
 
-for t : tests/c{* -lzo}
+# these tests are not run by upstream (ran with 'make fate -j 1 | grep libavutil')
+# -utf8 -rational
+for t : tests/c{* -lzo -utf8 -rational}
 {
   c = $($lib: libavutil.$name($t))
   ./: exe{$name($t)}: $t $lib: include = ($c == [null] || $c)
 }
 
+# SET ARGS HERE FOR EACH EXE WHEN EXECUTED BY TESTSCRIPT. SEE libavutil.mak
+
 c.poptions += -D_USE_MATH_DEFINES
-# exe{lzo}: tests/c{lzo}: include = ($c.find_system_header("lzo/lzo1x.h") != [null])
+exe{lzo}: tests/c{lzo}: include = ($c.find_system_header("lzo/lzo1x.h") != [null])
