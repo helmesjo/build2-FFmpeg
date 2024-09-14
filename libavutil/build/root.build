@@ -4,6 +4,8 @@
 
 using c
 
+c.std = 17
+
 h{*}: extension = h
 c{*}: extension = c
 
