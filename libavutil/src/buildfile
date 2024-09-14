@@ -49,8 +49,8 @@ h{config}: in{config}
   FFMPEG_CONFIGURATION = "\"$c.target.system\""
   FFMPEG_LICENSE = "\"LGPL version 2.1 or later\""
   CONFIG_THIS_YEAR = 2024
-  CONFIG_PIXELUTILS       = $config.libavutil.pixelutils
-  CONFIG_MEMORY_POISONING = $config.libavutil.memory_poisoning
+  CONFIG_PIXELUTILS       = ($config.libavutil.pixelutils ? 1 : 0)
+  CONFIG_MEMORY_POISONING = ($config.libavutil.memory_poisoning ? 1 : 0)
 
   autoconf.substitutions = HAVE_ALIGNED_MALLOC@HAVE__ALIGNED_MALLOC \
                            HAVE_AS_ARCHEXT_DOTPROD_DIRECTIVE@HAVE_AS_ARCHEXT_DOTPROD \
@@ -86,7 +86,7 @@ h{config}: in{config}
   HAVE_LIBDRM_GETFB2 = ($c.find_system_header("drm/drm.h") != [null])
 
   #  Win32
-  ## FFmpeg (incorrectly) assumse that HAVE_BCRYPT implies it's _WIN32
+  ## FFmpeg (incorrectly) assumes that HAVE_BCRYPT implies it's _WIN32
   HAVE_BCRYPT = ($c.find_system_header("bcrypt.h") != [null] && $tgt_win32)
   HAVE_DPI_AWARENESS_CONTEXT   = $tgt_win32
   HAVE_GETMODULEHANDLE         = $tgt_win32
@@ -111,7 +111,8 @@ libavutil/h{ffversion}: in{ffversion} $src_root/manifest
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
-c.poptions =+ "-I$out_pfx" "-I$src_pfx" -DHAVE_AV_CONFIG_H
+c.poptions =+ "-I$out_pfx" "-I$src_pfx" -DHAVE_AV_CONFIG_H -DBUILDING_avutil
+objs{**}: c.poptions =+ -DCONFIG_SHARED
 
 # System libraries
 sys_libs =
@@ -125,15 +126,17 @@ switch $c.target.class, $c.target.system
 c.libs += $sys_libs
 
 # <stdatomic.h> compatibility
-use_compat_atomics = [bool] true # ($c.find_system_header("stdatomic.h") == [null]) # NEED TO CHECK $c.std > 17 (but handle case when not defined)
+use_compat_atomics = [bool] true # ($c.find_system_header("stdatomic.h") == [null]) # NEED TO CHECK $c.std <= 17 (but handle case when not defined)
 if ($use_compat_atomics)
 {
   switch ($c.target.system)
   {
     case 'win32-msvc'
-      c.poptions +=   "-I$out_pfx/compat/atomics/win32/" \
-                      "-I$src_pfx/compat/atomics/win32/" \
-                      -D_USE_MATH_DEFINES -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_WARNINGS
+    {
+      c.coptions += -wd4018 -wd4146 -wd4244 -wd4305 -wd4554 -wd4133 -wd4333
+      c.poptions += "-I$src_pfx/compat/atomics/win32/" \
+                    -DWIN32_LEAN_AND_MEAN -D_USE_MATH_DEFINES -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_WARNINGS
+    }
   }
 }
 
