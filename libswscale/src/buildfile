@@ -1,0 +1,116 @@
+using autoconf
+
+intf_libs = # Interface dependencies.
+impl_libs = # Implementation dependencies.
+
+import intf_libs += libavutil%lib{avutil}
+
+cpu = [string] $c.target.cpu
+tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
+tgt_macos = [bool] ($c.target.system == 'darwin')
+
+HEADERS = swscale.h                                     \
+          version.h                                     \
+          version_major.h
+
+OBJS = alphablend.c                                     \
+       hscale.c                                         \
+       hscale_fast_bilinear.c                           \
+       gamma.c                                          \
+       half2float.c                                     \
+       input.c                                          \
+       options.c                                        \
+       output.c                                         \
+       rgb2rgb.c                                        \
+       slice.c                                          \
+       swscale.c                                        \
+       swscale_unscaled.c                               \
+       utils.c                                          \
+       version.c                                        \
+       yuv2rgb.c                                        \
+       vscale.c
+
+lib{swscale}: libul{swscale}: \
+               libswscale/h{$HEADERS} \
+               libswscale/c{$OBJS} \
+               $impl_libs $intf_libs
+
+libul{swscale}: libswscale/arm/{h c}{**}: include = ($cpu == 'arm')
+libul{swscale}: libswscale/aarch64/{h c}{**}: include = ($cpu == 'aarch64')
+libul{swscale}: libswscale/x86/{h c}{**}: include = $regex.match($cpu, 'i[3-6]86')
+
+# OS specific source
+# Win32
+# libul{swscale}: \
+#   compat/windows/{h c}{*} \
+#   compat/{h c}{w32*} \
+#   libswscale/{h c}{d3d*} \
+#   libswscale/{h c}{dx*} \
+#   : include = $tgt_win32
+
+# GCC
+
+# MacOS
+libul{swscale}: libswscale/{h c}{macos_*}: include = $tgt_macos
+
+libs{swscale}: def{swscale}: include = ($c.target.system == 'win32-msvc')
+def{swscale}: libul{swscale}
+
+# Build options.
+#
+out_pfx = [dir_path] $out_root/src/
+src_pfx = [dir_path] $src_root/src/
+
+# CONFIG_SWSCALE_ALPHA
+
+c.poptions =+ "-I$out_pfx" "-I$src_pfx" -DBUILDING_swscale -DSWS_MAX_FILTER_SIZE=256 -DCONFIG_SWSCALE_ALPHA=1
+objs{**}: c.poptions =+ -DCONFIG_SHARED
+
+# System libraries
+sys_libs =
+# switch $c.target.class, $c.target.system
+# {
+#   case 'windows', 'win32-msvc'
+#     sys_libs += bcrypt.lib
+#   case 'windows', 'mingw32'
+#     sys_libs += -lbcrypt
+# }
+# c.libs += $sys_libs
+
+switch ($c.target.system)
+{
+  case 'win32-msvc'
+  {
+    c.coptions += -wd4003
+    c.poptions += -DWIN32_LEAN_AND_MEAN -D_USE_MATH_DEFINES -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_WARNINGS
+  }
+}
+
+if ($c.target.system == 'mingw32')
+  c.loptions += -Wl,--export-all-symbols
+
+# Export options.
+#
+lib{swscale}:
+{
+  libswscale.pixelutils = $config.libswscale.pixelutils
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -DHAVE_AV_CONFIG_H -DSWS_MAX_FILTER_SIZE=256
+  c.export.libs = $intf_libs $sys_libs
+}
+
+# For pre-releases use the complete version to make sure they cannot
+# be used in place of another pre-release or the final version. See
+# the version module for details on the version.* variable values.
+#
+if $version.pre_release
+  lib{swscale}: bin.lib.version = "-$version.project_id"
+else
+  lib{swscale}: bin.lib.version = "-$version.major.$version.minor"
+
+# Install recreating subdirectories.
+#
+h{*}:
+{
+  install         = include/
+  install.subdirs = true
+}

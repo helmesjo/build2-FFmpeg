@@ -1,2 +1,14 @@
 : 1
 location: libavutil/
+
+:
+location: libavcodec/
+
+:
+location: libavfilter/
+
+:
+location: libswscale/
+
+:
+location: libavformat/

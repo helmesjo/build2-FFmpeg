@@ -1,0 +1,6 @@
+import lib = libswscale%lib{swscale}
+
+for t : tests/c{* -colorspace}
+{
+  ./: exe{$name($t)}: $t $lib
+}

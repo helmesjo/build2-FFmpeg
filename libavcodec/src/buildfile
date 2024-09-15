@@ -1,0 +1,147 @@
+using autoconf
+
+intf_libs = # Interface dependencies.
+impl_libs = # Implementation dependencies.
+
+import impl_libs += \
+  libavutil%lib{avutil} \
+  libavformat%lib{avformat}
+
+cpu = [string] $c.target.cpu
+tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
+tgt_macos = [bool] ($c.target.system == 'darwin')
+
+HEADERS = ac3_parser.h                                                  \
+          adts_parser.h                                                 \
+          avcodec.h                                                     \
+          avdct.h                                                       \
+          avfft.h                                                       \
+          bsf.h                                                         \
+          codec.h                                                       \
+          codec_desc.h                                                  \
+          codec_id.h                                                    \
+          codec_par.h                                                   \
+          d3d11va.h                                                     \
+          defs.h                                                        \
+          dirac.h                                                       \
+          dv_profile.h                                                  \
+          dxva2.h                                                       \
+          jni.h                                                         \
+          mediacodec.h                                                  \
+          packet.h                                                      \
+          qsv.h                                                         \
+          vdpau.h                                                       \
+          version.h                                                     \
+          version_major.h                                               \
+          videotoolbox.h                                                \
+          vorbis_parser.h
+
+OBJS = ac3_parser.c                                                     \
+       adts_parser.c                                                    \
+       allcodecs.c                                                      \
+       avcodec.c                                                        \
+       avdct.c                                                          \
+       avfft.c                                                          \
+       avpacket.c                                                       \
+       bitstream.c                                                      \
+       bitstream_filters.c                                              \
+       bsf.c                                                            \
+       codec_desc.c                                                     \
+       codec_par.c                                                      \
+       d3d11va.c                                                        \
+       decode.c                                                         \
+       dirac.c                                                          \
+       dv_profile.c                                                     \
+       encode.c                                                         \
+       get_buffer.c                                                     \
+       imgconvert.c                                                     \
+       jni.c                                                            \
+       mathtables.c                                                     \
+       mediacodec.c                                                     \
+       mpeg12framerate.c                                                \
+       options.c                                                        \
+       parser.c                                                         \
+       parsers.c                                                        \
+       profiles.c                                                       \
+       qsv_api.c                                                        \
+       raw.c                                                            \
+       refstruct.c                                                      \
+       utils.c                                                          \
+       version.c                                                        \
+       vlc.c                                                            \
+       vorbis_parser.c                                                  \
+       xiph.c
+
+lib{avcodec}: libul{avcodec}: \
+               libavcodec/h{$HEADERS} \
+               libavcodec/c{$OBJS} \
+               $impl_libs $intf_libs
+
+libul{avcodec}: libavcodec/arm/{h c}{**}: include = ($cpu == 'arm')
+libul{avcodec}: libavcodec/aarch64/{h c}{**}: include = ($cpu == 'aarch64')
+libul{avcodec}: libavcodec/x86/{h c}{**}: include = $regex.match($cpu, 'i[3-6]86')
+
+# OS specific source
+# Win32
+# libul{avcodec}: \
+#   compat/windows/{h c}{*} \
+#   compat/{h c}{w32*} \
+#   libavcodec/{h c}{d3d*} \
+#   libavcodec/{h c}{dx*} \
+#   : include = $tgt_win32
+
+# GCC
+
+# MacOS
+libul{avcodec}: libavcodec/{h c}{macos_*}: include = $tgt_macos
+
+libs{avcodec}: def{avcodec}: include = ($c.target.system == 'win32-msvc')
+def{avcodec}: libul{avcodec}
+
+# Build options.
+#
+out_pfx = [dir_path] $out_root/src/
+src_pfx = [dir_path] $src_root/src/
+
+c.poptions =+ "-I$out_pfx" "-I$src_pfx" -DBUILDING_avcodec
+objs{**}: c.poptions =+ -DCONFIG_SHARED
+
+# System libraries
+sys_libs =
+# switch $c.target.class, $c.target.system
+# {
+#   case 'windows', 'win32-msvc'
+#     sys_libs += bcrypt.lib
+#   case 'windows', 'mingw32'
+#     sys_libs += -lbcrypt
+# }
+# c.libs += $sys_libs
+
+if ($c.target.system == 'mingw32')
+  c.loptions += -Wl,--export-all-symbols
+
+# Export options.
+#
+lib{avcodec}:
+{
+  libavcodec.pixelutils = $config.libavcodec.pixelutils
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -DHAVE_AV_CONFIG_H
+  c.export.libs = $intf_libs $sys_libs
+}
+
+# For pre-releases use the complete version to make sure they cannot
+# be used in place of another pre-release or the final version. See
+# the version module for details on the version.* variable values.
+#
+if $version.pre_release
+  lib{avcodec}: bin.lib.version = "-$version.project_id"
+else
+  lib{avcodec}: bin.lib.version = "-$version.major.$version.minor"
+
+# Install recreating subdirectories.
+#
+h{*}:
+{
+  install         = include/
+  install.subdirs = true
+}

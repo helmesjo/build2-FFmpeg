@@ -1,0 +1,107 @@
+using autoconf
+
+intf_libs = # Interface dependencies.
+impl_libs = # Implementation dependencies.
+
+import impl_libs += libavutil%lib{avutil}
+
+cpu = [string] $c.target.cpu
+tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
+tgt_macos = [bool] ($c.target.system == 'darwin')
+
+HEADERS = avfilter.h                                                    \
+          buffersink.h                                                  \
+          buffersrc.h                                                   \
+          version.h                                                     \
+          version_major.h
+
+OBJS = allfilters.c                                                     \
+       audio.c                                                          \
+       avfilter.c                                                       \
+       avfiltergraph.c                                                  \
+       buffersink.c                                                     \
+       buffersrc.c                                                      \
+       colorspace.c                                                     \
+       ccfifo.c                                                         \
+       drawutils.c                                                      \
+       formats.c                                                        \
+       framepool.c                                                      \
+       framequeue.c                                                     \
+       graphdump.c                                                      \
+       graphparser.c                                                    \
+       version.c                                                        \
+       video.c
+
+lib{avfilter}: libul{avfilter}: \
+               libavfilter/h{$HEADERS} \
+               libavfilter/c{$OBJS} \
+               $impl_libs $intf_libs
+
+libul{avfilter}: libavfilter/arm/{h c}{**}: include = ($cpu == 'arm')
+libul{avfilter}: libavfilter/aarch64/{h c}{**}: include = ($cpu == 'aarch64')
+libul{avfilter}: libavfilter/x86/{h c}{**}: include = $regex.match($cpu, 'i[3-6]86')
+
+# OS specific source
+# Win32
+# libul{avfilter}: \
+#   compat/windows/{h c}{*} \
+#   compat/{h c}{w32*} \
+#   libavfilter/{h c}{d3d*} \
+#   libavfilter/{h c}{dx*} \
+#   : include = $tgt_win32
+
+# GCC
+
+# MacOS
+libul{avfilter}: libavfilter/{h c}{macos_*}: include = $tgt_macos
+
+libs{avfilter}: def{avfilter}: include = ($c.target.system == 'win32-msvc')
+def{avfilter}: libul{avfilter}
+
+# Build options.
+#
+out_pfx = [dir_path] $out_root/src/
+src_pfx = [dir_path] $src_root/src/
+
+c.poptions =+ "-I$out_pfx" "-I$src_pfx" -DBUILDING_avfilter
+objs{**}: c.poptions =+ -DCONFIG_SHARED
+
+# System libraries
+sys_libs =
+# switch $c.target.class, $c.target.system
+# {
+#   case 'windows', 'win32-msvc'
+#     sys_libs += bcrypt.lib
+#   case 'windows', 'mingw32'
+#     sys_libs += -lbcrypt
+# }
+# c.libs += $sys_libs
+
+if ($c.target.system == 'mingw32')
+  c.loptions += -Wl,--export-all-symbols
+
+# Export options.
+#
+lib{avfilter}:
+{
+  libavfilter.pixelutils = $config.libavfilter.pixelutils
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -DHAVE_AV_CONFIG_H
+  c.export.libs = $intf_libs $sys_libs
+}
+
+# For pre-releases use the complete version to make sure they cannot
+# be used in place of another pre-release or the final version. See
+# the version module for details on the version.* variable values.
+#
+if $version.pre_release
+  lib{avfilter}: bin.lib.version = "-$version.project_id"
+else
+  lib{avfilter}: bin.lib.version = "-$version.major.$version.minor"
+
+# Install recreating subdirectories.
+#
+h{*}:
+{
+  install         = include/
+  install.subdirs = true
+}

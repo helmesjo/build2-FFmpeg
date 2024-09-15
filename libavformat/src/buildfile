@@ -1,0 +1,183 @@
+using autoconf
+
+intf_libs = # Interface dependencies.
+impl_libs = # Implementation dependencies.
+
+import impl_libs += \
+  libavutil%lib{avutil}
+
+cpu = [string] $c.target.cpu
+tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
+tgt_macos = [bool] ($c.target.system == 'darwin')
+
+HEADERS = avformat.h                                                    \
+          avio.h                                                        \
+          version.h                                                     \
+          version_major.h
+
+OBJS = allformats.c         \
+       avformat.c           \
+       avio.c               \
+       aviobuf.c            \
+       demux.c              \
+       demux_utils.c        \
+       dump.c               \
+       dv.c                 \
+       format.c             \
+       id3v1.c              \
+       id3v2.c              \
+       isom_tags.c          \
+       metadata.c           \
+       mux.c                \
+       mux_utils.c          \
+       options.c            \
+       os_support.c         \
+       protocols.c          \
+       riff.c               \
+       sdp.c                \
+       seek.c               \
+       url.c                \
+       utils.c              \
+       version.c
+
+lib{avformat}: libul{avformat}: \
+               libavformat/h{$HEADERS} \
+               libavformat/h{muxer_list.c demuxer_list.c protocol_list.c} \
+               libavformat/c{$OBJS} \
+               $impl_libs $intf_libs
+
+libul{avformat}: libavformat/arm/{h c}{**}: include = ($cpu == 'arm')
+libul{avformat}: libavformat/aarch64/{h c}{**}: include = ($cpu == 'aarch64')
+libul{avformat}: libavformat/x86/{h c}{**}: include = $regex.match($cpu, 'i[3-6]86')
+
+# Generated sources
+libavformat/h{muxer_list.c}: libavformat/c{allformats}
+{{
+  diag generate ($>)
+
+  s = $path($<)        # Source file.
+  f = $path($>)        # Target file.
+  pattern = "FFOutputFormat"
+  thing = "muxer"
+  struct_name = "FFOutputFormat"
+  name = "muxer_list"
+
+  sed -n -e "s/^[^#]*extern.*$pattern *ff_\([^ ]*\)_$thing;/\1_$thing/p" $s | set -n muxer_LIST
+  # assert ($size($muxer_LIST) > 0)
+  echo "static const $struct_name * const $name[] = {" > $f
+  for c: $muxer_LIST
+    # if enabled $c; then
+      echo "    &ff_$c," >> $path($>)
+    # fi
+  end
+  echo "    NULL };" >> $path($>)
+}}
+
+libavformat/h{demuxer_list.c}: libavformat/c{allformats}
+{{
+  diag generate ($>)
+
+  s = $path($<)        # Source file.
+  f = $path($>)        # Target file.
+  pattern = "FFInputFormat"
+  thing = "demuxer"
+  struct_name = "FFInputFormat"
+  name = "demuxer_list"
+
+  sed -n -e "s/^[^#]*extern.*$pattern *ff_\([^ ]*\)_$thing;/\1_$thing/p" $s | set -n demuxer_LIST
+  # assert ($size($demuxer_LIST) > 0)
+  echo "static const $struct_name * const $name[] = {" > $f
+  for c: $demuxer_LIST
+    # if enabled $c; then
+      echo "    &ff_$c," >> $path($>)
+    # fi
+  end
+  echo "    NULL };" >> $path($>)
+}}
+
+libavformat/h{protocol_list.c}: libavformat/c{protocols}
+{{
+  diag generate ($>)
+
+  s = $path($<)        # Source file.
+  f = $path($>)        # Target file.
+  pattern = "URLProtocol"
+  thing = "protocol"
+  struct_name = "URLProtocol"
+  name = "url_protocols"
+
+  sed -n -e "s/^[^#]*extern.*$pattern *ff_\([^ ]*\)_$thing;/\1_$thing/p" $s | set -n protocol_LIST
+  # assert ($size($protocol_LIST) > 0)
+  echo "static const $struct_name * const $name[] = {" > $f
+  for c: $protocol_LIST
+    # if enabled $c; then
+      echo "    &ff_$c," >> $path($>)
+    # fi
+  end
+  echo "    NULL };" >> $path($>)
+}}
+
+# OS specific source
+# Win32
+# libul{avformat}: \
+#   compat/windows/{h c}{*} \
+#   compat/{h c}{w32*} \
+#   libavformat/{h c}{d3d*} \
+#   libavformat/{h c}{dx*} \
+#   : include = $tgt_win32
+
+# GCC
+
+# MacOS
+libul{avformat}: libavformat/{h c}{macos_*}: include = $tgt_macos
+
+libs{avformat}: def{avformat}: include = ($c.target.system == 'win32-msvc')
+def{avformat}: libul{avformat}
+
+# Build options.
+#
+out_pfx = [dir_path] $out_root/src/
+src_pfx = [dir_path] $src_root/src/
+
+c.poptions =+ "-I$out_pfx" "-I$src_pfx" -DBUILDING_avformat
+objs{**}: c.poptions =+ -DCONFIG_SHARED
+
+# System libraries
+sys_libs =
+# switch $c.target.class, $c.target.system
+# {
+#   case 'windows', 'win32-msvc'
+#     sys_libs += bcrypt.lib
+#   case 'windows', 'mingw32'
+#     sys_libs += -lbcrypt
+# }
+# c.libs += $sys_libs
+
+if ($c.target.system == 'mingw32')
+  c.loptions += -Wl,--export-all-symbols
+
+# Export options.
+#
+lib{avformat}:
+{
+  libavformat.pixelutils = $config.libavformat.pixelutils
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -DHAVE_AV_CONFIG_H
+  c.export.libs = $intf_libs $sys_libs
+}
+
+# For pre-releases use the complete version to make sure they cannot
+# be used in place of another pre-release or the final version. See
+# the version module for details on the version.* variable values.
+#
+if $version.pre_release
+  lib{avformat}: bin.lib.version = "-$version.project_id"
+else
+  lib{avformat}: bin.lib.version = "-$version.major.$version.minor"
+
+# Install recreating subdirectories.
+#
+h{*}:
+{
+  install         = include/
+  install.subdirs = true
+}
