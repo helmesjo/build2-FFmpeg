@@ -16,3 +16,4 @@ test.target = $c.target
 # Configuration Options
 config [bool] config.libavutil.pixelutils       ?= false
 config [bool] config.libavutil.memory_poisoning ?= false
+config [bool] config.libavutil.zlib             ?= false
