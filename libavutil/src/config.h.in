@@ -8,6 +8,7 @@
 #undef CONFIG_THIS_YEAR
 #define CONFIG_MEMORY_POISONING @CONFIG_MEMORY_POISONING@
 #define CONFIG_PIXELUTILS @CONFIG_PIXELUTILS@
+#define CONFIG_ZLIB @CONFIG_ZLIB@
 
 #undef HAVE_ACCESS
 #undef HAVE_ALIGNED_MALLOC
@@ -209,6 +210,63 @@
 // Defaulted defines (used in compiled contexts)
 #ifndef HAVE_BIGENDIAN
 #  define HAVE_BIGENDIAN 0
+#endif
+#ifndef HAVE_ALTIVEC
+#  define HAVE_ALTIVEC 0
+#endif
+#ifndef HAVE_MMX
+#  define HAVE_MMX 0
+#endif
+#ifndef HAVE_LASX
+#  define HAVE_LASX 0
+#endif
+#ifndef HAVE_LSX
+#  define HAVE_LSX 0
+#endif
+#ifndef HAVE_MMX
+#  define HAVE_MMX 0
+#endif
+#ifndef HAVE_NEON
+#  define HAVE_NEON 0
+#endif
+#ifndef HAVE_LSX
+#  define HAVE_LSX 0
+#endif
+#ifndef HAVE_LASX
+#  define HAVE_LASX 0
+#endif
+#ifndef HAVE_MMX
+#  define HAVE_MMX 0
+#endif
+#ifndef HAVE_NEON
+#  define HAVE_NEON 0
+#endif
+#ifndef HAVE_MMX
+#  define HAVE_MMX 0
+#endif
+#ifndef HAVE_LASX
+#  define HAVE_LASX 0
+#endif
+#ifndef HAVE_LSX
+#  define HAVE_LSX 0
+#endif
+#ifndef HAVE_MMX
+#  define HAVE_MMX 0
+#endif
+#ifndef HAVE_NEON
+#  define HAVE_NEON 0
+#endif
+#ifndef HAVE_LSX
+#  define HAVE_LSX 0
+#endif
+#ifndef HAVE_LASX
+#  define HAVE_LASX 0
+#endif
+#ifndef HAVE_MMX
+#  define HAVE_MMX 0
+#endif
+#ifndef HAVE_NEON
+#  define HAVE_NEON 0
 #endif
 
 // Ignored defines
