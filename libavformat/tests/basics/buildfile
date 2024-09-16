@@ -1,3 +1,13 @@
-import libs = libavformat%lib{avformat}
+import libs = \
+  libavformat%lib{avformat} \
+  libavutil%lib{config}
 
-exe{driver}: {h c}{**} $libs testscript{**}
+TESTPROGS = seek                                                        \
+            url                                                         \
+            seek_utils
+#           async                                                       \
+
+for t : tests/c{$TESTPROGS}
+{
+  ./: exe{$name($t)}: $t $libs
+}

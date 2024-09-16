@@ -3,7 +3,10 @@ using autoconf
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 
-import intf_libs += libavutil%lib{avutil}
+import intf_libs += \
+  libavutil%lib{avutil}
+import impl_libs += \
+  libavutil%lib{config}
 
 cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
@@ -94,7 +97,7 @@ if ($c.target.system == 'mingw32')
 lib{swscale}:
 {
   libswscale.pixelutils = $config.libswscale.pixelutils
-  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -DHAVE_AV_CONFIG_H -DSWS_MAX_FILTER_SIZE=256
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -DCONFIG_SWSCALE -DSWS_MAX_FILTER_SIZE=256
   c.export.libs = $intf_libs $sys_libs
 }
 

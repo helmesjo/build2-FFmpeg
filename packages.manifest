@@ -12,3 +12,6 @@ location: libswscale/
 
 :
 location: libavformat/
+
+:
+location: libswresample/

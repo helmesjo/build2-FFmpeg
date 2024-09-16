@@ -1,3 +1,34 @@
-import libs = libavcodec%lib{avcodec}
+import avutil = libavutil%lib{avutil}
+import libs = \
+  libavcodec%lib{avcodec} \
+  libavutil%lib{config}
 
-exe{driver}: {h c}{**} $libs testscript{**}
+TESTPROGS = avcodec                   \
+            avpacket                  \
+            bitstream_be              \
+            bitstream_le              \
+            celp_math                 \
+            codec_desc                \
+            htmlsubtitles             \
+            jpeg2000dwt               \
+            mathops                   \
+            av1_levels                \
+            cabac                     \
+            golomb                    \
+            dct                       \
+            iirfilter                 \
+            mjpegenc_huffman          \
+            motion                    \
+            mpeg12framerate           \
+            h264_levels               \
+            h265_levels               \
+            rangecoder                \
+            snowenc
+
+# TESTOBJS += dctref.c
+
+for t : tests/c{$TESTPROGS $TESTOBJS}
+{
+  c = $($avutil: libavutil.$name($t))
+  ./: exe{$name($t)}: $t $libs: include = ($c == [null] || $c)
+}

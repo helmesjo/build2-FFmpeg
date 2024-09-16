@@ -3,7 +3,10 @@ using autoconf
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 
-import impl_libs += libavutil%lib{avutil}
+import intf_libs += \
+  libavutil%lib{avutil}
+import impl_libs += \
+  libavutil%lib{config}
 
 cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
@@ -34,12 +37,37 @@ OBJS = allfilters.c                                                     \
 
 lib{avfilter}: libul{avfilter}: \
                libavfilter/h{$HEADERS} \
-               libavfilter/c{$OBJS} \
+               libavfilter/c{$OBJS pthread} \
                $impl_libs $intf_libs
+libul{avfilter}: libavfilter/c{ \
+                  filter_list \
+                }: include = adhoc
 
 libul{avfilter}: libavfilter/arm/{h c}{**}: include = ($cpu == 'arm')
 libul{avfilter}: libavfilter/aarch64/{h c}{**}: include = ($cpu == 'aarch64')
 libul{avfilter}: libavfilter/x86/{h c}{**}: include = $regex.match($cpu, 'i[3-6]86')
+
+libavfilter/c{filter_list}: libavfilter/c{allfilters}
+{{
+  diag generate ($>)
+
+  s = $path($<)        # Source file.
+  f = $path($>)        # Target file.
+  pattern = "AVFilter"
+  thing = "parser"
+  struct_name = "AVFilter"
+  name = "filter_list"
+
+  sed -n -e "s/^[^#]*extern.*$pattern *ff_\([^ ]*\)_$thing;/\1_$thing/p" $s | set -n filter_LIST
+  # assert ($size($filter_LIST) > 0)
+  echo "static const $struct_name * const $name[] = {" > $f
+  for c: $filter_LIST
+    # if enabled $c; then
+      echo "    &ff_$c," >> $path($>)
+    # fi
+  end
+  echo "    NULL };" >> $path($>)
+}}
 
 # OS specific source
 # Win32
@@ -85,7 +113,7 @@ if ($c.target.system == 'mingw32')
 lib{avfilter}:
 {
   libavfilter.pixelutils = $config.libavfilter.pixelutils
-  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -DHAVE_AV_CONFIG_H
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -DCONFIG_AVFILTER
   c.export.libs = $intf_libs $sys_libs
 }
 

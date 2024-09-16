@@ -1,6 +1,14 @@
 $out_root/
 {
   include src/
+  include libconfig/
 }
 
-export $out_root/src/$import.target
+if ($name($import.target) == 'avutil')
+{
+  export $out_root/src/$import.target
+}
+elif ($name($import.target) == 'config')
+{
+  export $out_root/libconfig/$import.target
+}

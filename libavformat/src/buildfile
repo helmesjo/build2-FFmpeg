@@ -1,10 +1,11 @@
-using autoconf
-
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 
+import intf_libs += \
+  libavutil%lib{avutil} \
+  libavcodec%lib{avcodec}
 import impl_libs += \
-  libavutil%lib{avutil}
+  libavutil%lib{config}
 
 cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
@@ -42,7 +43,6 @@ OBJS = allformats.c         \
 
 lib{avformat}: libul{avformat}: \
                libavformat/h{$HEADERS} \
-               libavformat/h{muxer_list.c demuxer_list.c protocol_list.c} \
                libavformat/c{$OBJS} \
                $impl_libs $intf_libs
 
@@ -50,8 +50,10 @@ libul{avformat}: libavformat/arm/{h c}{**}: include = ($cpu == 'arm')
 libul{avformat}: libavformat/aarch64/{h c}{**}: include = ($cpu == 'aarch64')
 libul{avformat}: libavformat/x86/{h c}{**}: include = $regex.match($cpu, 'i[3-6]86')
 
+libul{avformat}: libavformat/c{muxer_list demuxer_list protocol_list}: include = adhoc
+
 # Generated sources
-libavformat/h{muxer_list.c}: libavformat/c{allformats}
+libavformat/c{muxer_list}: libavformat/c{allformats}
 {{
   diag generate ($>)
 
@@ -73,7 +75,7 @@ libavformat/h{muxer_list.c}: libavformat/c{allformats}
   echo "    NULL };" >> $path($>)
 }}
 
-libavformat/h{demuxer_list.c}: libavformat/c{allformats}
+libavformat/c{demuxer_list}: libavformat/c{allformats}
 {{
   diag generate ($>)
 
@@ -95,7 +97,7 @@ libavformat/h{demuxer_list.c}: libavformat/c{allformats}
   echo "    NULL };" >> $path($>)
 }}
 
-libavformat/h{protocol_list.c}: libavformat/c{protocols}
+libavformat/c{protocol_list}: libavformat/c{protocols}
 {{
   diag generate ($>)
 
@@ -134,6 +136,9 @@ libul{avformat}: libavformat/{h c}{macos_*}: include = $tgt_macos
 libs{avformat}: def{avformat}: include = ($c.target.system == 'win32-msvc')
 def{avformat}: libul{avformat}
 
+if ($c.target.system == 'mingw32')
+  c.loptions += -Wl,--export-all-symbols
+
 # Build options.
 #
 out_pfx = [dir_path] $out_root/src/
@@ -153,15 +158,11 @@ sys_libs =
 # }
 # c.libs += $sys_libs
 
-if ($c.target.system == 'mingw32')
-  c.loptions += -Wl,--export-all-symbols
-
 # Export options.
 #
 lib{avformat}:
 {
-  libavformat.pixelutils = $config.libavformat.pixelutils
-  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -DHAVE_AV_CONFIG_H
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -DCONFIG_AVFORMAT
   c.export.libs = $intf_libs $sys_libs
 }
 

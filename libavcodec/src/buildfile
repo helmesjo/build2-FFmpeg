@@ -3,9 +3,16 @@ using autoconf
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 
-import impl_libs += \
+import intf_libs += \
   libavutil%lib{avutil} \
-  libavformat%lib{avformat}
+  libavfilter%lib{avfilter}
+
+import impl_libs += \
+  libavutil%lib{config} \
+  libswresample%lib{swresample}
+
+import! config += \
+  libavutil%lib{config}
 
 cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
@@ -73,27 +80,112 @@ OBJS = ac3_parser.c                                                     \
        xiph.c
 
 lib{avcodec}: libul{avcodec}: \
-               libavcodec/h{$HEADERS} \
-               libavcodec/c{$OBJS} \
-               $impl_libs $intf_libs
+              libavcodec/h{$HEADERS} \
+              libavcodec/c{$OBJS} \
+              conditional/c{* -CONFIG_PCM*} \
+              $impl_libs $intf_libs
+libul{avcodec}: libavcodec/c{ \
+                  bsf_list \
+                  codec_list \
+                  parser_list \
+                }: include = adhoc
 
 libul{avcodec}: libavcodec/arm/{h c}{**}: include = ($cpu == 'arm')
 libul{avcodec}: libavcodec/aarch64/{h c}{**}: include = ($cpu == 'aarch64')
 libul{avcodec}: libavcodec/x86/{h c}{**}: include = $regex.match($cpu, 'i[3-6]86')
-
-# OS specific source
-# Win32
-# libul{avcodec}: \
-#   compat/windows/{h c}{*} \
-#   compat/{h c}{w32*} \
-#   libavcodec/{h c}{d3d*} \
-#   libavcodec/{h c}{dx*} \
-#   : include = $tgt_win32
-
-# GCC
-
-# MacOS
 libul{avcodec}: libavcodec/{h c}{macos_*}: include = $tgt_macos
+
+# define [see_through] impl_target: group
+# libul{avcodec}: impl_target{avcodec}: update = match
+
+# libavcodec/h{config2}: h{$($config: src_base)/config.h}: $config
+
+# impl_target{avcodec}: c{$relevant_files} libavcodec/h{config2}
+# {{
+#   o = [dir_path] $directory($>[0])
+#   d = [path] $path($o/avcodec_dyn.files)
+#   c = [path] $path($<[1])
+#   sed -n -e 's/#define[ ]+(CONFIG_[_0-9A-Z]+ [0-1])/\1/p' | set -n CONFIG_VARS
+#   echo $CONFIG_VARS
+
+#   depdb dyndep \
+#     --dyn-target \
+#     --target-cwd "$o" \
+#     --target-what 'conditional source files' \
+#     --format lines \
+#     --file "$d" \
+#     -- \
+#       echo "$CONFIG_VARS"
+#   # depdb dyndep [...] <cond-write-to-dep-file>
+#   # [...]
+
+#   diag $c $>
+# }}
+
+libavcodec/c{codec_list}: libavcodec/c{allcodecs}
+{{
+  diag generate ($>)
+
+  s = $path($<)        # Source file.
+  f = $path($>)        # Target file.
+  pattern = "FFCodec"
+  thing = "parser"
+  struct_name = "FFCodec"
+  name = "codec_list"
+
+  sed -n -e "s/^[^#]*extern.*$pattern *ff_\([^ ]*\)_$thing;/\1_$thing/p" $s | set -n codec_LIST
+  # assert ($size($codec_LIST) > 0)
+  echo "static const $struct_name * const $name[] = {" > $f
+  for c: $codec_LIST
+    # if enabled $c; then
+      echo "    &ff_$c," >> $path($>)
+    # fi
+  end
+  echo "    NULL };" >> $path($>)
+}}
+
+libavcodec/c{parser_list}: libavcodec/c{allcodecs}
+{{
+  diag generate ($>)
+
+  s = $path($<)        # Source file.
+  f = $path($>)        # Target file.
+  pattern = "AVCodecParser"
+  thing = "parser"
+  struct_name = "AVCodecParser"
+  name = "parser_list"
+
+  sed -n -e "s/^[^#]*extern.*$pattern *ff_\([^ ]*\)_$thing;/\1_$thing/p" $s | set -n parser_LIST
+  # assert ($size($parser_LIST) > 0)
+  echo "static const $struct_name * const $name[] = {" > $f
+  for c: $parser_LIST
+    # if enabled $c; then
+      echo "    &ff_$c," >> $path($>)
+    # fi
+  end
+  echo "    NULL };" >> $path($>)
+}}
+
+libavcodec/c{bsf_list}: libavcodec/c{allcodecs}
+{{
+  diag generate ($>)
+  s = $path($<)        # Source file.
+  f = $path($>)        # Target file.
+  pattern = "FFBitStreamFilter"
+  thing = "bsf"
+  struct_name = "FFBitStreamFilter"
+  name = "bitstream_filters"
+
+  sed -n -e "s/^[^#]*extern.*$pattern *ff_\([^ ]*\)_$thing;/\1_$thing/p" $s | set -n bsf_LIST
+  # assert ($size($bsf_LIST) > 0)
+  echo "static const $struct_name * const $name[] = {" > $f
+  for c: $bsf_LIST
+    # if enabled $c; then
+      echo "    &ff_$c," >> $path($>)
+    # fi
+  end
+  echo "    NULL };" >> $path($>)
+}}
 
 libs{avcodec}: def{avcodec}: include = ($c.target.system == 'win32-msvc')
 def{avcodec}: libul{avcodec}
@@ -103,7 +195,16 @@ def{avcodec}: libul{avcodec}
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
+c.coptions =+ -wd4018 -wd4146 -wd4244 -wd4305 \
+              -wd4554 \
+              -wd4005 \
+              -wd4244 -wd4127 -wd4018 -wd4389     \
+              -wd4146 -wd4057 -wd4204 -wd4706 -wd4305 \
+              -wd4152 -wd4324 -we4013 -wd4100 -wd4214 \
+              -wd4307 \
+              -wd4273 -wd4554 -wd4701 -wd4703
 c.poptions =+ "-I$out_pfx" "-I$src_pfx" -DBUILDING_avcodec
+conditional/c{*}: c.loptions += -ignore:4006 -ignore:2005
 objs{**}: c.poptions =+ -DCONFIG_SHARED
 
 # System libraries
@@ -124,8 +225,7 @@ if ($c.target.system == 'mingw32')
 #
 lib{avcodec}:
 {
-  libavcodec.pixelutils = $config.libavcodec.pixelutils
-  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -DHAVE_AV_CONFIG_H
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -DCONFIG_AVCODEC
   c.export.libs = $intf_libs $sys_libs
 }
 

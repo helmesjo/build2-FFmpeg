@@ -1,3 +1,18 @@
-import libs = libavfilter%lib{avfilter}
+import avutil = libavutil%lib{avutil}
+import libs = \
+  libavfilter%lib{avfilter} \
+  libavutil%lib{config}
 
-exe{driver}: {h c}{**} $libs testscript{**}
+# TESTPROGS = \
+#   drawutils \
+#   filtfmts \
+#   formats \
+#   integral
+
+# TESTOBJS += dctref.c
+
+for t : tests/c{*}
+{
+  c = $($avutil: libavutil.$name($t))
+  ./: exe{$name($t)}: $t $libs testscript: include = ($c == [null] || $c)
+}

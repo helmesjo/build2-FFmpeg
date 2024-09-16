@@ -1,0 +1,12 @@
+import avutil = libavutil%lib{avutil}
+import libs = \
+  libswresample%lib{swresample} \
+  libavutil%lib{config}
+
+TESTPROGS = swresample
+
+for t : tests/c{$TESTPROGS}
+{
+  c = $($avutil: libavutil.$name($t))
+  ./: exe{$name($t)}: $t $libs: include = ($c == [null] || $c)
+}

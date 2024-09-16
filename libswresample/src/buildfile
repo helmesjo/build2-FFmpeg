@@ -1,0 +1,72 @@
+intf_libs = # Interface dependencies.
+impl_libs = # Implementation dependencies.
+
+import intf_libs += libavutil%lib{avutil}
+import impl_libs += libavutil%lib{config}
+
+cpu = [string] $c.target.cpu
+tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
+tgt_macos = [bool] ($c.target.system == 'darwin')
+
+HEADERS = swresample.h                       \
+          version.h                          \
+          version_major.h
+
+OBJS = audioconvert.c                        \
+       dither.c                              \
+       options.c                             \
+       rematrix.c                            \
+       resample.c                            \
+       resample_dsp.c                        \
+       swresample.c                          \
+       swresample_frame.c                    \
+       version.c
+
+lib{swresample}: libul{swresample}: \
+               libswresample/h{$HEADERS} \
+               libswresample/c{$OBJS} \
+               $impl_libs $intf_libs
+
+libul{swresample}: libswresample/arm/{h c}{**}: include = ($cpu == 'arm')
+libul{swresample}: libswresample/aarch64/{h c}{**}: include = ($cpu == 'aarch64')
+libul{swresample}: libswresample/x86/{h c}{**}: include = $regex.match($cpu, 'i[3-6]86')
+
+# Build options.
+#
+out_pfx = [dir_path] $out_root/src/
+src_pfx = [dir_path] $src_root/src/
+
+c.poptions =+ "-I$out_pfx" "-I$src_pfx" -DBUILDING_swresample
+objs{**}: c.poptions =+ -DCONFIG_SHARED
+
+libs{swresample}: def{swresample}: include = ($c.target.system == 'win32-msvc')
+def{swresample}: libul{swresample}
+
+if ($c.target.system == 'mingw32')
+  c.loptions += -Wl,--export-all-symbols
+
+# Export options.
+#
+lib{swresample}:
+{
+  c.export.poptions += "-I$out_pfx" "-I$src_pfx" -DCONFIG_SWRESAMPLE
+  c.export.libs = $intf_libs $sys_libs
+}
+
+# For pre-releases use the complete version to make sure they cannot
+# be used in place of another pre-release or the final version. See
+# the version module for details on the version.* variable values.
+#
+if $version.pre_release
+  lib{swresample}: bin.lib.version = "-$version.project_id"
+else
+  lib{swresample}: bin.lib.version = "-$version.major.$version.minor"
+
+# Install recreating subdirectories.
+#
+h{*}:
+{
+  install         = include/
+  install.subdirs = true
+}
+
