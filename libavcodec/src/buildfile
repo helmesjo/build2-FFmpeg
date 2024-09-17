@@ -79,9 +79,10 @@ OBJS = ac3_parser.c                                                     \
 define [see_through] impl_target: group
 
 lib{avcodec}: libul{avcodec}: \
-              libavcodec/h{$HEADERS} \
+              libavcodec/impl_target{avcodec} \
+              libavcodec/h{**} \
               libavcodec/c{$OBJS} \
-              libavcodec/impl_target{avcodec} $impl_libs $intf_libs
+              $impl_libs $intf_libs
 libul{avcodec}: libavcodec/c{ \
                   bsf_list \
                   codec_list \
@@ -94,7 +95,7 @@ libul{avcodec}: libavcodec/x86/{h c}{**}: include = $regex.match($cpu, 'i[3-6]86
 libul{avcodec}: libavcodec/{h c}{macos_*}: include = $tgt_macos
 
 makefile = "$src_base/libavcodec/Makefile"
-libavcodec/impl_target{avcodec}: $config
+libavcodec/impl_target{avcodec}: $config $impl_libs $intf_libs file{$makefile}
 {{
   o = [dir_path] $directory($>[0])
   t = [dir_path] $directory($makefile)
@@ -109,29 +110,30 @@ libavcodec/impl_target{avcodec}: $config
   cat $makefile | set COND_FILES
   echo "$regex.merge($COND_FILES, '[ ]*\\\n[ ]*', ' ')" \
           | sed -n -e 's/^OBJS-\$\((CONFIG_[A-Z0-9_]+)\)[ +=]+(.*)/\1=\2/p' \
-          | set COND_FILES
+          | set -n COND_FILES
 
-  echo "$COND_FILES" | sed $CONFIG_VARS \
-    | sed -n -e 's/CONFIG_[A-Z0-9_]+=//gp' \
+  OUTPUT_FILES =
+  echo ($COND_FILES) | sed $CONFIG_VARS \
+    | sed -n -e "s|CONFIG_[A-Z0-9_]+=||gp" \
     | sed -n -e 's/\.o/.c/gp' \
     | set -w OUTPUT_FILES
 
   depdb dyndep \
     --dyn-target \
-    --target-cwd $path.posix_string($t) \
+    --target-cwd $path.posix_string($o) \
     --target-what 'conditional source files' \
     --format lines \
     --file "$d" \
     -- \
-      echo $OUTPUT_FILES >$d &!$d && \
-      sed -n -e "s|\(.*\)\$|$path.posix_string($o)/\1|p" -i $d && \
-      cat $d
+      echo ($OUTPUT_FILES) | tr ' ' '\n' >$d &!$d
+      # echo ($OUTPUT_FILES) | tr ' ' '\n' && \
 
-  diag cat $d
-  echo $OUTPUT_FILES
-  for file : $OUTPUT_FILES
-    cp --no-cleanup --preserve $path.posix_string($t)/$file $path.posix_string($o)/$file
-    touch --after $s $path.posix_string($o)/$file
+  diag cp ($>[1])
+  # cat $d
+  cat ($d) | for file
+    # echo cp $path.posix_string($t/$file) $path.posix_string($o/$file)
+    cp $path.posix_string($t/$file) $path.posix_string($o/$file)
+    # touch --after $s $path.posix_string($o)/$file
   end
 }}
 
@@ -216,9 +218,7 @@ c.coptions =+ -wd4018 -wd4146 -wd4244 -wd4305 \
               -wd4152 -wd4324 -we4013 -wd4100 -wd4214 \
               -wd4307 \
               -wd4273 -wd4554 -wd4701 -wd4703
-c.poptions =+ "-I$out_pfx" "-I$src_pfx" -DBUILDING_avcodec
-conditional/c{*}: c.loptions += -ignore:4006 -ignore:2005
-objs{**}: c.poptions =+ -DCONFIG_SHARED
+c.poptions =+ "-I$out_pfx" "-I$src_pfx" -DBUILDING_avcodec -DCONFIG_SHARED "-I$src_pfx/libavcodec"
 
 # System libraries
 sys_libs =
