@@ -1,11 +1,8 @@
-using autoconf
-
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 
 import intf_libs += \
-  libavutil%lib{avutil} \
-  libavfilter%lib{avfilter}
+  libavutil%lib{avutil}
 
 import impl_libs += \
   libavutil%lib{config} \
@@ -79,11 +76,12 @@ OBJS = ac3_parser.c                                                     \
        vorbis_parser.c                                                  \
        xiph.c
 
+define [see_through] impl_target: group
+
 lib{avcodec}: libul{avcodec}: \
               libavcodec/h{$HEADERS} \
               libavcodec/c{$OBJS} \
-              conditional/c{* -CONFIG_PCM*} \
-              $impl_libs $intf_libs
+              libavcodec/impl_target{avcodec} $impl_libs $intf_libs
 libul{avcodec}: libavcodec/c{ \
                   bsf_list \
                   codec_list \
@@ -95,32 +93,47 @@ libul{avcodec}: libavcodec/aarch64/{h c}{**}: include = ($cpu == 'aarch64')
 libul{avcodec}: libavcodec/x86/{h c}{**}: include = $regex.match($cpu, 'i[3-6]86')
 libul{avcodec}: libavcodec/{h c}{macos_*}: include = $tgt_macos
 
-# define [see_through] impl_target: group
-# libul{avcodec}: impl_target{avcodec}: update = match
+makefile = "$src_base/libavcodec/Makefile"
+libavcodec/impl_target{avcodec}: $config
+{{
+  o = [dir_path] $directory($>[0])
+  t = [dir_path] $directory($makefile)
+  s = [path] $path(h{$($config: out_base)/config_components.h})
+  d = "$o/avcodec_dyn.files"
+  c = "$o/avcodec_dyn.components"
+  p = "$o/avcodec_dyn.sed"
 
-# libavcodec/h{config2}: h{$($config: src_base)/config.h}: $config
+  # create list from '#define CONFIG_<name> <0|1>' -> 'CONFIG_<name>=<0|1>'
+  sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+0/ -e s|\1.*||p /p' $s \
+    | set -w CONFIG_VARS
+  cat $makefile | set COND_FILES
+  echo "$regex.merge($COND_FILES, '[ ]*\\\n[ ]*', ' ')" \
+          | sed -n -e 's/^OBJS-\$\((CONFIG_[A-Z0-9_]+)\)[ +=]+(.*)/\1=\2/p' \
+          | set COND_FILES
 
-# impl_target{avcodec}: c{$relevant_files} libavcodec/h{config2}
-# {{
-#   o = [dir_path] $directory($>[0])
-#   d = [path] $path($o/avcodec_dyn.files)
-#   c = [path] $path($<[1])
-#   sed -n -e 's/#define[ ]+(CONFIG_[_0-9A-Z]+ [0-1])/\1/p' | set -n CONFIG_VARS
-#   echo $CONFIG_VARS
+  echo "$COND_FILES" | sed $CONFIG_VARS \
+    | sed -n -e 's/CONFIG_[A-Z0-9_]+=//gp' \
+    | sed -n -e 's/\.o/.c/gp' \
+    | set -w OUTPUT_FILES
 
-#   depdb dyndep \
-#     --dyn-target \
-#     --target-cwd "$o" \
-#     --target-what 'conditional source files' \
-#     --format lines \
-#     --file "$d" \
-#     -- \
-#       echo "$CONFIG_VARS"
-#   # depdb dyndep [...] <cond-write-to-dep-file>
-#   # [...]
+  depdb dyndep \
+    --dyn-target \
+    --target-cwd $path.posix_string($t) \
+    --target-what 'conditional source files' \
+    --format lines \
+    --file "$d" \
+    -- \
+      echo $OUTPUT_FILES >$d &!$d && \
+      sed -n -e "s|\(.*\)\$|$path.posix_string($o)/\1|p" -i $d && \
+      cat $d
 
-#   diag $c $>
-# }}
+  diag cat $d
+  echo $OUTPUT_FILES
+  for file : $OUTPUT_FILES
+    cp --no-cleanup --preserve $path.posix_string($t)/$file $path.posix_string($o)/$file
+    touch --after $s $path.posix_string($o)/$file
+  end
+}}
 
 libavcodec/c{codec_list}: libavcodec/c{allcodecs}
 {{
