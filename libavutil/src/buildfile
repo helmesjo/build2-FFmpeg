@@ -3,7 +3,8 @@ using autoconf
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 
-import impl_libs += libavutil%lib{config}
+include ../libconfig/
+impl_libs += ../libconfig/lib{config}
 
 cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
