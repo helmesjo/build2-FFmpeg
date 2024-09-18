@@ -95,45 +95,56 @@ libul{avcodec}: libavcodec/x86/{h c}{**}: include = $regex.match($cpu, 'i[3-6]86
 libul{avcodec}: libavcodec/{h c}{macos_*}: include = $tgt_macos
 
 makefile = "$src_base/libavcodec/Makefile"
-libavcodec/impl_target{avcodec}: $config $impl_libs $intf_libs file{$makefile}
+libavcodec/impl_target{avcodec}: $config file{$makefile} $impl_libs $intf_libs
 {{
   o = [dir_path] $directory($>[0])
   t = [dir_path] $directory($makefile)
-  s = [path] $path(h{$($config: out_base)/config_components.h})
-  d = "$o/avcodec_dyn.files"
-  c = "$o/avcodec_dyn.components"
-  p = "$o/avcodec_dyn.sed"
+  c1 = [path] $path(h{$($config: out_base)/config_components.h})
+  c2 = [path] $path(h{$($config: out_base)/config.h})
+  d = "$o/av_conditional.files"
 
-  # create list from '#define CONFIG_<name> <0|1>' -> 'CONFIG_<name>=<0|1>'
-  sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+0/ -e s|\1.*||p /p' $s \
-    | set -w CONFIG_VARS
-  cat $makefile | set COND_FILES
-  echo "$regex.merge($COND_FILES, '[ ]*\\\n[ ]*', ' ')" \
-          | sed -n -e 's/^OBJS-\$\((CONFIG_[A-Z0-9_]+)\)[ +=]+(.*)/\1=\2/p' \
-          | set -n COND_FILES
+  # extract all enabled (1) CONFIG_XXX
+  sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/"\1"/p' $c1 \
+    | set -w ENABLED_COMPONENTS [string_set]
+  sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/"\1"/p' $c2 \
+    | set -w ENABLED_CONFIGS [string_set]
 
-  OUTPUT_FILES =
-  echo ($COND_FILES) | sed $CONFIG_VARS \
-    | sed -n -e "s|CONFIG_[A-Z0-9_]+=||gp" \
+  #  extract all conditional source files form makefile,
+  ## & split to json: '{"CONFIG_XXX": "all.o extra.o sources.o"}'
+  cat $makefile \
+    | set COND_SRC [string_set]
+  COND_SRC = [strings] ($regex.merge($COND_SRC, '[ ]*\\\n[ ]*', ' '))
+  echo $COND_SRC \
+          | sed -n -e 's/^OBJS-\$\((CONFIG_[A-Z0-9_]+)\)[ +=]+(.*)/{"\1": "\2"}/p' \
+          | set -n COND_SRC [strings]
+
+  ADD_SRC = [strings]
+  # iterate conditional files, check if enabled, extract extra files, append to list.
+  for str: [strings] ($COND_SRC)
+    pair = [json_object] $json.parse($str)
+    cfg = $member_name($pair)
+    if ($ENABLED_COMPONENTS[\"$cfg\"] || $ENABLED_CONFIGS[\"$cfg\"])
+      ADD_SRC += [strings] $member_value($pair)
+    end
+  end
+
+  # TODO: DEAL WITH $empty($ADD_SRC) case
+  echo $ADD_SRC \
     | sed -n -e 's/\.o/.c/gp' \
-    | set -w OUTPUT_FILES
+    | set -w ADD_SRC [paths]
 
   depdb dyndep \
     --dyn-target \
-    --target-cwd $path.posix_string($o) \
+    --target-cwd $o \
     --target-what 'conditional source files' \
     --format lines \
     --file "$d" \
     -- \
-      echo ($OUTPUT_FILES) | tr ' ' '\n' >$d &!$d
-      # echo ($OUTPUT_FILES) | tr ' ' '\n' && \
+      echo ($ADD_SRC) | tr ' ' '\n' >$d &!$d
 
-  diag cp ($>[1])
-  # cat $d
-  cat ($d) | for file
-    # echo cp $path.posix_string($t/$file) $path.posix_string($o/$file)
+  diag src ($>)
+  cat $d | for -n file
     cp $path.posix_string($t/$file) $path.posix_string($o/$file)
-    # touch --after $s $path.posix_string($o)/$file
   end
 }}
 
