@@ -4,233 +4,28 @@ intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 
 include ../libconfig/
-impl_libs += ../libconfig/lib{config}
+config = ../libconfig/lib{config}
+impl_libs += $config
 
 cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
 tgt_macos = [bool] ($c.target.system == 'darwin')
 
-HEADERS = adler32.h                                                     \
-          aes.h                                                         \
-          aes_ctr.h                                                     \
-          ambient_viewing_environment.h                                 \
-          attributes.h                                                  \
-          audio_fifo.h                                                  \
-          avassert.h                                                    \
-          avstring.h                                                    \
-          avutil.h                                                      \
-          base64.h                                                      \
-          blowfish.h                                                    \
-          bprint.h                                                      \
-          bswap.h                                                       \
-          buffer.h                                                      \
-          cast5.h                                                       \
-          camellia.h                                                    \
-          channel_layout.h                                              \
-          common.h                                                      \
-          cpu.h                                                         \
-          crc.h                                                         \
-          csp.h                                                         \
-          des.h                                                         \
-          detection_bbox.h                                              \
-          dict.h                                                        \
-          display.h                                                     \
-          dovi_meta.h                                                   \
-          downmix_info.h                                                \
-          encryption_info.h                                             \
-          error.h                                                       \
-          eval.h                                                        \
-          executor.h                                                    \
-          fifo.h                                                        \
-          file.h                                                        \
-          frame.h                                                       \
-          hash.h                                                        \
-          hdr_dynamic_metadata.h                                        \
-          hdr_dynamic_vivid_metadata.h                                  \
-          hmac.h                                                        \
-          hwcontext.h                                                   \
-          hwcontext_cuda.h                                              \
-          hwcontext_d3d11va.h                                           \
-          hwcontext_d3d12va.h                                           \
-          hwcontext_drm.h                                               \
-          hwcontext_dxva2.h                                             \
-          hwcontext_qsv.h                                               \
-          hwcontext_mediacodec.h                                        \
-          hwcontext_opencl.h                                            \
-          hwcontext_vaapi.h                                             \
-          hwcontext_videotoolbox.h                                      \
-          hwcontext_vdpau.h                                             \
-          hwcontext_vulkan.h                                            \
-          iamf.h                                                        \
-          imgutils.h                                                    \
-          intfloat.h                                                    \
-          intreadwrite.h                                                \
-          lfg.h                                                         \
-          log.h                                                         \
-          lzo.h                                                         \
-          macros.h                                                      \
-          mathematics.h                                                 \
-          mastering_display_metadata.h                                  \
-          md5.h                                                         \
-          mem.h                                                         \
-          motion_vector.h                                               \
-          murmur3.h                                                     \
-          opt.h                                                         \
-          parseutils.h                                                  \
-          pixdesc.h                                                     \
-          pixelutils.h                                                  \
-          pixfmt.h                                                      \
-          random_seed.h                                                 \
-          rc4.h                                                         \
-          rational.h                                                    \
-          replaygain.h                                                  \
-          ripemd.h                                                      \
-          samplefmt.h                                                   \
-          sha.h                                                         \
-          sha512.h                                                      \
-          spherical.h                                                   \
-          stereo3d.h                                                    \
-          threadmessage.h                                               \
-          time.h                                                        \
-          timecode.h                                                    \
-          timestamp.h                                                   \
-          tree.h                                                        \
-          twofish.h                                                     \
-          uuid.h                                                        \
-          version.h                                                     \
-          video_enc_params.h                                            \
-          xtea.h                                                        \
-          tea.h                                                         \
-          tx.h                                                          \
-          film_grain_params.h                                           \
-          video_hint.h
-
-ARCH_HEADERS = bswap.h                                                  \
-               intmath.h                                                \
-               intreadwrite.h                                           \
-               timer.h                                                  \
-
-BUILT_HEADERS = avconfig.h                                              \
-                ffversion.h
-
-OBJS = adler32.c                                                        \
-       aes.c                                                            \
-       aes_ctr.c                                                        \
-       ambient_viewing_environment.c                                    \
-       audio_fifo.c                                                     \
-       avstring.c                                                       \
-       avsscanf.c                                                       \
-       base64.c                                                         \
-       blowfish.c                                                       \
-       bprint.c                                                         \
-       buffer.c                                                         \
-       cast5.c                                                          \
-       camellia.c                                                       \
-       channel_layout.c                                                 \
-       cpu.c                                                            \
-       crc.c                                                            \
-       csp.c                                                            \
-       des.c                                                            \
-       detection_bbox.c                                                 \
-       dict.c                                                           \
-       display.c                                                        \
-       dovi_meta.c                                                      \
-       downmix_info.c                                                   \
-       encryption_info.c                                                \
-       error.c                                                          \
-       eval.c                                                           \
-       executor.c                                                       \
-       fifo.c                                                           \
-       file.c                                                           \
-       file_open.c                                                      \
-       float_dsp.c                                                      \
-       fixed_dsp.c                                                      \
-       frame.c                                                          \
-       hash.c                                                           \
-       hdr_dynamic_metadata.c                                           \
-       hdr_dynamic_vivid_metadata.c                                     \
-       hmac.c                                                           \
-       hwcontext.c                                                      \
-       iamf.c                                                           \
-       imgutils.c                                                       \
-       integer.c                                                        \
-       intmath.c                                                        \
-       lfg.c                                                            \
-       lls.c                                                            \
-       log.c                                                            \
-       log2_tab.c                                                       \
-       lzo.c                                                            \
-       mathematics.c                                                    \
-       mastering_display_metadata.c                                     \
-       md5.c                                                            \
-       mem.c                                                            \
-       murmur3.c                                                        \
-       opt.c                                                            \
-       parseutils.c                                                     \
-       pixdesc.c                                                        \
-       pixelutils.c                                                     \
-       random_seed.c                                                    \
-       rational.c                                                       \
-       reverse.c                                                        \
-       rc4.c                                                            \
-       ripemd.c                                                         \
-       samplefmt.c                                                      \
-       sha.c                                                            \
-       sha512.c                                                         \
-       slicethread.c                                                    \
-       spherical.c                                                      \
-       stereo3d.c                                                       \
-       threadmessage.c                                                  \
-       time.c                                                           \
-       timecode.c                                                       \
-       timestamp.c                                                      \
-       tree.c                                                           \
-       twofish.c                                                        \
-       utils.c                                                          \
-       xga_font_data.c                                                  \
-       xtea.c                                                           \
-       tea.c                                                            \
-       tx.c                                                             \
-       tx_float.c                                                       \
-       tx_double.c                                                      \
-       tx_int32.c                                                       \
-       uuid.c                                                           \
-       version.c                                                        \
-       video_enc_params.c                                               \
-       video_hint.c                                                     \
-       film_grain_params.c \
-       hwcontext_d3d11va.c # <---------- temp! should be conditional
+define [see_through] impl_target: group
 
 lib{avutil}: libul{avutil}: \
-               libavutil/h{$HEADERS} \
-               libavutil/h{$ARCH_HEADERS} \
-               libavutil/c{$OBJS} \
-               libavutil/h{avconfig ffversion} \
-               $impl_libs $intf_libs
+              libavutil/impl_target{avutil} \
+              libavutil/h{avconfig ffversion} \
+              $impl_libs $intf_libs
 
-# Architecture specific source
-# libavutils/aarch64
-# libavutils/arm
-# libavutils/avr32
-# libavutils/loongarch
-# libavutils/mips
-# libavutils/ppc
-# libavutils/riscv
-# libavutils/x86
 libul{avutil}: libavutil/arm/{h c}{**}: include = ($cpu == 'arm')
 libul{avutil}: libavutil/aarch64/{h c}{**}: include = ($cpu == 'aarch64')
 libul{avutil}: libavutil/x86/{h c}{**}: include = $regex.match($cpu, 'i[3-6]86')
 
-# OS specific source
-# Win32
-libul{avutil}: \
-  compat/windows/{h c}{*} \
-  compat/{h c}{w32*} \
-  : include = $tgt_win32
-
-# GCC
-
-# MacOS
+libul{avutil}: compat/windows/{h c}{*} \
+               compat/msvrt/{h c}{*} \
+               compat/{h c}{w32*} \
+               : include = $tgt_win32
 libul{avutil}: libavutil/{h c}{macos_*}: include = $tgt_macos
 
 libavutil/h{avconfig}: in{avconfig}
@@ -241,12 +36,85 @@ libavutil/h{avconfig}: in{avconfig}
 [rule_hint=version.in] \
 libavutil/h{ffversion}: in{ffversion} $src_root/manifest
 
+makefile = "$src_base/libavutil/Makefile"
+libavutil/impl_target{avutil}: $config file{$makefile}
+{{
+  o = [dir_path] $directory($>[0])
+  s = [dir_path] $directory($makefile)
+  c1 = [path] $path(h{$($config: out_base)/config_components.h})
+  c2 = [path] $path(h{$($config: out_base)/config.h})
+  d = "$o/av_conditional.files"
+
+  cat $makefile \
+    | set MAKEFILE [string_set]
+  ## join all escaped lines
+  MAKEFILE = [strings] ($regex.merge($MAKEFILE, '[ ]*\\\n[ ]*', ' '))
+
+  # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
+  sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c1 \
+    | set -w ENABLED_COMPONENTS [string_set]
+  sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
+    | set -w ENABLED_CONFIGS [string_set]
+
+  ENABLED_GROUPS = [string_set] ( \
+    $ENABLED_CONFIGS \
+    $ENABLED_COMPONENTS \
+    "HEADERS" \
+    "ARCH_HEADERS" \
+    "OBJS" \
+  )
+
+  # extract all headers (including conditional and skipped)
+  ## format as json: '{"<group>": "<files...>"}'
+  echo $MAKEFILE \
+    | sed -n -e 's/^([A-Z0-9_]+|HEADERS).*[ +]+=[[:space:]]+(.*\.h)/{"\1": "\2"}/p' \
+    | set -n ALL_HDRS [strings]
+  echo $MAKEFILE \
+    | sed -n -e 's/^SKIPHEADERS-\$\(((CONFIG|HAVE)_[A-Z0-9_]+)\)[ +]+=[[:space:]]+(.*\.h)/{"\1": "\3"}/p' \
+    | set -n COND_HDRS [strings]
+  ALL_HDRS = $ALL_HDRS $COND_HDRS
+
+  # extract all sources (including conditional and skipped)
+  ## format as json: '{"<group>": "<files...>"}'
+  echo $MAKEFILE \
+    | sed -n -e 's/^([A-Z0-9_]+|OBJS).*[ +]+=[[:space:]]+(.*\.o)/{"\1": "\2"}/p' \
+    | set -n ALL_SRCS [strings]
+
+  echo $ALL_SRCS \
+    | sed -n -e 's/\.o/.c/gp' \
+    | set -n ALL_SRCS [strings]
+
+  SRCS = [strings]
+  # iterate files, check if enabled, extract extra files, append to list.
+  for str: [strings] $ALL_HDRS $ALL_SRCS
+    pair = [json_object] $json.parse($str)
+    group = $member_name($pair)
+    if ($ENABLED_GROUPS[$group])
+      SRCS += [strings] $member_value($pair)
+    end
+  end
+
+  depdb dyndep \
+    --dyn-target \
+    --target-cwd $o \
+    --target-what 'conditional source files' \
+    --format lines \
+    --file "$d" \
+    -- \
+      echo ($SRCS) | tr ' ' '\n' >$d &!$d
+
+  diag src ($>)
+  cat $d | for -n file
+    cp $path.posix_string($s/$file) $path.posix_string($o/$file)
+  end
+}}
+
 # Build options.
 #
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
-c.poptions =+ "-I$out_pfx" "-I$src_pfx" -DBUILDING_avutil
+c.poptions =+ "-I$out_pfx" "-I$src_pfx" "-I$src_pfx/libavutil" -DBUILDING_avutil
 objs{**}: c.poptions =+ -DCONFIG_SHARED
 
 # System libraries
@@ -287,7 +155,7 @@ if ($c.target.system == 'mingw32')
 lib{avutil}:
 {
   libavutil.pixelutils = $config.libavutil.pixelutils
-  c.export.poptions += "-I$out_pfx" "-I$src_pfx" -DHAVE_AV_CONFIG_H
+  c.export.poptions += "-I$out_pfx" "-I$src_pfx" "-I$src_pfx/libavutil/" -DHAVE_AV_CONFIG_H
   c.export.libs = $intf_libs $sys_libs
 }
 # workaround: <libavutil/md5.c> doesn't prefix with AV_
