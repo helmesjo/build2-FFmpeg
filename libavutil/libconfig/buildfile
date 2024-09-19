@@ -2904,8 +2904,7 @@ c.poptions =+ "-I$out_pfx" "-I$src_pfx"
 #
 lib{config}:
 {
-  c.export.poptions += "-I$out_pfx" "-I$src_pfx" \
-                        -DHAVE_AV_CONFIG_H -DWIN32_LEAN_AND_MEAN
+  c.export.poptions += "-I$out_pfx" "-I$src_pfx" -DHAVE_AV_CONFIG_H
 }
 
 # For pre-releases use the complete version to make sure they cannot
