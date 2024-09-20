@@ -101,9 +101,8 @@ libavutil/impl_target{avutil}: $config file{$makefile}
     --format lines \
     --file "$d" \
     -- \
-      echo ($SRCS) | tr ' ' '\n' >$d &!$d && \
-      echo internal.h >>$d && \
-      echo file_open.h >>$d
+      echo ($SRCS) | tr ' ' '\n' >$d &!$d #&& \
+      # echo internal.h >>$d
 
   diag src ($>)
   cat $d | for -n file
