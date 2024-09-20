@@ -24,7 +24,7 @@ libul{avutil}: libavutil/x86/{h c}{**}: include = $regex.match($cpu, 'i[3-6]86')
 
 libul{avutil}: compat/windows/{h c}{*} \
                compat/msvrt/{h c}{*} \
-               compat/{h c}{w32*} \
+               compat/{h}{*} \
                : include = $tgt_win32
 libul{avutil}: libavutil/{h c}{macos_*}: include = $tgt_macos
 
@@ -101,7 +101,9 @@ libavutil/impl_target{avutil}: $config file{$makefile}
     --format lines \
     --file "$d" \
     -- \
-      echo ($SRCS) | tr ' ' '\n' >$d &!$d
+      echo ($SRCS) | tr ' ' '\n' >$d &!$d && \
+      echo internal.h >>$d && \
+      echo file_open.h >>$d
 
   diag src ($>)
   cat $d | for -n file
@@ -114,7 +116,9 @@ libavutil/impl_target{avutil}: $config file{$makefile}
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
-c.poptions =+ "-I$out_pfx" "-I$src_pfx" "-I$src_pfx/libavutil" -DBUILDING_avutil
+c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_avutil
+# c.poptions = "-I$out_pfx" "-I$src_pfx" "-I$src_pfx/libavutil" -DBUILDING_avutil -D_ISOC11_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -DWIN32_LEAN_AND_MEAN -D_USE_MATH_DEFINES -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_WARNINGS -D_WIN32_WINNT=0x0600 -DPIC
+# c.coptions = -nologo -std:c17 -Z7 -W3 -wd4018 -wd4146 -wd4244 -wd4305 -wd4554 -O2 -utf-8 -showIncludes -Zs
 objs{**}: c.poptions =+ -DCONFIG_SHARED
 
 # System libraries
@@ -122,23 +126,24 @@ sys_libs =
 switch $c.target.class, $c.target.system
 {
   case 'windows', 'win32-msvc'
-    sys_libs += bcrypt.lib
+    sys_libs += clock_gettime.lib stdatomic.lib
   case 'windows', 'mingw32'
     sys_libs += -lbcrypt
 }
 c.libs += $sys_libs
 
-# <stdatomic.h> compatibility
-use_compat_atomics = [bool] true # ($c.find_system_header("stdatomic.h") == [null]) # NEED TO CHECK $c.std <= 17 (but handle case when not defined)
-if ($use_compat_atomics)
+switch ($c.target.system)
 {
-  switch ($c.target.system)
+  case 'win32-msvc'
   {
-    case 'win32-msvc'
+    c.coptions += -wd4018 -wd4146 -wd4244 -wd4305 -wd4554 -wd4133 -wd4333
+    c.poptions += -DWIN32_LEAN_AND_MEAN -D_USE_MATH_DEFINES -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_WARNINGS
+
+    # <stdatomic.h> compatibility
+    use_compat_atomics = [bool] $tgt_win32 # ($c.find_system_header("stdatomic.h") == [null]) # NEED TO CHECK $c.std <= 17 (but handle case when not defined)
+    if ($use_compat_atomics)
     {
-      c.coptions += -wd4018 -wd4146 -wd4244 -wd4305 -wd4554 -wd4133 -wd4333
-      c.poptions += "-I$src_pfx/compat/atomics/win32/" \
-                    -DWIN32_LEAN_AND_MEAN -D_USE_MATH_DEFINES -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_WARNINGS
+      c.poptions += "-I$src_pfx/compat/atomics/win32/"
       lib{avutil}: c.export.poptions += "-I$src_pfx/compat/atomics/win32/"
     }
   }
@@ -155,14 +160,14 @@ if ($c.target.system == 'mingw32')
 lib{avutil}:
 {
   libavutil.pixelutils = $config.libavutil.pixelutils
-  c.export.poptions += "-I$out_pfx" "-I$src_pfx" "-I$src_pfx/libavutil/" -DHAVE_AV_CONFIG_H
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -DHAVE_AV_CONFIG_H
   c.export.libs = $intf_libs $sys_libs
 }
 # workaround: <libavutil/md5.c> doesn't prefix with AV_
-libavutil/obj{md5}:
-{
-  c.poptions =+ -DHAVE_FAST_UNALIGNED=1
-}
+# libavutil/obj{md5}:
+# {
+#   c.poptions =+ -DHAVE_FAST_UNALIGNED=1
+# }
 
 # For pre-releases use the complete version to make sure they cannot
 # be used in place of another pre-release or the final version. See
