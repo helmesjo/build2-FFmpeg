@@ -15,18 +15,27 @@ define [see_through] impl_target: group
 
 lib{avutil}: libul{avutil}: \
               libavutil/impl_target{avutil} \
+              libavutil/h{** -avconfig -ffversion} \
               libavutil/h{avconfig ffversion} \
               $impl_libs $intf_libs
-
-libul{avutil}: libavutil/arm/{h c}{**}: include = ($cpu == 'arm')
-libul{avutil}: libavutil/aarch64/{h c}{**}: include = ($cpu == 'aarch64')
-libul{avutil}: libavutil/x86/{h c}{**}: include = $regex.match($cpu, 'i[3-6]86')
 
 libul{avutil}: compat/windows/{h c}{*} \
                compat/msvrt/{h c}{*} \
                compat/{h}{*} \
                : include = $tgt_win32
-libul{avutil}: libavutil/{h c}{macos_*}: include = $tgt_macos
+
+# for asm: $filesystem.path_search('**.asm', $src_base/libavutil)
+# {
+#   n = $name($asm)
+#   d = $
+#   obja{$n} objs{$n}:
+#   {{
+#     diag masm64 $>
+#     ml = $directory($effect($c.path))/ml64.exe
+#     $ml /Fo $path($>).obj /c $path($<[0])
+#   }}
+#   libul{avutil}: obj{$n}: include = $tgt_win32
+# }
 
 libavutil/h{avconfig}: in{avconfig}
 {
@@ -36,77 +45,134 @@ libavutil/h{avconfig}: in{avconfig}
 [rule_hint=version.in] \
 libavutil/h{ffversion}: in{ffversion} $src_root/manifest
 
-makefile = "$src_base/libavutil/Makefile"
-libavutil/impl_target{avutil}: $config file{$makefile}
+all_asm = [strings] \
+  '{"HAVE_X86ASM":            "x86/cpuid.asm x86/emms.asm x86/fixed_dsp.asm x86/float_dsp.asm x86/imgutils.asm x86/lls.asm x86/tx_float.asm x86/x86inc.asm x86/x86util.asm"}' \
+  '{"HAVE_X86ASM CONFIG_PIXELUTILS":      "x86/pixelutils.asm"}' \
+  '{"HAVE_AARCH64":           "aarch64/asm.S"}' \
+  '{"HAVE_AARCH64 HAVE_NEON": "aarch64/float_dsp_neon.S aarch64/tx_float_neon.S"}' \
+  '{"HAVE_ARM":               "arm/asm.S arm/float_dsp_vfp.S"}' \
+  '{"HAVE_ARM HAVE_NEON":     "arm/float_dsp_neon.S"}' \
+  '{"HAVE_RISCV":             "riscv/asm.S riscv/bswap_rvb.S riscv/fixed_dsp_rvv.S riscv/float_dsp_rvv.S"}'
+all_srcs = [strings] \
+  '{"SRC":                 "adler32.c aes.c aes_ctr.c ambient_viewing_environment.c audio_fifo.c avstring.c avsscanf.c base64.c blowfish.c bprint.c buffer.c cast5.c camellia.c channel_layout.c cpu.c crc.c csp.c des.c detection_bbox.c dict.c display.c dovi_meta.c downmix_info.c encryption_info.c error.c eval.c executor.c fifo.c file.c file_open.c float_dsp.c fixed_dsp.c frame.c hash.c hdr_dynamic_metadata.c hdr_dynamic_vivid_metadata.c hmac.c hwcontext.c iamf.c imgutils.c integer.c intmath.c lfg.c lls.c log.c log2_tab.c lzo.c mathematics.c mastering_display_metadata.c md5.c mem.c murmur3.c opt.c parseutils.c pixdesc.c pixelutils.c random_seed.c rational.c reverse.c rc4.c ripemd.c samplefmt.c sha.c sha512.c slicethread.c spherical.c stereo3d.c threadmessage.c time.c timecode.c timestamp.c tree.c twofish.c utils.c xga_font_data.c xtea.c tea.c tx.c tx_float.c tx_double.c tx_int32.c uuid.c version.c video_enc_params.c video_hint.c film_grain_params.c"}' \
+  '{"CONFIG_CUDA":         "hwcontext_cuda.c"}' \
+  '{"CONFIG_D3D11VA":      "hwcontext_d3d11va.c"}' \
+  '{"CONFIG_D3D12VA":      "hwcontext_d3d12va.c"}' \
+  '{"CONFIG_DXVA2":        "hwcontext_dxva2.c"}' \
+  '{"CONFIG_LIBDRM":       "hwcontext_drm.c"}' \
+  '{"CONFIG_MACOS_KPERF":  "macos_kperf.c"}' \
+  '{"CONFIG_MEDIACODEC":   "hwcontext_mediacodec.c"}' \
+  '{"CONFIG_OPENCL":       "hwcontext_opencl.c"}' \
+  '{"CONFIG_QSV":          "hwcontext_qsv.c"}' \
+  '{"CONFIG_VAAPI":        "hwcontext_vaapi.c"}' \
+  '{"CONFIG_VDPAU":        "hwcontext_vdpau.c"}' \
+  '{"CONFIG_VIDEOTOOLBOX": "hwcontext_videotoolbox.c"}' \
+  '{"CONFIG_VULKAN":       "hwcontext_vulkan.c vulkan.c"}' \
+  '{"HAVE_GNU_WINDRES":    "avutilres.rc"}' \
+  '{"HAVE_MMX_INLINE HAVE_MMX_EXTERNAL HAVE_MM_EMPTY":       "x86/emms.c"}' \
+  '{"HAVE_X86ASM":         "x86/tx_float_init.c"}' \
+  '{"HAVE_AARCH64":        "aarch64/cpu.c aarch64/float_dsp_init.c aarch64/tx_float_init.c"}' \
+  '{"HAVE_ARM":            "arm/cpu.c arm/float_dsp_init_arm.c"}' \
+  '{"HAVE_LOONG":          "loongarch/cpu.c"}' \
+  '{"HAVE_MIPS":           "mips/float_dsp_mips.c mips/cpu.c"}' \
+  '{"HAVE_PPC":            "ppc/cpu.c ppc/float_dsp_init.c"}' \
+  '{"HAVE_RISCV":          "riscv/float_dsp_init.c riscv/fixed_dsp_init.c riscv/cpu.c"}' \
+  '{"HAVE_X86ASM CONFIG_PIXELUTILS":   "x86/pixelutils_init.c"}' \
+  '{"HAVE_X86 HAVE_X86ASM":            "x86/cpu.c x86/fixed_dsp_init.c x86/float_dsp_init.c x86/imgutils_init.c x86/lls_init.c"}'
+
+libavutil/impl_target{avutil}: $config
 {{
   o = [dir_path] $directory($>[0])
-  s = [dir_path] $directory($makefile)
+  s = [dir_path] $src_base/libavutil
   c1 = [path] $path(h{$($config: out_base)/config_components.h})
   c2 = [path] $path(h{$($config: out_base)/config.h})
   d = "$o/av_conditional.files"
-
-  cat $makefile \
-    | set MAKEFILE [string_set]
-  ## join all escaped lines
-  MAKEFILE = [strings] ($regex.merge($MAKEFILE, '[ ]*\\\n[ ]*', ' '))
 
   # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
   sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c1 \
     | set -w ENABLED_COMPONENTS [string_set]
   sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
     | set -w ENABLED_CONFIGS [string_set]
+  sed -n -e 's/^#define[ ]+(HAVE_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
+    | set -w ENABLED_HAVE [string_set]
 
   ENABLED_GROUPS = [string_set] ( \
     $ENABLED_CONFIGS \
     $ENABLED_COMPONENTS \
-    "HEADERS" \
-    "ARCH_HEADERS" \
-    "OBJS" \
+    $ENABLED_HAVE \
+    "SRC" \
+    ($regex.find_match($ENABLED_CONFIGS, 'HAVE_ARM.*') ? "arm" : '') \
   )
 
-  # extract all headers (including conditional and skipped)
-  ## format as json: '{"<group>": "<files...>"}'
-  echo $MAKEFILE \
-    | sed -n -e 's/^([A-Z0-9_]+|HEADERS).*[ +]+=[[:space:]]+(.*\.h)/{"\1": "\2"}/p' \
-    | set -n ALL_HDRS [strings]
-  echo $MAKEFILE \
-    | sed -n -e 's/^SKIPHEADERS-\$\(((CONFIG|HAVE)_[A-Z0-9_]+)\)[ +]+=[[:space:]]+(.*\.h)/{"\1": "\3"}/p' \
-    | set -n COND_HDRS [strings]
-  ALL_HDRS = $ALL_HDRS $COND_HDRS
-
-  # extract all sources (including conditional and skipped)
-  ## format as json: '{"<group>": "<files...>"}'
-  echo $MAKEFILE \
-    | sed -n -e 's/^([A-Z0-9_]+|OBJS).*[ +]+=[[:space:]]+(.*\.o)/{"\1": "\2"}/p' \
-    | set -n ALL_SRCS [strings]
-
-  echo $ALL_SRCS \
-    | sed -n -e 's/\.o/.c/gp' \
-    | set -n ALL_SRCS [strings]
-
-  SRCS = [strings]
-  # iterate files, check if enabled, extract extra files, append to list.
-  for str: [strings] $ALL_HDRS $ALL_SRCS
-    pair = [json_object] $json.parse($str)
-    group = $member_name($pair)
-    if ($ENABLED_GROUPS[$group])
-      SRCS += [strings] $member_value($pair)
+  # append enabled sources
+  SRCS = [paths]
+  OBJS = [paths]
+  for str: [strings] ($all_asm $all_srcs)
+    pair = [json] $json.parse($str)
+    echo $member_name($pair)  | set -w groups [strings]
+    echo $member_value($pair) | set -w srcs [paths]
+    for src: [paths] $srcs
+      enabled = [bool] true
+      for group: $groups
+        if (!$ENABLED_GROUPS[$group])
+          enabled = false
+        end
+      end
+      if ($enabled)
+        if ($extension($src) != 'asm')
+          SRCS += [paths] $path.posix_representation($src)
+        else
+          ASM += [paths] $path.posix_representation($path.base($src).asma)
+          ASM += [paths] $path.posix_representation($path.base($src).asms)
+        end
+      end
     end
   end
+
+  SRCS += [paths] $filesystem.path_search('**.h', $src_base/libavutil)
+  ALL = [paths] $filesystem.path_search('**.c', $src_base/libavutil)
 
   depdb dyndep \
     --dyn-target \
     --target-cwd $o \
-    --target-what 'conditional source files' \
+    --target-what 'extracted source' \
+    --target-extension-type 'asma=libua' \
+    --target-extension-type 'asms=libus' \
     --format lines \
     --file "$d" \
     -- \
-      echo ($SRCS) | tr ' ' '\n' >$d &!$d #&& \
-      # echo internal.h >>$d
+      echo ($SRCS $ASM) | tr ' ' '\n' >$d &!$d
 
   diag src ($>)
-  cat $d | for -n file
-    cp $path.posix_string($s/$file) $path.posix_string($o/$file)
+
+  # echo $file
+  # for ff: $SRCS
+  #   echo $ff
+  # end
+  for file: [paths] ($SRCS $ALL)
+    mkdir --no-cleanup --parents $o/$directory($file)
+    rm --force $path.posix_string($o/$file)
+    ln --no-cleanup --symbolic $path.posix_string($s/$file) $path.posix_string($o/$file)
+    touch --after $path.posix_string($s/$file) $path.posix_string($o/$file)
+  end
+  # not sure if this will work without (supposedly required) yasm
+  if (!$empty($ASM))
+    ml = $directory($effect($c.path))/ml64.exe
+    # for file: $ASM
+    #   src = [path] $path.posix_string($s/$path.base($file).asm)
+    #   dst = [path] $path.posix_string($o/$path.base($file).asm)
+    #   mkdir --no-cleanup --parents $o/$directory($file)
+    #   rm --force $dst
+    #   cp --no-cleanup $src $dst
+    #   # touch --after $src $dst
+    #   echo $dst
+    # end
+    for file: $ASM
+      src = [path] $path.posix_string($s/$path.base($file).asm)
+      dst = [path] $path.posix_string($o/$file)
+      mkdir --no-cleanup --parents $o/$directory($file)
+      $ml -nologo -quiet -I "$path.canonicalize($src_base)" -Fo $dst -c $src
+    end
   end
 }}
 
@@ -125,7 +191,7 @@ sys_libs =
 switch $c.target.class, $c.target.system
 {
   case 'windows', 'win32-msvc'
-    sys_libs += clock_gettime.lib stdatomic.lib
+    sys_libs += bcrypt.lib
   case 'windows', 'mingw32'
     sys_libs += -lbcrypt
 }

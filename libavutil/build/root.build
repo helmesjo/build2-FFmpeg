@@ -3,6 +3,7 @@
 #c.internal.scope = current
 
 using c
+using c.as-cpp
 
 c.std = 17
 
