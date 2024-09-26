@@ -46,8 +46,8 @@ libavutil/h{avconfig}: in{avconfig}
 libavutil/h{ffversion}: in{ffversion} $src_root/manifest
 
 all_asm = [strings] \
-  '{"HAVE_X86ASM":            "x86/cpuid.asm x86/emms.asm x86/fixed_dsp.asm x86/float_dsp.asm x86/imgutils.asm x86/lls.asm x86/tx_float.asm x86/x86inc.asm x86/x86util.asm"}' \
-  '{"HAVE_X86ASM CONFIG_PIXELUTILS":      "x86/pixelutils.asm"}' \
+  '{"DISABLED HAVE_X86ASM":            "x86/cpuid.asm x86/emms.asm x86/fixed_dsp.asm x86/float_dsp.asm x86/imgutils.asm x86/lls.asm x86/tx_float.asm x86/x86inc.asm x86/x86util.asm"}' \
+  '{"DISABLED HAVE_X86ASM CONFIG_PIXELUTILS":      "x86/pixelutils.asm"}' \
   '{"HAVE_AARCH64":           "aarch64/asm.S"}' \
   '{"HAVE_AARCH64 HAVE_NEON": "aarch64/float_dsp_neon.S aarch64/tx_float_neon.S"}' \
   '{"HAVE_ARM":               "arm/asm.S arm/float_dsp_vfp.S"}' \
@@ -70,17 +70,17 @@ all_srcs = [strings] \
   '{"CONFIG_VULKAN":       "hwcontext_vulkan.c vulkan.c"}' \
   '{"HAVE_GNU_WINDRES":    "avutilres.rc"}' \
   '{"HAVE_MMX_INLINE HAVE_MMX_EXTERNAL HAVE_MM_EMPTY":       "x86/emms.c"}' \
-  '{"HAVE_X86ASM":         "x86/tx_float_init.c"}' \
+  '{"DISABLED HAVE_X86ASM":         "x86/tx_float_init.c"}' \
   '{"HAVE_AARCH64":        "aarch64/cpu.c aarch64/float_dsp_init.c aarch64/tx_float_init.c"}' \
   '{"HAVE_ARM":            "arm/cpu.c arm/float_dsp_init_arm.c"}' \
   '{"HAVE_LOONG":          "loongarch/cpu.c"}' \
   '{"HAVE_MIPS":           "mips/float_dsp_mips.c mips/cpu.c"}' \
   '{"HAVE_PPC":            "ppc/cpu.c ppc/float_dsp_init.c"}' \
   '{"HAVE_RISCV":          "riscv/float_dsp_init.c riscv/fixed_dsp_init.c riscv/cpu.c"}' \
-  '{"HAVE_X86ASM CONFIG_PIXELUTILS":   "x86/pixelutils_init.c"}' \
-  '{"HAVE_X86 HAVE_X86ASM":            "x86/cpu.c x86/fixed_dsp_init.c x86/float_dsp_init.c x86/imgutils_init.c x86/lls_init.c"}'
+  '{"DISABLED HAVE_X86ASM CONFIG_PIXELUTILS":   "x86/pixelutils_init.c"}' \
+  '{"DISABLED HAVE_X86 HAVE_X86ASM":            "x86/cpu.c x86/fixed_dsp_init.c x86/float_dsp_init.c x86/imgutils_init.c x86/lls_init.c"}'
 
-libavutil/impl_target{avutil}: $config
+libavutil/impl_target{avutil}: $config libavutil/h{**} libavutil/c{**}
 {{
   o = [dir_path] $directory($>[0])
   s = [dir_path] $src_base/libavutil
@@ -129,8 +129,8 @@ libavutil/impl_target{avutil}: $config
     end
   end
 
-  SRCS += [paths] $filesystem.path_search('**.h', $src_base/libavutil)
-  ALL = [paths] $filesystem.path_search('**.c', $src_base/libavutil)
+  HDRS += [paths] $filesystem.path_search('**.h', $src_base/libavutil)
+  SRCS_ALL = [paths] $filesystem.path_search('**.c', $src_base/libavutil)
 
   depdb dyndep \
     --dyn-target \
@@ -149,29 +149,25 @@ libavutil/impl_target{avutil}: $config
   # for ff: $SRCS
   #   echo $ff
   # end
-  for file: [paths] ($SRCS $ALL)
-    mkdir --no-cleanup --parents $o/$directory($file)
-    rm --force $path.posix_string($o/$file)
-    ln --no-cleanup --symbolic $path.posix_string($s/$file) $path.posix_string($o/$file)
-    touch --after $path.posix_string($s/$file) $path.posix_string($o/$file)
+  for file: [paths] ($HDRS $SRCS $SRCS_ALL)
+    src = $path.posix_string($s/$file)
+    dst = $path.posix_string($o/$file)
+    mkdir --no-cleanup --parents $directory($dst)
+    rm --force $dst
+    cp --no-cleanup $src $dst
+    # fix symbol importation on MSVC of global variables
+    # sed -n -e 's/^(extern \S* \S*;)/av_export_avutil \1/gp' $dst
+    # ln --no-cleanup --symbolic $src $dst
+    # touch --after $src $dst
   end
   # not sure if this will work without (supposedly required) yasm
   if (!$empty($ASM))
     ml = $directory($effect($c.path))/ml64.exe
-    # for file: $ASM
-    #   src = [path] $path.posix_string($s/$path.base($file).asm)
-    #   dst = [path] $path.posix_string($o/$path.base($file).asm)
-    #   mkdir --no-cleanup --parents $o/$directory($file)
-    #   rm --force $dst
-    #   cp --no-cleanup $src $dst
-    #   # touch --after $src $dst
-    #   echo $dst
-    # end
     for file: $ASM
       src = [path] $path.posix_string($s/$path.base($file).asm)
       dst = [path] $path.posix_string($o/$file)
       mkdir --no-cleanup --parents $o/$directory($file)
-      $ml -nologo -quiet -I "$path.canonicalize($src_base)" -Fo $dst -c $src
+      $ml -nologo -quiet "-I$path.posix_string($src_base)" $c.poptions $c.coptions -Fo "$dst" -c "$src"
     end
   end
 }}
