@@ -141,24 +141,27 @@ libavutil/impl_target{avutil}: $config libavutil/h{**} libavutil/c{**}
     --format lines \
     --file "$d" \
     -- \
-      echo ($SRCS $ASM) | tr ' ' '\n' >$d &!$d
+      echo ($SRCS $ASM) | tr ' ' '\n' >$d && \
+      echo '' >>$d && echo $path.representation([dir_path] $o) >>$d
 
   diag src ($>)
 
-  # echo $file
-  # for ff: $SRCS
-  #   echo $ff
-  # end
   for file: [paths] ($HDRS $SRCS $SRCS_ALL)
     src = $path.posix_string($s/$file)
     dst = $path.posix_string($o/$file)
     mkdir --no-cleanup --parents $directory($dst)
-    rm --force $dst
     cp --no-cleanup $src $dst
-    # fix symbol importation on MSVC of global variables
-    # sed -n -e 's/^(extern \S* \S*;)/av_export_avutil \1/gp' $dst
-    # ln --no-cleanup --symbolic $src $dst
-    # touch --after $src $dst
+  end
+  # fix symbol importation on MSVC of global variables
+  for file: [paths] $HDRS
+    dst = $path.posix_string($o/$file)
+    # insert 'av_export_avutil' before any global and explicitly 'extern' variables
+    sed -i -e 's|^(extern [a-zA-Z ]* [\S]*;)$|av_export_avutil \1|gp' $dst
+    sed -n -e 's|^av_export_avutil||p' $dst | set match
+    # make sure 'internal.h' is included to access 'av_export_avutil'.
+    if (!$empty($match))
+      sed -i -e 's|^(#define AVUTIL_'"$ucase($name($dst))"'_H)$|\1\n#include <libavutil/internal.h>\n|g' $dst
+    end
   end
   # not sure if this will work without (supposedly required) yasm
   if (!$empty($ASM))
@@ -178,8 +181,6 @@ out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
 c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_avutil
-# c.poptions = "-I$out_pfx" "-I$src_pfx" "-I$src_pfx/libavutil" -DBUILDING_avutil -D_ISOC11_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -DWIN32_LEAN_AND_MEAN -D_USE_MATH_DEFINES -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_WARNINGS -D_WIN32_WINNT=0x0600 -DPIC
-# c.coptions = -nologo -std:c17 -Z7 -W3 -wd4018 -wd4146 -wd4244 -wd4305 -wd4554 -O2 -utf-8 -showIncludes -Zs
 objs{**}: c.poptions =+ -DCONFIG_SHARED
 
 # System libraries

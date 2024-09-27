@@ -5,7 +5,7 @@ import libs = \
 
 # these tests are not run by upstream (ran with 'make fate -j 1 | grep libavutil')
 # -utf8 -rational
-for t : tests/c{random_seed}
+for t : tests/c{* -lzo -utf8 -rational -pixelutils}
 {
   c = $($avutil: libavutil.$name($t))
   ./: exe{$name($t)}: $t $libs testscript: include = ($c == [null] || $c)
