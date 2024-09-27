@@ -24,19 +24,6 @@ libul{avutil}: compat/windows/{h c}{*} \
                compat/{h}{*} \
                : include = $tgt_win32
 
-# for asm: $filesystem.path_search('**.asm', $src_base/libavutil)
-# {
-#   n = $name($asm)
-#   d = $
-#   obja{$n} objs{$n}:
-#   {{
-#     diag masm64 $>
-#     ml = $directory($effect($c.path))/ml64.exe
-#     $ml /Fo $path($>).obj /c $path($<[0])
-#   }}
-#   libul{avutil}: obj{$n}: include = $tgt_win32
-# }
-
 libavutil/h{avconfig}: in{avconfig}
 {
   autoconf.prefix = AV_
@@ -82,8 +69,9 @@ all_srcs = [strings] \
 
 libavutil/impl_target{avutil}: $config libavutil/h{**} libavutil/c{**}
 {{
-  o = [dir_path] $directory($>[0])
-  s = [dir_path] $src_base/libavutil
+  o = [dir_path] $directory($>)
+  n = $name($o)
+  s = [dir_path] $src_base/$n
   c1 = [path] $path(h{$($config: out_base)/config_components.h})
   c2 = [path] $path(h{$($config: out_base)/config.h})
   d = "$o/av_conditional.files"
@@ -129,8 +117,8 @@ libavutil/impl_target{avutil}: $config libavutil/h{**} libavutil/c{**}
     end
   end
 
-  HDRS += [paths] $filesystem.path_search('**.h', $src_base/libavutil)
-  SRCS_ALL = [paths] $filesystem.path_search('**.c', $src_base/libavutil)
+  HDRS += [paths] $filesystem.path_search('**.h', $s)
+  SRCS_ALL = [paths] $filesystem.path_search('**.c', $s)
 
   depdb dyndep \
     --dyn-target \
@@ -160,7 +148,7 @@ libavutil/impl_target{avutil}: $config libavutil/h{**} libavutil/c{**}
     sed -n -e 's|^av_export_avutil||p' $dst | set match
     # make sure 'internal.h' is included to access 'av_export_avutil'.
     if (!$empty($match))
-      sed -i -e 's|^(#define AVUTIL_'"$ucase($name($dst))"'_H)$|\1\n#include <libavutil/internal.h>\n|g' $dst
+      sed -i -e 's|^(#define AVUTIL_'"$ucase($name($dst))"'_H)$|\1\n#include <'"$n"'/internal.h>\n|g' $dst
     end
   end
   # not sure if this will work without (supposedly required) yasm
