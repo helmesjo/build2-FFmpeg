@@ -21,8 +21,6 @@
 libavutil/src/compat symlink=dir
 libavutil/src/libavutil symlink=dir
 libavutil/tests/basics/tests symlink=dir
-# TEMP! Remove when libavcodec exists as package.
-libavutil/src/libavcodec symlink=dir
 
 libavformat/src/libavformat symlink=dir
 libavformat/tests/basics/tests symlink=dir
