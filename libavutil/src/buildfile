@@ -124,8 +124,8 @@ libavutil/impl_target{avutil}: $config libavutil/h{**} libavutil/c{**}
     --dyn-target \
     --target-cwd $o \
     --target-what 'extracted source' \
+    --target-extension-type 'cpp=cxx' \
     --target-extension-type 'asma=libua' \
-    --target-extension-type 'asms=libus' \
     --format lines \
     --file "$d" \
     -- \
@@ -210,7 +210,7 @@ if ($c.target.system == 'mingw32')
 lib{avutil}:
 {
   libavutil.pixelutils = $config.libavutil.pixelutils
-  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -DHAVE_AV_CONFIG_H
+  c.export.poptions += "-I$out_pfx" "-I$src_pfx" -DHAVE_AV_CONFIG_H
   c.export.libs = $intf_libs $sys_libs
 }
 # workaround: <libavutil/md5.c> doesn't prefix with AV_

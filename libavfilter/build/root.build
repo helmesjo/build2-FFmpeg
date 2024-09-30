@@ -3,6 +3,8 @@
 #c.internal.scope = current
 
 using c
+using c.as-cpp
+using cxx
 
 h{*}: extension = h
 c{*}: extension = c
