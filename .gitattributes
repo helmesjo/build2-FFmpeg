@@ -26,6 +26,7 @@ libavformat/src/libavformat symlink=dir
 libavformat/tests/basics/tests symlink=dir
 
 libavcodec/src/libavcodec symlink=dir
+libavcodec/src/libavfilter symlink=dir
 libavcodec/tests/basics/tests symlink=dir
 
 libavfilter/src/libavfilter symlink=dir
