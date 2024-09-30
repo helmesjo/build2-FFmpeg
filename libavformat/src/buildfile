@@ -31,10 +31,27 @@ libul{avformat}: libavformat/c{ \
 # Generated sources
 libavformat/c{muxer_list}: libavformat/c{allformats}
 {{
-  diag generate ($>)
+  c1 = [path] $path(h{$($config: out_base)/config_components.h})
+  c2 = [path] $path(h{$($config: out_base)/config.h})
+  depdb hash $c1
+  depdb hash $c2
+
+  # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
+  sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c1 \
+    | set -w ENABLED_COMPONENTS [string_set]
+  sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
+    | set -w ENABLED_CONFIGS [string_set]
+
+  ENABLED_GROUPS = [string_set] ( \
+    $ENABLED_CONFIGS \
+    $ENABLED_COMPONENTS \
+  )
 
   s = $path($<)        # Source file.
   f = $path($>)        # Target file.
+
+  diag generate ($>)
+
   pattern = "FFOutputFormat"
   thing = "muxer"
   struct_name = "FFOutputFormat"
@@ -44,19 +61,37 @@ libavformat/c{muxer_list}: libavformat/c{allformats}
   # assert ($size($muxer_LIST) > 0)
   echo "static const $struct_name * const $name[] = {" > $f
   for c: $muxer_LIST
-    # if enabled $c; then
+    ff = $string.ucase("CONFIG_$c")
+    if ($ENABLED_GROUPS[$ff])
       echo "    &ff_$c," >> $path($>)
-    # fi
+    end
   end
   echo "    NULL };" >> $path($>)
 }}
 
 libavformat/c{demuxer_list}: libavformat/c{allformats}
 {{
-  diag generate ($>)
+  c1 = [path] $path(h{$($config: out_base)/config_components.h})
+  c2 = [path] $path(h{$($config: out_base)/config.h})
+  depdb hash $c1
+  depdb hash $c2
+
+  # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
+  sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c1 \
+    | set -w ENABLED_COMPONENTS [string_set]
+  sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
+    | set -w ENABLED_CONFIGS [string_set]
+
+  ENABLED_GROUPS = [string_set] ( \
+    $ENABLED_CONFIGS \
+    $ENABLED_COMPONENTS \
+  )
 
   s = $path($<)        # Source file.
   f = $path($>)        # Target file.
+
+  diag generate ($>)
+
   pattern = "FFInputFormat"
   thing = "demuxer"
   struct_name = "FFInputFormat"
@@ -66,19 +101,37 @@ libavformat/c{demuxer_list}: libavformat/c{allformats}
   # assert ($size($demuxer_LIST) > 0)
   echo "static const $struct_name * const $name[] = {" > $f
   for c: $demuxer_LIST
-    # if enabled $c; then
+    ff = $string.ucase("CONFIG_$c")
+    if ($ENABLED_GROUPS[$ff])
       echo "    &ff_$c," >> $path($>)
-    # fi
+    end
   end
   echo "    NULL };" >> $path($>)
 }}
 
-libavformat/c{protocol_list}: libavformat/c{protocols}
+libavformat/c{protocol_list}: libavformat/c{protocols} $config
 {{
+  c1 = [path] $path(h{$($config: out_base)/config_components.h})
+  c2 = [path] $path(h{$($config: out_base)/config.h})
+  depdb hash $c1
+  depdb hash $c2
+
+  # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
+  sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c1 \
+    | set -w ENABLED_COMPONENTS [string_set]
+  sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
+    | set -w ENABLED_CONFIGS [string_set]
+
+  ENABLED_GROUPS = [string_set] ( \
+    $ENABLED_CONFIGS \
+    $ENABLED_COMPONENTS \
+  )
+
+  s = $path($<[0])     # Source file.
+  f = $path($>)        # Target file.
+
   diag generate ($>)
 
-  s = $path($<)        # Source file.
-  f = $path($>)        # Target file.
   pattern = "URLProtocol"
   thing = "protocol"
   struct_name = "URLProtocol"
@@ -88,15 +141,15 @@ libavformat/c{protocol_list}: libavformat/c{protocols}
   # assert ($size($protocol_LIST) > 0)
   echo "static const $struct_name * const $name[] = {" > $f
   for c: $protocol_LIST
-    # if enabled $c; then
+    ff = $string.ucase("CONFIG_$c")
+    if ($ENABLED_GROUPS[$ff])
       echo "    &ff_$c," >> $path($>)
-    # fi
+    end
   end
   echo "    NULL };" >> $path($>)
 }}
 
 all_srcs = [strings] \
-  '{"HEADERS": "avformat.c avio.c version.c version_major.h"}' \
   '{"OBJS": "allformats.c avformat.c avio.c aviobuf.c demux.c demux_utils.c dump.c dv.c format.c id3v1.c id3v2.c isom_tags.c metadata.c mux.c mux_utils.c options.c os_support.c protocols.c riff.c sdp.c seek.c url.c utils.c version.c"}' \
   '{"SHLIBOBJS": "log2_tab.o to_upper4.o bitstream.o"}' \
   '{"HAVE_LIBC_MSVCRT": "file_open.c"}' \

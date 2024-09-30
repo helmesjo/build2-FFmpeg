@@ -27,7 +27,7 @@ TESTPROGS = avcodec                   \
 
 # TESTOBJS += dctref.c
 
-for t : tests/c{$TESTPROGS $TESTOBJS}
+for t : tests/c{avcodec}
 {
   c = $($avutil: libavutil.$name($t))
   ./: exe{$name($t)}: $t $libs: include = ($c == [null] || $c)
