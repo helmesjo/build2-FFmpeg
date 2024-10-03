@@ -37,7 +37,7 @@ while IFS= read -r line; do
       actual=($filename.metal)
     elif test -f "./$filename.m"; then
       printf ' -> %s' "$filename.m" >&3
-      actual=($filename.c)
+      actual=($filename.m)
     elif test -f ./$filename.S; then
       printf ' -> %s' "$filename.S" >&3
       actual=($filename.S)

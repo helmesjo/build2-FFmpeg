@@ -59,7 +59,8 @@ libswscale/impl_target{swscale}: $config libswscale/h{**} libswscale/c{**}
     $ENABLED_CONFIGS \
     $ENABLED_COMPONENTS \
     $ENABLED_HAVE \
-    "OBJS" \
+    OBJS \
+    ARCH_ \
     ($regex.find_match($ENABLED_CONFIGS, 'HAVE_ARM.*') ? "arm" : '') \
   )
 

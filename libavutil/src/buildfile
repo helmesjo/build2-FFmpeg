@@ -13,8 +13,11 @@ tgt_macos = [bool] ($c.target.system == 'darwin')
 
 define [see_through] impl_target: group
 
-lib{avutil}: libul{avutil}: \
-              libavutil/impl_target{avutil} \
+define asm: file
+asm{*}: extension = asm
+
+./: lib{avutil}: \
+            libul{avutil}: \
               libavutil/h{** -avconfig -ffversion} \
               libavutil/h{avconfig ffversion} \
               $impl_libs $intf_libs
@@ -23,6 +26,11 @@ libul{avutil}: compat/windows/{h c}{*} \
                compat/msvrt/{h c}{*} \
                compat/{h}{*} \
                : include = $tgt_win32
+
+# conditional source & assembly
+libul{avutil}: libavutil/impl_target{avutil}
+libua{avutil}: libavutil/impl_target{avutil_asm_obja}
+libus{avutil}: libavutil/impl_target{avutil_asm_objs}
 
 libavutil/h{avconfig}: in{avconfig}
 {
@@ -33,15 +41,15 @@ libavutil/h{avconfig}: in{avconfig}
 libavutil/h{ffversion}: in{ffversion} $src_root/manifest
 
 all_asm = [strings] \
-  '{"DISABLED HAVE_X86ASM":            "x86/cpuid.asm x86/emms.asm x86/fixed_dsp.asm x86/float_dsp.asm x86/imgutils.asm x86/lls.asm x86/tx_float.asm x86/x86inc.asm x86/x86util.asm"}' \
-  '{"DISABLED HAVE_X86ASM CONFIG_PIXELUTILS":      "x86/pixelutils.asm"}' \
+  '{"HAVE_X86ASM":   "x86/cpuid.asm x86/emms.asm x86/fixed_dsp.asm x86/float_dsp.asm x86/imgutils.asm x86/lls.asm x86/tx_float.asm x86/x86inc.asm x86/x86util.asm"}' \
+  '{"HAVE_X86ASM CONFIG_PIXELUTILS":      "x86/pixelutils.asm"}' \
   '{"HAVE_AARCH64":           "aarch64/asm.S"}' \
   '{"HAVE_AARCH64 HAVE_NEON": "aarch64/float_dsp_neon.S aarch64/tx_float_neon.S"}' \
   '{"HAVE_ARM":               "arm/asm.S arm/float_dsp_vfp.S"}' \
   '{"HAVE_ARM HAVE_NEON":     "arm/float_dsp_neon.S"}' \
   '{"HAVE_RISCV":             "riscv/asm.S riscv/bswap_rvb.S riscv/fixed_dsp_rvv.S riscv/float_dsp_rvv.S"}'
 all_srcs = [strings] \
-  '{"SRC":                 "adler32.c aes.c aes_ctr.c ambient_viewing_environment.c audio_fifo.c avstring.c avsscanf.c base64.c blowfish.c bprint.c buffer.c cast5.c camellia.c channel_layout.c cpu.c crc.c csp.c des.c detection_bbox.c dict.c display.c dovi_meta.c downmix_info.c encryption_info.c error.c eval.c executor.c fifo.c file.c file_open.c float_dsp.c fixed_dsp.c frame.c hash.c hdr_dynamic_metadata.c hdr_dynamic_vivid_metadata.c hmac.c hwcontext.c iamf.c imgutils.c integer.c intmath.c lfg.c lls.c log.c log2_tab.c lzo.c mathematics.c mastering_display_metadata.c md5.c mem.c murmur3.c opt.c parseutils.c pixdesc.c pixelutils.c random_seed.c rational.c reverse.c rc4.c ripemd.c samplefmt.c sha.c sha512.c slicethread.c spherical.c stereo3d.c threadmessage.c time.c timecode.c timestamp.c tree.c twofish.c utils.c xga_font_data.c xtea.c tea.c tx.c tx_float.c tx_double.c tx_int32.c uuid.c version.c video_enc_params.c video_hint.c film_grain_params.c"}' \
+  '{"OBJS":                 "adler32.c aes.c aes_ctr.c ambient_viewing_environment.c audio_fifo.c avstring.c avsscanf.c base64.c blowfish.c bprint.c buffer.c cast5.c camellia.c channel_layout.c cpu.c crc.c csp.c des.c detection_bbox.c dict.c display.c dovi_meta.c downmix_info.c encryption_info.c error.c eval.c executor.c fifo.c file.c file_open.c float_dsp.c fixed_dsp.c frame.c hash.c hdr_dynamic_metadata.c hdr_dynamic_vivid_metadata.c hmac.c hwcontext.c iamf.c imgutils.c integer.c intmath.c lfg.c lls.c log.c log2_tab.c lzo.c mathematics.c mastering_display_metadata.c md5.c mem.c murmur3.c opt.c parseutils.c pixdesc.c pixelutils.c random_seed.c rational.c reverse.c rc4.c ripemd.c samplefmt.c sha.c sha512.c slicethread.c spherical.c stereo3d.c threadmessage.c time.c timecode.c timestamp.c tree.c twofish.c utils.c xga_font_data.c xtea.c tea.c tx.c tx_float.c tx_double.c tx_int32.c uuid.c version.c video_enc_params.c video_hint.c film_grain_params.c"}' \
   '{"CONFIG_CUDA":         "hwcontext_cuda.c"}' \
   '{"CONFIG_D3D11VA":      "hwcontext_d3d11va.c"}' \
   '{"CONFIG_D3D12VA":      "hwcontext_d3d12va.c"}' \
@@ -57,15 +65,15 @@ all_srcs = [strings] \
   '{"CONFIG_VULKAN":       "hwcontext_vulkan.c vulkan.c"}' \
   '{"HAVE_GNU_WINDRES":    "avutilres.rc"}' \
   '{"HAVE_MMX_INLINE HAVE_MMX_EXTERNAL HAVE_MM_EMPTY":       "x86/emms.c"}' \
-  '{"DISABLED HAVE_X86ASM":         "x86/tx_float_init.c"}' \
+  '{"HAVE_X86ASM":         "x86/tx_float_init.c"}' \
   '{"HAVE_AARCH64":        "aarch64/cpu.c aarch64/float_dsp_init.c aarch64/tx_float_init.c"}' \
   '{"HAVE_ARM":            "arm/cpu.c arm/float_dsp_init_arm.c"}' \
   '{"HAVE_LOONG":          "loongarch/cpu.c"}' \
   '{"HAVE_MIPS":           "mips/float_dsp_mips.c mips/cpu.c"}' \
   '{"HAVE_PPC":            "ppc/cpu.c ppc/float_dsp_init.c"}' \
   '{"HAVE_RISCV":          "riscv/float_dsp_init.c riscv/fixed_dsp_init.c riscv/cpu.c"}' \
-  '{"DISABLED HAVE_X86ASM CONFIG_PIXELUTILS":   "x86/pixelutils_init.c"}' \
-  '{"DISABLED HAVE_X86 HAVE_X86ASM":            "x86/cpu.c x86/fixed_dsp_init.c x86/float_dsp_init.c x86/imgutils_init.c x86/lls_init.c"}'
+  '{"HAVE_X86ASM CONFIG_PIXELUTILS":   "x86/pixelutils_init.c"}' \
+  '{"HAVE_X86ASM":            "x86/cpu.c x86/fixed_dsp_init.c x86/float_dsp_init.c x86/imgutils_init.c x86/lls_init.c"}'
 
 libavutil/impl_target{avutil}: $config libavutil/h{**} libavutil/c{**}
 {{
@@ -74,7 +82,7 @@ libavutil/impl_target{avutil}: $config libavutil/h{**} libavutil/c{**}
   s = [dir_path] $src_base/$n
   c1 = [path] $path(h{$($config: out_base)/config_components.h})
   c2 = [path] $path(h{$($config: out_base)/config.h})
-  d = "$o/av_conditional.files"
+  d = "$o/avutil.files"
 
   # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
   sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c1 \
@@ -88,14 +96,14 @@ libavutil/impl_target{avutil}: $config libavutil/h{**} libavutil/c{**}
     $ENABLED_CONFIGS \
     $ENABLED_COMPONENTS \
     $ENABLED_HAVE \
-    "SRC" \
+    OBJS \
     ($regex.find_match($ENABLED_CONFIGS, 'HAVE_ARM.*') ? "arm" : '') \
   )
 
   # append enabled sources
   SRCS = [paths]
   OBJS = [paths]
-  for str: [strings] ($all_asm $all_srcs)
+  for str: [strings] ($all_srcs)
     pair = [json] $json.parse($str)
     echo $member_name($pair)  | set -w groups [strings]
     echo $member_value($pair) | set -w srcs [paths]
@@ -107,12 +115,7 @@ libavutil/impl_target{avutil}: $config libavutil/h{**} libavutil/c{**}
         end
       end
       if ($enabled)
-        if ($extension($src) != 'asm')
-          SRCS += [paths] $path.posix_representation($src)
-        else
-          ASM += [paths] $path.posix_representation($path.base($src).asma)
-          ASM += [paths] $path.posix_representation($path.base($src).asms)
-        end
+        SRCS += [paths] $path.posix_representation($src)
       end
     end
   end
@@ -125,7 +128,7 @@ libavutil/impl_target{avutil}: $config libavutil/h{**} libavutil/c{**}
     --target-cwd $o \
     --target-what 'extracted source' \
     --target-extension-type 'cpp=cxx' \
-    --target-extension-type 'asma=libua' \
+    --target-extension-type 'asm=asm' \
     --format lines \
     --file "$d" \
     -- \
@@ -151,15 +154,141 @@ libavutil/impl_target{avutil}: $config libavutil/h{**} libavutil/c{**}
       sed -i -e 's|^(#define AVUTIL_'"$ucase($name($dst))"'_H)$|\1\n#include <'"$n"'/internal.h>\n|g' $dst
     end
   end
-  # not sure if this will work without (supposedly required) yasm
-  if (!$empty($ASM))
-    ml = $directory($effect($c.path))/ml64.exe
-    for file: $ASM
-      src = [path] $path.posix_string($s/$path.base($file).asm)
-      dst = [path] $path.posix_string($o/$file)
-      mkdir --no-cleanup --parents $o/$directory($file)
-      $ml -nologo -quiet "-I$path.posix_string($src_base)" $c.poptions $c.coptions -Fo "$dst" -c "$src"
+}}
+
+libavutil/impl_target{avutil_asm_obja}: $config asm{config} libavutil/asm{**}
+{{
+  o = [dir_path] $directory($>)
+  n = $name($o)
+  s = [dir_path] $src_base/$n
+  c1 = [path] $path(h{$($config: out_base)/config_components.h})
+  c2 = [path] $path(h{$($config: out_base)/config.h})
+  d = "$o/avutil_asm_obja.files"
+
+  # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
+  sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c1 \
+    | set -w ENABLED_COMPONENTS [string_set]
+  sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
+    | set -w ENABLED_CONFIGS [string_set]
+  sed -n -e 's/^#define[ ]+(HAVE_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
+    | set -w ENABLED_HAVE [string_set]
+
+  ENABLED_GROUPS = [string_set] ( \
+    $ENABLED_CONFIGS \
+    $ENABLED_COMPONENTS \
+    $ENABLED_HAVE \
+    OBJS \
+    ($regex.find_match($ENABLED_CONFIGS, 'HAVE_ARM.*') ? "arm" : '') \
+  )
+
+  # append enabled sources
+  SRCS = [paths]
+  for str: [strings] ($all_asm)
+    pair = [json] $json.parse($str)
+    echo $member_name($pair)  | set -w groups [strings]
+    echo $member_value($pair) | set -w srcs [paths]
+    for src: [paths] $srcs
+      enabled = [bool] true
+      for group: $groups
+        if (!$ENABLED_GROUPS[$group])
+          enabled = false
+        end
+      end
+      if ($enabled)
+        SRCS += [paths] $path.base($src).obja
+      end
     end
+  end
+
+  ASM_ALL = [paths] $filesystem.path_search('**.asm', $s)
+
+  depdb dyndep \
+    --dyn-target \
+    --target-cwd $o \
+    --target-what 'extracted assembly' \
+    --target-extension-type 'obja=obja' \
+    --format lines \
+    --file "$d" \
+    -- \
+      echo ($SRCS) | tr ' ' '\n' >$d && \
+      echo '' >>$d && echo $path.representation([dir_path] $o) >>$d
+
+  diag yasm ($>)
+
+  for file: [paths] $SRCS
+    src = $path.posix_string($s/$path.base($file).asm)
+    dst = $path.posix_string($o/$file)
+    mkdir --no-cleanup --parents $directory($dst)
+    yasm "-I$out_base" "-I$src_base" -f win64 --arch=x86 "-Pconfig.asm" \
+          $c.poptions $lib_poptions $c.coptions -o $dst $src
+  end
+}}
+
+libavutil/impl_target{avutil_asm_objs}: $config asm{config} libavutil/asm{**}
+{{
+  o = [dir_path] $directory($>)
+  n = $name($o)
+  s = [dir_path] $src_base/$n
+  c1 = [path] $path(h{$($config: out_base)/config_components.h})
+  c2 = [path] $path(h{$($config: out_base)/config.h})
+  d = "$o/avutil_asm_objs.files"
+
+  # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
+  sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c1 \
+    | set -w ENABLED_COMPONENTS [string_set]
+  sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
+    | set -w ENABLED_CONFIGS [string_set]
+  sed -n -e 's/^#define[ ]+(HAVE_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
+    | set -w ENABLED_HAVE [string_set]
+
+  ENABLED_GROUPS = [string_set] ( \
+    $ENABLED_CONFIGS \
+    $ENABLED_COMPONENTS \
+    $ENABLED_HAVE \
+    OBJS \
+    ($regex.find_match($ENABLED_CONFIGS, 'HAVE_ARM.*') ? "arm" : '') \
+  )
+
+  # append enabled sources
+  SRCS = [paths]
+  for str: [strings] ($all_asm)
+    pair = [json] $json.parse($str)
+    echo $member_name($pair)  | set -w groups [strings]
+    echo $member_value($pair) | set -w srcs [paths]
+    for src: [paths] $srcs
+      enabled = [bool] true
+      for group: $groups
+        if (!$ENABLED_GROUPS[$group])
+          enabled = false
+        end
+      end
+      if ($enabled)
+        SRCS += [paths] $path.base($src).objs
+      end
+    end
+  end
+
+  ASM_ALL = [paths] $filesystem.path_search('**.asm', $s)
+
+  depdb dyndep \
+    --dyn-target \
+    --target-cwd $o \
+    --target-what 'extracted assembly' \
+    --target-extension-type 'objs=objs' \
+    --format lines \
+    --file "$d" \
+    -- \
+      echo ($SRCS) | tr ' ' '\n' >$d && \
+      echo '' >>$d && echo $path.representation([dir_path] $o) >>$d
+
+  diag yasm ($>)
+
+  for file: [paths] $SRCS
+    src = $path.posix_string($s/$path.base($file).asm)
+    dst = $path.posix_string($o/$file)
+    mkdir --no-cleanup --parents $directory($dst)
+    yasm "-I$out_base" "-I$src_base" -f win64 --arch=x86 "-Pconfig.asm" \
+          $c.poptions $lib_poptions $c.coptions -o $dst $src
   end
 }}
 

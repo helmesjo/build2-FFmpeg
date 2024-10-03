@@ -16,3 +16,4 @@ depends: * bpkg >= 0.16.0
 depends: libavutil == $
 depends: libswscale == $
 depends: libavcodec == $
+depends: libavformat == $

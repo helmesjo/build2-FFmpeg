@@ -54,7 +54,8 @@ libswresample/impl_target{swresample}: $config libswresample/h{**} libswresample
     $ENABLED_CONFIGS \
     $ENABLED_COMPONENTS \
     $ENABLED_HAVE \
-    "OBJS" \
+    OBJS \
+    ARCH_ \
     ($regex.find_match($ENABLED_CONFIGS, 'HAVE_ARM.*') ? "arm" : '') \
   )
 
