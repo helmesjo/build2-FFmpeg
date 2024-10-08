@@ -5,12 +5,24 @@ exec 3>/dev/tty
 
 cd "$1"
 
-mandatory=$(find ./ -type f -name "Makefile" -exec cat {} \; | sed -e ':a' -e '/\\$/ { N; s/\\\n//; ba }' -e 's/  */ /g' | sed -rne 's/^([A-Z0-9_]+)[ \+=]+(.*\.[ho])/{"\1": "\2"}/p')
-conditional=$(find ./ -type f -name "Makefile" -exec cat {} \; | sed -e ':a' -e '/\\$/ { N; s/\\\n//; ba }' -e 's/  */ /g' | sed -rne 's/^[-A-Z0-9_]+\$\(([A-Z0-9_]+)\)[ \+=]+(.*\.[a-z]+)/{"\1": "\2"}/p')
+mandatory=$(find ./ -type f -name "Makefile" -exec echo \; -exec cat {} \; -exec echo \; \
+          | sed ':x; /\\$/ { N; s/\\\n//; tx }' \
+          | sed -r 's/\s+/ /g' \
+          | sed -rne 's/^([A-Z0-9_]+)[ \+=]+(.*\.[ho])/{"\1": "\2"}/p')
+conditional=$(find ./ -type f -name "Makefile" -exec echo \; -exec cat {} \; -exec echo \; \
+            | sed ':x; /\\$/ { N; s/\\\n//; tx }' \
+            | sed -r 's/\s+/ /g' \
+            | sed -rne 's/^[-A-Z0-9_]+\$\(([A-Z0-9_]+)\)[ \+=]+(.*\.[a-z]+)/{"\1": "\2"}/p')
+platform=$(find ./ -type f -name "Makefile" -exec echo \; -exec cat {} \; -exec echo \; \
+          | sed ':x; /\\$/ { N; s/\\\n//; tx }' \
+          | sed -r 's/\s+/ /g' \
+          | sed -rne 's/^([-A-Z0-9_]+)[ \+=]+(.*\.[a-z]+)/{"\1": "\2"}/p')
 
-existing=()
-missing=()
-cleaned=()
+# change all X-OBJ -> HAVE_X
+mandatory=$(echo "$mandatory" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/')
+conditional=$(echo "$conditional" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/')
+platform=$(echo "$platform" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/')
+
 while IFS= read -r line; do
   files=$(sed -nre 's/^.*: \"(.*)\"\}/\1/p' <<< $line)
   for file in ${files[@]}; do
@@ -55,11 +67,13 @@ while IFS= read -r line; do
 
     mandatory=${mandatory/"$file"/"$actual"}
     conditional=${conditional/"$file"/"$actual"}
+    platform=${platform/"$file"/"$actual"}
   done
-done <<< "$mandatory $conditional"
+done <<< $(printf '%s\n%s\n%s' "$mandatory" "$conditional" "$platform")
 
 echo "${mandatory[@]}"
 echo "${conditional[@]}"
+echo "${platform[@]}"
 
 for file in "${missing[@]}"; do
   echo "Missing: $file" >&2
