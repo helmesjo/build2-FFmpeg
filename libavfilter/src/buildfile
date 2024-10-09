@@ -829,7 +829,6 @@ out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
 c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_avfilter
-objs{**}: c.poptions =+ -DCONFIG_SHARED
 
 # System libraries
 sys_libs =

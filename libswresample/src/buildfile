@@ -13,122 +13,38 @@ cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
 tgt_macos = [bool] ($c.target.system == 'darwin')
 
-define [see_through] impl_target: group
-
 lib{swresample}: libul{swresample}: \
-              libswresample/impl_target{swresample} \
               libswresample/h{**} \
               $impl_libs $intf_libs
 
-all_srcs = [strings] \
-  '{"OBJS HAVE_AARCH64":                     "aarch64/audio_convert_init.c aarch64/resample_init.c"}' \
-  '{"OBJS HAVE_ARM":                         "arm/audio_convert_init.c arm/resample_init.c"}' \
-  '{"OBJS":                                  "audioconvert.c dither.c options.c rematrix.c resample.c resample_dsp.c swresample.c swresample_frame.c version.c"}'  \
-  '{"SHLIBOBJS":                             "log2_tab.c"}' \
-  '{"OBJS HAVE_X86ASM":                      "x86/audio_convert_init.asm x86/rematrix_init.c x86/resample_init.c"}' \
-  '{"CONFIG_NEON_CLOBBER_TEST HAVE_AARCH64 HAVE_NEON": "aarch64/neontest.c"}' \
-  '{"CONFIG_NEON_CLOBBER_TEST HAVE_NEON":    "arm/neontest.c"}' \
-  '{"CONFIG_LIBSOXR":                        "soxr_resample.c"}' \
-  '{"HAVE_GNU_WINDRES":                      "swresampleres.rc"}' \
-  '{"CONFIG_XMM_CLOBBER_TEST HAVE_X86":      "x86/w64xmmtest.c"}'
+conditional_src = [strings] \
+  '{"OBJS":                     "aarch64/audio_convert_init.c aarch64/resample_init.c"}' \
+  '{"OBJS":                     "arm/audio_convert_init.c arm/resample_init.c"}' \
+  '{"HEADERS":                  "swresample.h version.h version_major.h"}'  \
+  '{"OBJS":                     "audioconvert.c dither.c options.c rematrix.c resample.c resample_dsp.c swresample.c swresample_frame.c version.c"}'  \
+  '{"SHLIBOBJS":                "log2_tab.c"}' \
+  '{"OBJS":                     "x86/audio_convert_init.c x86/rematrix_init.c x86/resample_init.c"}' \
+  '{"CONFIG_NEON_CLOBBER_TEST": "aarch64/neontest.c"}' \
+  '{"CONFIG_NEON_CLOBBER_TEST": "arm/neontest.c"}' \
+  '{"CONFIG_LIBSOXR":           "soxr_resample.c"}' \
+  '{"HAVE_GNU_WINDRES":         "swresampleres.rc"}' \
+  '{"CONFIG_XMM_CLOBBER_TEST":  "x86/w64xmmtest.c"}' \
+  '{"OBJS":                     "aarch64/audio_convert_init.c aarch64/resample_init.c"}' \
+  '{"HAVE_NEON":                "aarch64/audio_convert_neon.S aarch64/resample.S"}' \
+  '{"OBJS":                     "arm/audio_convert_init.c arm/resample_init.c"}' \
+  '{"HAVE_NEON":                "arm/audio_convert_neon.S arm/resample.S"}' \
+  '{"HEADERS":                  "swresample.h version.h version_major.h"}'  \
+  '{"OBJS":                     "audioconvert.c dither.c options.c rematrix.c resample.c resample_dsp.c swresample.c swresample_frame.c version.c"}'  \
+  '{"SHLIBOBJS":                "log2_tab.c"}' \
+  '{"HAVE_X86ASM":              "x86/audio_convert.asm x86/rematrix.asm x86/resample.asm"}' \
+  '{"OBJS":                     "x86/audio_convert_init.c x86/rematrix_init.c x86/resample_init.c"}'
 
 
-libswresample/impl_target{swresample}: $config libswresample/h{**} libswresample/c{**}
-{{
-  o = [dir_path] $directory($>)
-  n = $name($o)
-  s = [dir_path] $src_base/$n
-  c1 = [path] $path(h{$($config: out_base)/config_components.h})
-  c2 = [path] $path(h{$($config: out_base)/config.h})
-  d = "$o/av_conditional.files"
-
-  # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
-  sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c1 \
-    | set -w ENABLED_COMPONENTS [string_set]
-  sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
-    | set -w ENABLED_CONFIGS [string_set]
-  sed -n -e 's/^#define[ ]+(HAVE_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
-    | set -w ENABLED_HAVE [string_set]
-
-  ENABLED_GROUPS = [string_set] ( \
-    $ENABLED_CONFIGS \
-    $ENABLED_COMPONENTS \
-    $ENABLED_HAVE \
-    OBJS \
-    ARCH_ \
-    ($regex.find_match($ENABLED_CONFIGS, 'HAVE_ARM.*') ? "arm" : '') \
-  )
-
-  # append enabled sources
-  SRCS = [paths]
-  OBJS = [paths]
-  for str: [strings] ($all_asm $all_srcs)
-    pair = [json] $json.parse($str)
-    echo $member_name($pair)  | set -w groups [strings]
-    echo $member_value($pair) | set -w srcs [paths]
-    for src: [paths] $srcs
-      enabled = [bool] true
-      for group: $groups
-        if (!$ENABLED_GROUPS[$group])
-          enabled = false
-        end
-      end
-      if ($enabled)
-        if ($extension($src) != 'asm')
-          SRCS += [paths] $path.posix_representation($src)
-        else
-          ASM += [paths] $path.posix_representation($path.base($src).asma)
-        end
-      end
-    end
-  end
-
-  HDRS += [paths] $filesystem.path_search('**.h', $s)
-  SRCS_ALL = [paths] $filesystem.path_search('**.c', $s)
-
-  depdb dyndep \
-    --dyn-target \
-    --target-cwd $o \
-    --target-what 'extracted source' \
-    --target-extension-type 'cpp=cxx' \
-    --target-extension-type 'asma=obja' \
-    --format lines \
-    --file "$d" \
-    -- \
-      echo ($SRCS $ASM) | tr ' ' '\n' >$d && \
-      echo '' >>$d && echo $path.representation([dir_path] $o) >>$d
-
-  diag src ($>)
-
-  for file: [paths] ($HDRS $SRCS $SRCS_ALL)
-    src = $path.posix_string($s/$file)
-    dst = $path.posix_string($o/$file)
-    mkdir --no-cleanup --parents $directory($dst)
-    cp --no-cleanup $src $dst
-  end
-  # # fix symbol importation on MSVC of global variables
-  # for file: [paths] $HDRS
-  #   dst = $path.posix_string($o/$file)
-  #   # insert 'av_export_swresample' before any global and explicitly 'extern' variables
-  #   sed -i -e 's|^(extern [a-zA-Z ]* [\S]*;)$|av_export_swresample \1|gp' $dst
-  #   sed -n -e 's|^av_export_swresample||p' $dst | set match
-  #   # make sure 'internal.h' is included to access 'av_export_swresample'.
-  #   if (!$empty($match))
-  #     sed -i -e 's|^(#define swresample_'"$ucase($name($dst))"'_H)$|\1\n#include <'"$n"'/internal.h>\n|g' $dst
-  #   end
-  # end
-  # not sure if this will work without (supposedly required) yasm
-  if (!$empty($MASM))
-    ml = $directory($effect($c.path))/ml64.exe
-    for file: $MASM
-      src = [path] $path.posix_string($s/$path.base($file).asm)
-      dst = [path] $path.posix_string($o/$file)
-      mkdir --no-cleanup --parents $o/$directory($file)
-      echo $c.poptions
-      $ml -nologo -quiet "-I$path.posix_string($src_base)/libswresample" "-IC:/Users/fho/git/b2/build2-FFmpeg/libavutil/src" -Fo "$dst" -c "$src"
-    end
-  end
-}}
+# conditional source & assembly
+import [once] libavutil%buildfile{conditional-src}
+libua{swresample}: libswresample/impl_target{conditional-asm-obja}
+libus{swresample}: libswresample/impl_target{conditional-asm-objs}
+libul{swresample}: libswresample/impl_target{conditional-src}
 
 # Build options.
 #
@@ -136,7 +52,6 @@ out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
 c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_swresample
-objs{**}: c.poptions =+ -DCONFIG_SHARED
 
 # System libraries
 sys_libs =
@@ -153,7 +68,7 @@ switch ($c.target.system)
 {
   case 'win32-msvc'
   {
-    c.coptions += -wd4018 -wd4146 -wd4244 -wd4305 -wd4554 -wd4133 -wd4333
+    c.coptions += -wd4003 -wd4018 -wd4146 -wd4244 -wd4305 -wd4554 -wd4133 -wd4333
     c.poptions += -DWIN32_LEAN_AND_MEAN -D_USE_MATH_DEFINES -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_WARNINGS
   }
 }
