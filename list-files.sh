@@ -19,9 +19,9 @@ platform=$(find ./ -type f -name "Makefile" -exec echo \; -exec cat {} \; -exec 
           | sed -rne 's/^([-A-Z0-9_]+)[ \+=]+(.*\.[a-z]+)/{"\1": "\2"}/p')
 
 # change all X-OBJ -> HAVE_X
-mandatory=$(echo "$mandatory" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/')
-conditional=$(echo "$conditional" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/')
-platform=$(echo "$platform" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/')
+all_files=$(echo "$mandatory" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/')
+all_files+=$(echo && echo "$conditional" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/')
+all_files+=$(echo && echo "$platform" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/')
 
 while IFS= read -r line; do
   files=$(sed -nre 's/^.*: \"(.*)\"\}/\1/p' <<< $line)
@@ -68,15 +68,11 @@ while IFS= read -r line; do
     fi
     echo >&3
 
-    mandatory=${mandatory/"$file"/"$actual"}
-    conditional=${conditional/"$file"/"$actual"}
-    platform=${platform/"$file"/"$actual"}
+    all_files=${all_files/"$file"/"$actual"}
   done
-done <<< $(printf '%s\n%s\n%s' "$mandatory" "$conditional" "$platform")
+done <<< $all_files
 
-echo "${mandatory[@]}"
-echo "${conditional[@]}"
-echo "${platform[@]}"
+echo "${all_files[@]}"
 
 for file in "${missing[@]}"; do
   echo "Missing: $file" >&2
