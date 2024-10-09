@@ -69,7 +69,6 @@ asm{*}: extension = asm
       enabled = [bool] true
       for group: $groups
         if ($all_groups[$group] && !$enabled_groups[$group])
-          derps += [string_set] $group
           enabled = false
         end
       end
@@ -85,8 +84,6 @@ asm{*}: extension = asm
   end
 
   diag configure $>
-  # echo $all_groups
-  echo $derps
   echo $enabled_groups >$path($>[0]) &$path($>[0])
   echo $enabled_source >$path($>[1]) &$path($>[1])
 }}
