@@ -42,6 +42,16 @@ asm{*}: extension = asm
     OBJS \
   )
 
+  sed -n -e 's/^#define[ ]+([A-Z0-9_]+) .*/\1/p' $c1 \
+    | set -w all_components [string_set]
+  sed -n -e 's/^#define[ ]+([A-Z0-9_]+) .*$/\1/p' $c2 \
+    | set -w all_configs [string_set]
+
+  all_groups = [string_set] ( \
+    $all_configs \
+    $all_components \
+  )
+
   enabled_source = [json_array]
   for str: [strings] $conditional_src
     pair = [json] $json.parse($str)
@@ -50,12 +60,16 @@ asm{*}: extension = asm
 
     filtered_srcs = [strings]
     for src: [paths] $srcs
-      # if in a subdir, treat append group 'ARCH_<DIR>', eg. 'ARCH_ARM'
-      dir = $name($directory($src))
-      arch_group = (!$empty($dir) ? $string.ucase("ARCH_$dir") : [null])
+      # if in a immediate subdir, treat as group 'ARCH_<DIR>',
+      #  eg. 'ARCH_ARM' or 'HAVE_NEON'
+      dir = $directory($src)
+      dir = $regex.match($dir, '(.*)/', return_subs)
+      groups += $string.ucase("ARCH_$dir")
+      groups += $string.ucase("HAVE_$dir")
       enabled = [bool] true
-      for group: $groups $arch_group
-        if (!$enabled_groups[$group])
+      for group: $groups
+        if ($all_groups[$group] && !$enabled_groups[$group])
+          derps += [string_set] $group
           enabled = false
         end
       end
@@ -71,6 +85,8 @@ asm{*}: extension = asm
   end
 
   diag configure $>
+  # echo $all_groups
+  echo $derps
   echo $enabled_groups >$path($>[0]) &$path($>[0])
   echo $enabled_source >$path($>[1]) &$path($>[1])
 }}
