@@ -517,7 +517,6 @@ h{config}: in{config}
   CONFIG_DXVA2 = 1
   CONFIG_RUNTIME_CPUDETECT = 1
   CONFIG_SAFE_BITSTREAM_READER = 1
-  CONFIG_SHARED = 1
   CONFIG_SWSCALE_ALPHA = 1
   CONFIG_AVDEVICE = 1
   CONFIG_AVFILTER = 1
@@ -2911,6 +2910,14 @@ c.poptions =+ "-I$out_pfx" "-I$src_pfx"
 lib{config}:
 {
   c.export.poptions += "-I$out_pfx" "-I$src_pfx" -DHAVE_AV_CONFIG_H
+}
+liba{config}:
+{
+  c.export.poptions += -DCONFIG_STATIC
+}
+libs{config}:
+{
+  c.export.poptions += -DCONFIG_SHARED
 }
 
 # For pre-releases use the complete version to make sure they cannot

@@ -7,9 +7,11 @@ include ../libconfig/
 config = ../libconfig/lib{config}
 impl_libs += $config
 
+define patch: alias
+
 conditional_asm = [strings] \
   '{"HAVE_X86ASM": "x86/cpuid.asm x86/fixed_dsp.asm x86/float_dsp.asm x86/imgutils.asm x86/lls.asm x86/tx_float.asm x86/x86inc.asm x86/x86util.asm"}' \
-  '{"HAVE_MMX HAVE_MM_EMPTY": "x86/emms.asm"}' \
+  '{"HAVE_MMX_EXTERNAL": "x86/emms.asm"}' \
   '{"HAVE_X86ASM CONFIG_PIXELUTILS":      "x86/pixelutils.asm"}' \
   '{"HAVE_AARCH64":           "aarch64/asm.S"}' \
   '{"HAVE_AARCH64 HAVE_NEON": "aarch64/float_dsp_neon.S aarch64/tx_float_neon.S"}' \
@@ -48,7 +50,7 @@ tgt_macos = [bool] ($c.target.system == 'darwin')
 
 ./: lib{avutil}: \
             libul{avutil}: \
-              libavutil/h{** -avconfig -ffversion} \
+              libavutil/h{* -avconfig -ffversion} \
               libavutil/h{avconfig ffversion} \
               $impl_libs $intf_libs
 
@@ -65,6 +67,35 @@ source ../build/export/conditional-src.build
 libua{avutil}: libavutil/impl_target{conditional-asm-obja}
 libus{avutil}: libavutil/impl_target{conditional-asm-objs}
 libul{avutil}: libavutil/impl_target{conditional-src}
+libul{avutil}: libavutil/patch{global_variables}:
+{
+  include = $tgt_win32
+  update = match
+}
+
+libavutil/patch{global_variables}: libavutil/impl_target{conditional-src}
+{{
+  o = [dir_path] $directory($>)
+  hdrs = [paths] $filesystem.path_search('**.h', $o)
+
+  # fix symbol importation on MSVC of global variables
+  diag patch $>
+
+  # prepend missing 'extern' to void avpriv_emms_asm(void);
+  sed -i -e 's/^(void avpriv_emms_asm\(void\);)/extern \1/g' "$o/emms.h"
+  for hdr: [paths] ($hdrs)
+    dst = [path] "$o/$hdr"
+    # insert 'av_export_avutil' before any global and explicitly 'extern' variables
+    sed -i -e 's|^(extern [a-zA-Z ]* [\S]*;)$|av_export_avutil \1|gp' $dst
+    sed -n -e 's|av_export_avutil||p' $dst | set has_export
+    sed -n -e 's|#include <libavutil/internal.h>||p' $dst | set has_include
+    # make sure 'internal.h' is included to access 'av_export_avutil'.
+    if (!$empty($has_export) && $empty($has_include))
+      sed -i -e 's|^(#define AVUTIL_'"$ucase($name($dst))"'_H)$|\1\n#include <libavutil/internal.h>|g' $dst
+    end
+  end
+  echo done
+}}
 
 libavutil/h{avconfig}: in{avconfig}
 {
@@ -80,7 +111,6 @@ out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
 c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_avutil
-objs{**}: c.poptions =+ -DCONFIG_SHARED
 
 # System libraries
 sys_libs =
