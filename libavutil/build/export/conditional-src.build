@@ -42,7 +42,7 @@ asm{*}: extension = asm
     OBJS \
   )
 
-  sed -n -e 's/^#define[ ]+([A-Z0-9_]+) .*/\1/p' $c1 \
+  sed -n -e 's/^#define[ ]+([A-Z0-9_]+) .*$/\1/p' $c1 \
     | set -w all_components [string_set]
   sed -n -e 's/^#define[ ]+([A-Z0-9_]+) .*$/\1/p' $c2 \
     | set -w all_configs [string_set]
@@ -60,15 +60,18 @@ asm{*}: extension = asm
 
     filtered_srcs = [strings]
     for src: [paths] $srcs
-      # if in a immediate subdir, treat as group 'ARCH_<DIR>',
-      #  eg. 'ARCH_ARM' or 'HAVE_NEON'
+      # if in a immediate subdir, treat as group 'ARCH_<DIR>', eg. 'ARCH_ARM'
       dir = $directory($src)
       dir = $regex.match($dir, '(.*)/', return_subs)
-      groups += $string.ucase("ARCH_$dir")
-      groups += $string.ucase("HAVE_$dir")
+      arch_dir = $string.ucase("ARCH_$dir")
+      have_dir = $string.ucase("HAVE_$dir")
       enabled = [bool] true
       for group: $groups
-        if ($all_groups[$group] && !$enabled_groups[$group])
+        if (!$enabled_groups[$group])
+          enabled = false
+        elif ($all_groups[$arch_dir] && !$enabled_groups[$arch_dir])
+          enabled = false
+        elif ($all_groups[$have_dir] && !$enabled_groups[$have_dir])
           enabled = false
         end
       end
