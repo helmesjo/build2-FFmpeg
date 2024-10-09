@@ -17,6 +17,9 @@ h{config}: in{config}
   FFMPEG_CONFIGURATION = "\"$c.target.system\""
   FFMPEG_LICENSE = "\"LGPL version 2.1 or later\""
 
+  ARCH_X86                             = ($regex.match($cpu, 'i[3-6]86') ? 1 : 0)
+  ARCH_X86_64                          = ($regex.match($cpu, 'i[3-6]86') ? 1 : 0)
+
   CONFIG_AVDEVICE                      = 1 #($config.libavutil.avdevice ? 1 : 0)
   CONFIG_AVFILTER                      = 1 #($config.libavutil.avfilter ? 1 : 0)
   CONFIG_SWSCALE                       = 1 #($config.libavutil.swscale ? 1 : 0)
@@ -355,8 +358,6 @@ h{config}: in{config}
   CONFIG_VP8DSP                        = ($config.libavutil.vp8dsp ? 1 : 0)
   CONFIG_WMA_FREQS                     = ($config.libavutil.wma_freqs ? 1 : 0)
   CONFIG_WMV2DSP                       = ($config.libavutil.wmv2dsp ? 1 : 0)
-  ARCH_X86 = 1
-  ARCH_X86_64 = 1
   HAVE_AESNI = 1
   HAVE_AMD3DNOW = 1
   HAVE_AMD3DNOWEXT = 1

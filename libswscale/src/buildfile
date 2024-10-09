@@ -15,9 +15,8 @@ lib{swscale}: libul{swscale}: \
               libswscale/h{**} \
               $impl_libs $intf_libs
 
-conditional_asm = [strings] \
-  '{"HAVE_X86ASM":               "x86/input.asm x86/output.asm x86/scale.asm x86/scale_avx2.asm x86/rgb_2_rgb.asm x86/yuv_2_rgb.asm x86/yuv2yuvX.asm"}'
 conditional_src = [strings] \
+  '{"HAVE_X86ASM":               "x86/input.asm x86/output.asm x86/scale.asm x86/scale_avx2.asm x86/rgb_2_rgb.asm x86/yuv_2_rgb.asm x86/yuv2yuvX.asm"}' \
   '{"HEADERS":                   "swscale.c version.c version_major.h"}' \
   '{"OBJS":                      "alphablend.c hscale.c hscale_fast_bilinear.c gamma.c half2float.c input.c options.c output.c rgb2rgb.c slice.c swscale.c swscale_unscaled.c utils.c version.c yuv2rgb.c vscale.c"}' \
   '{"SHLIBOBJS":                 "log2_tab.c"}' \
@@ -51,7 +50,6 @@ out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
 c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_swscale
-objs{**}: c.poptions =+ -DCONFIG_SHARED
 
 # System libraries
 sys_libs =

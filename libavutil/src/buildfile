@@ -9,7 +9,7 @@ impl_libs += $config
 
 define patch: alias
 
-conditional_asm = [strings] \
+conditional_src  = [strings] \
   '{"HAVE_X86ASM": "x86/cpuid.asm x86/fixed_dsp.asm x86/float_dsp.asm x86/imgutils.asm x86/lls.asm x86/tx_float.asm x86/x86inc.asm x86/x86util.asm"}' \
   '{"HAVE_MMX_EXTERNAL": "x86/emms.asm"}' \
   '{"HAVE_X86ASM CONFIG_PIXELUTILS":      "x86/pixelutils.asm"}' \
@@ -17,8 +17,7 @@ conditional_asm = [strings] \
   '{"HAVE_AARCH64 HAVE_NEON": "aarch64/float_dsp_neon.S aarch64/tx_float_neon.S"}' \
   '{"HAVE_ARM":               "arm/asm.S arm/float_dsp_vfp.S"}' \
   '{"HAVE_ARM HAVE_NEON":     "arm/float_dsp_neon.S"}' \
-  '{"HAVE_RISCV":             "riscv/asm.S riscv/bswap_rvb.S riscv/fixed_dsp_rvv.S riscv/float_dsp_rvv.S"}'
-conditional_src  = [strings] \
+  '{"HAVE_RISCV":             "riscv/asm.S riscv/bswap_rvb.S riscv/fixed_dsp_rvv.S riscv/float_dsp_rvv.S"}' \
   '{"OBJS":                 "adler32.c aes.c aes_ctr.c ambient_viewing_environment.c audio_fifo.c avstring.c avsscanf.c base64.c blowfish.c bprint.c buffer.c cast5.c camellia.c channel_layout.c cpu.c crc.c csp.c des.c detection_bbox.c dict.c display.c dovi_meta.c downmix_info.c encryption_info.c error.c eval.c executor.c fifo.c file.c file_open.c float_dsp.c fixed_dsp.c frame.c hash.c hdr_dynamic_metadata.c hdr_dynamic_vivid_metadata.c hmac.c hwcontext.c iamf.c imgutils.c integer.c intmath.c lfg.c lls.c log.c log2_tab.c lzo.c mathematics.c mastering_display_metadata.c md5.c mem.c murmur3.c opt.c parseutils.c pixdesc.c pixelutils.c random_seed.c rational.c reverse.c rc4.c ripemd.c samplefmt.c sha.c sha512.c slicethread.c spherical.c stereo3d.c threadmessage.c time.c timecode.c timestamp.c tree.c twofish.c utils.c xga_font_data.c xtea.c tea.c tx.c tx_float.c tx_double.c tx_int32.c uuid.c version.c video_enc_params.c video_hint.c film_grain_params.c"}' \
   '{"CONFIG_CUDA":         "hwcontext_cuda.c"}' \
   '{"CONFIG_D3D11VA":      "hwcontext_d3d11va.c"}' \
