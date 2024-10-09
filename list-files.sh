@@ -29,7 +29,10 @@ while IFS= read -r line; do
     filename="${file%.*}"
     printf '%s' "check: $file" >&3
     actual=
-    if test -f ./$filename.c; then
+    if test -f ./$file; then
+      printf ' -> %s' "$file" >&3
+      actual=($file)
+    elif test -f ./$filename.c; then
       printf ' -> %s' "$filename.c" >&3
       actual=($filename.c)
     elif test -f ./$filename.cpp; then
