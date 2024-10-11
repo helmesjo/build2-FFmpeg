@@ -4,7 +4,6 @@ intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 
 import config = libavutil%lib{config}
-import avutil = libavutil%lib{avutil}
 impl_libs += $config
 import intf_libs += \
   libavutil%lib{avutil} \
@@ -17,43 +16,12 @@ cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
 tgt_macos = [bool] ($c.target.system == 'darwin')
 
-define [see_through] impl_target: group
-
 lib{avfilter}: libul{avfilter}: \
-              libavfilter/impl_target{avfilter} \
               libavfilter/h{**} \
               $impl_libs $intf_libs
 
-libul{avfilter}: libavfilter/c{ \
-                  filter_list \
-                }: include = adhoc
-
-libavfilter/c{filter_list}: libavfilter/c{allfilters}
-{{
-  diag generate ($>)
-
-  s = $path($<)        # Source file.
-  f = $path($>)        # Target file.
-  pattern = "AVFilter"
-  thing = "filter"
-  struct_name = "AVFilter"
-  name = "filter_list"
-
-  sed -n -e 's/^extern const AVFilter ff_[avfsinkrc]{2,5}_([[:alnum:]_]{1,});/af_\1/p' $s | \
-    set -n LIST
-  # assert ($size($codec_LIST) > 0)
-  # echo $LIST
-  echo "static const $struct_name * const $name[] = {" > $f
-  for c: $LIST
-    # if enabled $c; then
-      echo "    &ff_$c," >> $path($>)
-    # fi
-  end
-  echo "    NULL };" >> $path($>)
-}}
-
-all_srcs = [strings] \
-  '{"HEADERS":                          "avfilter.c buffersink.c buffersrc.c version.c version_major.h"}' \
+conditional_src = [strings] \
+  '{"HEADERS":                          "avfilter.h buffersink.h buffersrc.h version.h version_major.h"}' \
   '{"OBJS":                             "allfilters.c audio.c avfilter.c avfiltergraph.c buffersink.c buffersrc.c colorspace.c ccfifo.c drawutils.c formats.c framepool.c framequeue.c graphdump.c graphparser.c version.c video.c"}' \
   '{"SHLIBOBJS":                        "log2_tab.c"}' \
   '{"OBJS":                             "riscv/af_afir_init.c"}' \
@@ -646,12 +614,12 @@ all_srcs = [strings] \
   '{"CONFIG_LIBGLSLANG":                "vulkan_glslang.c"}' \
   '{"CONFIG_LIBSHADERC":                "vulkan_shaderc.c"}' \
   '{"HAVE_GNU_WINDRES":                 "avfilterres.rc"}' \
-  '{"CONFIG_LCMS2":                     "fflcms2.c"}' \
-  '{"CONFIG_LIBVIDSTAB":                "vidstabutils.c"}' \
-  '{"CONFIG_QSVVPP":                    "qsvvpp.c stack_internal.c"}' \
-  '{"CONFIG_OPENCL":                    "opencl.c"}' \
-  '{"CONFIG_VAAPI":                     "vaapi_vpp.c stack_internal.c"}' \
-  '{"CONFIG_VULKAN":                    "vulkan.c vulkan_filter.c"}' \
+  '{"CONFIG_LCMS2":                     "fflcms2.h"}' \
+  '{"CONFIG_LIBVIDSTAB":                "vidstabutils.h"}' \
+  '{"CONFIG_QSVVPP":                    "qsvvpp.h stack_internal.h"}' \
+  '{"CONFIG_OPENCL":                    "opencl.h"}' \
+  '{"CONFIG_VAAPI":                     "vaapi_vpp.h stack_internal.h"}' \
+  '{"CONFIG_VULKAN":                    "vulkan.h vulkan_filter.h"}' \
   '{"CONFIG_LIBSHADERC":                "vulkan_spirv.h"}' \
   '{"CONFIG_LIBGLSLANG":                "vulkan_spirv.h"}' \
   '{"CONFIG_SCENE_SAD":                 "x86/scene_sad_init.c"}' \
@@ -731,98 +699,47 @@ all_srcs = [strings] \
   '{"CONFIG_VOLUME_FILTER":             "x86/af_volume.asm"}' \
   '{"CONFIG_V360_FILTER":               "x86/vf_v360.asm"}' \
   '{"CONFIG_W3FDIF_FILTER":             "x86/vf_w3fdif.asm"}' \
-  '{"CONFIG_YADIF_FILTER":              "x86/vf_yadif.asm x86/yadif-16.asm x86/yadif-10.asm"}'
+  '{"CONFIG_YADIF_FILTER":              "x86/vf_yadif.asm x86/yadif-16.asm x86/yadif-10.asm"}' \
+  '{"HEADERS":                          "avfilter.h buffersink.h buffersrc.h version.h version_major.h"}'  \
+  '{"OBJS":                             "allfilters.c audio.c avfilter.c avfiltergraph.c buffersink.c buffersrc.c colorspace.c ccfifo.c drawutils.c formats.c framepool.c framequeue.c graphdump.c graphparser.c version.c video.c"}'  \
+  '{"SHLIBOBJS":                        "log2_tab.c"}' \
+  '{"OPENCL":                           "libavfilter/opencl/*.cl"}' \
+  '{"VULKAN":                           "libavfilter/vulkan/*.comp"}' \
+  '{"OBJS":                             "riscv/af_afir_init.c"}' \
+  '{"HAVE_RVV":                         "riscv/af_afir_rvv.S"}'
 
-libavfilter/impl_target{avfilter}: $config $avutil libavfilter/h{**} libavfilter/c{**}
+# conditional source & assembly
+import [once] libavutil%buildfile{conditional-src}
+libua{avfilter}: libavfilter/impl_target{conditional-asm-obja}
+libus{avfilter}: libavfilter/impl_target{conditional-asm-objs}
+libul{avfilter}: libavfilter/impl_target{conditional-src}
+
+libavfilter/c{filter_list}: libavfilter/c{allfilters} file{enabled_groups}
 {{
-  o = [dir_path] $directory($>)
-  n = $name($o)
-  s = [dir_path] $src_base/$n
-  c1 = [path] $path(h{$($config: out_base)/config_components.h})
-  c2 = [path] $path(h{$($config: out_base)/config.h})
-  d = "$o/av_conditional.files"
+  diag generate ($>)
 
-  # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
-  sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c1 \
-    | set -w ENABLED_COMPONENTS [string_set]
-  sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
-    | set -w ENABLED_CONFIGS [string_set]
-  sed -n -e 's/^#define[ ]+(HAVE_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
-    | set -w ENABLED_HAVE [string_set]
+  s = $path($<[0])     # Source file.
+  f = $path($>)        # Target file.
+  cat $path($<[1]) | set -w enabled_groups [string_set]
+  pattern = "AVFilter"
+  thing = "parser"
+  struct_name = "AVFilter"
+  name = "filter_list"
 
-  ENABLED_GROUPS = [string_set] ( \
-    $ENABLED_CONFIGS \
-    $ENABLED_COMPONENTS \
-    $ENABLED_HAVE \
-    OBJS \
-    ARCH_ \
-  )
-
-  # append enabled sources
-  SRCS = [paths]
-  OBJS = [paths]
-  MASM = [paths]
-  for str: [strings] ($all_asm $all_srcs)
-    pair = [json] $json.parse($str)
-    echo $member_name($pair)  | set -w groups [strings]
-    echo $member_value($pair) | set -w srcs [paths]
-    for src: [paths] $srcs
-      dir = $string.ucase("ARCH_$directory($src)")
-      enabled = [bool] true
-      for group: $groups
-        if (!$ENABLED_GROUPS[$group] && !$ENABLED_GROUPS[$dir])
-          enabled = false
-        end
-      end
-      if ($enabled)
-        if ($extension($src) != 'asm')
-          SRCS += [paths] $path.posix_representation($src)
-        else
-          MASM += [paths] $path.posix_representation($path.base($src).asma)
-          # MASM += [paths] $path.posix_representation($path.base($src).asms)
-        end
-      end
+  sed -n -e "s/^extern const AVFilter ff_[avfsinkrc]\{2,5\}_\([[:alnum:]_]\{1,\}\);/\1_filter/p" $s | set -n filter_LIST
+  # assert ($size($filter_LIST) > 0)
+  echo "static const $struct_name * const $name[] = {" > $f
+  for c: $filter_LIST
+    group = $string.ucase(CONFIG_$c)
+    if ($enabled_groups[$group])
+      echo "SI: $group"
+      echo "    &ff_$c," >> $path($>)
+    else
+      echo "NEIN: $group"
     end
   end
-
-  HDRS += [paths] $filesystem.path_search('**.h', $s)
-  SRCS_ALL = [paths] $filesystem.path_search('**.c', $s)
-
-  depdb dyndep \
-    --dyn-target \
-    --target-cwd $o \
-    --target-what 'extracted source' \
-    --target-extension-type 'cpp=cxx' \
-    --target-extension-type 'asma=libua' \
-    --format lines \
-    --file "$d" \
-    -- \
-      echo ($SRCS $MASM) | tr ' ' '\n' >$d && \
-      echo '' >>$d && echo $path.representation([dir_path] $o) >>$d && cat $d
-
-  diag src ($>)
-
-  for file: [paths] ($HDRS $SRCS $SRCS_ALL)
-    src = $path.posix_string($s/$file)
-    dst = $path.posix_string($o/$file)
-    mkdir --no-cleanup --parents $directory($dst)
-    cp --no-cleanup $src $dst
-  end
-
-  # not sure if this will work without (supposedly required) yasm
-  if (!$empty($MASM))
-    ml = $directory($effect($c.path))/ml64.exe
-    for file: $MASM
-      src = [path] $path.posix_string($s/$path.base($file).asm)
-      dst = [path] $path.posix_string($o/$name($file)).lib
-      mkdir --no-cleanup --parents $o/$directory($file)
-      # yasm -f win64 -I./ -I.// -Ilibavfilter/x86/ -Pconfig.asm -M -o libavfilter/x86/af_volume.o libavfilter/x86/af_volume.asm
-      yasm -f win64 "-I$src_base/libavfilter" "-I$test" -M -o $dst $src
-      # $ml -nologo -quiet "-I$src_base/libavfilter" -Fo "$dst" -c "$src"
-    end
-  end
+  echo "    NULL };" >> $path($>)
 }}
-
 # Build options.
 #
 out_pfx = [dir_path] $out_root/src/
@@ -845,7 +762,7 @@ switch ($c.target.system)
 {
   case 'win32-msvc'
   {
-    c.coptions += -wd4018 -wd4146 -wd4244 -wd4305 -wd4554 -wd4133 -wd4333
+    c.coptions += -wd4003 -wd4018 -wd4146 -wd4244 -wd4305 -wd4554 -wd4133 -wd4333
     c.poptions += -DWIN32_LEAN_AND_MEAN -D_USE_MATH_DEFINES -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_WARNINGS
   }
 }

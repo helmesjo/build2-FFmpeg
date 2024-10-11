@@ -1618,12 +1618,13 @@ libul{avcodec}: libavcodec/c{ \
                   parser_list \
                 }: include = adhoc
 
-libavcodec/c{codec_list}: libavcodec/c{allcodecs}
+libavcodec/c{codec_list}: libavcodec/c{allcodecs} file{enabled_groups}
 {{
   diag generate ($>)
 
-  s = $path($<)        # Source file.
+  s = $path($<[0])     # Source file.
   f = $path($>)        # Target file.
+  cat $path($<[1]) | set -w enabled_groups [string_set]
   pattern = "FFCodec"
   thing = "parser"
   struct_name = "FFCodec"
@@ -1633,19 +1634,24 @@ libavcodec/c{codec_list}: libavcodec/c{allcodecs}
   # assert ($size($codec_LIST) > 0)
   echo "static const $struct_name * const $name[] = {" > $f
   for c: $codec_LIST
-    # if enabled $c; then
+    group = $string.ucase(CONFIG_$c)
+    if ($enabled_groups[$group])
+      echo "SI: $group"
       echo "    &ff_$c," >> $path($>)
-    # fi
+    else
+      echo "NEIN: $group"
+    end
   end
   echo "    NULL };" >> $path($>)
 }}
 
-libavcodec/c{parser_list}: libavcodec/c{allcodecs}
+libavcodec/c{parser_list}: libavcodec/c{allcodecs} file{enabled_groups}
 {{
   diag generate ($>)
 
-  s = $path($<)        # Source file.
+  s = $path($<[0])     # Source file.
   f = $path($>)        # Target file.
+  cat $path($<[1]) | set -w enabled_groups [string_set]
   pattern = "AVCodecParser"
   thing = "parser"
   struct_name = "AVCodecParser"
@@ -1655,18 +1661,23 @@ libavcodec/c{parser_list}: libavcodec/c{allcodecs}
   # assert ($size($parser_LIST) > 0)
   echo "static const $struct_name * const $name[] = {" > $f
   for c: $parser_LIST
-    # if enabled $c; then
+    group = $string.ucase(CONFIG_$c)
+    if ($enabled_groups[$group])
+      echo "SI: $group"
       echo "    &ff_$c," >> $path($>)
-    # fi
+    else
+      echo "NEIN: $group"
+    end
   end
   echo "    NULL };" >> $path($>)
 }}
 
-libavcodec/c{bsf_list}: libavcodec/c{allcodecs}
+libavcodec/c{bsf_list}: libavcodec/c{allcodecs} file{enabled_groups}
 {{
   diag generate ($>)
-  s = $path($<)        # Source file.
+  s = $path($<[0])     # Source file.
   f = $path($>)        # Target file.
+  cat $path($<[1]) | set -w enabled_groups [string_set]
   pattern = "FFBitStreamFilter"
   thing = "bsf"
   struct_name = "FFBitStreamFilter"
@@ -1676,9 +1687,13 @@ libavcodec/c{bsf_list}: libavcodec/c{allcodecs}
   # assert ($size($bsf_LIST) > 0)
   echo "static const $struct_name * const $name[] = {" > $f
   for c: $bsf_LIST
-    # if enabled $c; then
+    group = $string.ucase(CONFIG_$c)
+    if ($enabled_groups[$group])
+      echo "SI: $group"
       echo "    &ff_$c," >> $path($>)
-    # fi
+    else
+      echo "NEIN: $group"
+    end
   end
   echo "    NULL };" >> $path($>)
 }}
