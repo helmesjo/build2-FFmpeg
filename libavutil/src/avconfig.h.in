@@ -7,3 +7,8 @@
 #ifndef AV_HAVE_BIGENDIAN
 #  define AV_HAVE_BIGENDIAN 0
 #endif
+
+// md5.c doesn't prefix with AV_
+#ifndef HAVE_FAST_UNALIGNED
+#  define HAVE_FAST_UNALIGNED AV_HAVE_FAST_UNALIGNED
+#endif
