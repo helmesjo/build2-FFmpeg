@@ -63,8 +63,8 @@ libaconfig = ../libconfig/liba{config}
 libsconfig = ../libconfig/libs{config}
 
 source ../build/export/conditional-src.build
-libua{avutil}: libavutil/impl_target{conditional-asm-obja}
-libus{avutil}: libavutil/impl_target{conditional-asm-objs}
+libua{avutil}: libavutil/impl_target{conditional-asm-obja}: include = $tgt_win32
+libus{avutil}: libavutil/impl_target{conditional-asm-objs}: include = $tgt_win32
 libul{avutil}: libavutil/impl_target{conditional-src}
 libul{avutil}: libavutil/patch{global_variables}:
 {
@@ -119,10 +119,12 @@ switch $c.target.class, $c.target.system
     sys_libs += bcrypt.lib
   case 'windows', 'mingw32'
     sys_libs += -lbcrypt
+  case 'macos'
+    sys_libs += -pthread
 }
 c.libs += $sys_libs
 
-switch ($c.target.system)
+switch $c.target.system
 {
   case 'win32-msvc'
   {
@@ -136,6 +138,17 @@ switch ($c.target.system)
       c.poptions += "-I$src_pfx/compat/atomics/win32/"
       lib{avutil}: c.export.poptions += "-I$src_pfx/compat/atomics/win32/"
     }
+  }
+  case 'darwin'
+  {
+    c.coptions += -Wno-implicit-function-declaration \
+                  -Wno-deprecated-declarations \
+                  -Wno-pointer-sign \
+                  -Wno-parentheses \
+                  -Wno-implicit-const-int-float-conversion \
+                  -Wno-deprecated-pragma \
+                  -Wno-switch
+    c.loptions += -Wl,-dynamic,-search_paths_first
   }
 }
 
