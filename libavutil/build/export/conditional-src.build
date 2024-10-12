@@ -15,7 +15,7 @@ define [see_through] impl_target: group
 define asm: file
 asm{*}: extension = asm
 
-<file{enabled_groups enabled_source}>: $config
+<file{all_groups enabled_groups enabled_source}>: $config
 {{
   o = [dir_path] $directory($>[0])
 
@@ -25,13 +25,13 @@ asm{*}: extension = asm
   depdb hash $c2
 
   # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
-  sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c1 \
+  sed -n -e 's/^[ ]*#[ ]*define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c1 \
     | set -w enabled_components [string_set]
-  sed -n -e 's/^#define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
+  sed -n -e 's/^[ ]*#[ ]*define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
     | set -w enabled_configs [string_set]
-  sed -n -e 's/^#define[ ]+(HAVE_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
+  sed -n -e 's/^[ ]*#[ ]*define[ ]+(HAVE_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
     | set -w enabled_have [string_set]
-  sed -n -e 's/^#define[ ]+(ARCH_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
+  sed -n -e 's/^[ ]*#[ ]*define[ ]+(ARCH_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
     | set -w enabled_arch [string_set]
 
   enabled_groups = [string_set] ( \
@@ -42,9 +42,9 @@ asm{*}: extension = asm
     OBJS \
   )
 
-  sed -n -e 's/^#define[ ]+([A-Z0-9_]+) .*$/\1/p' $c1 \
+  sed -n -e 's/^[ ]*#[ ]*define[ ]+([A-Z0-9_]+) .*$/\1/p' $c1 \
     | set -w all_components [string_set]
-  sed -n -e 's/^#define[ ]+([A-Z0-9_]+) .*$/\1/p' $c2 \
+  sed -n -e 's/^[ ]*#[ ]*define[ ]+([A-Z0-9_]+) .*$/\1/p' $c2 \
     | set -w all_configs [string_set]
 
   all_groups = [string_set] ( \
@@ -87,10 +87,11 @@ asm{*}: extension = asm
   end
 
   diag configure $>
-  echo $enabled_groups >$path($>[0]) &$path($>[0])
-  echo $enabled_source >$path($>[1]) &$path($>[1])
+  echo $all_groups >$path($>[0]) &$path($>[0])
+  echo $enabled_groups >$path($>[1]) &$path($>[1])
+  echo $enabled_source >$path($>[2]) &$path($>[2])
 }}
-  
+
 $project/impl_target{conditional-src}: file{enabled_groups enabled_source}: update = match
 $project/impl_target{conditional-src}: h{**} c{**}
 {{
