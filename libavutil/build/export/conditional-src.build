@@ -19,19 +19,15 @@ asm{*}: extension = asm
 {{
   o = [dir_path] $directory($>[0])
 
-  c1 = [path] $($config: out_base)/config_components.h
-  c2 = [path] $($config: out_base)/config.h
+  c1 = [path] $($config: out_base)/config.h
   depdb hash $c1
-  depdb hash $c2
 
   # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
   sed -n -e 's/^[ ]*#[ ]*define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c1 \
-    | set -w enabled_components [string_set]
-  sed -n -e 's/^[ ]*#[ ]*define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
     | set -w enabled_configs [string_set]
-  sed -n -e 's/^[ ]*#[ ]*define[ ]+(HAVE_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
+  sed -n -e 's/^[ ]*#[ ]*define[ ]+(HAVE_[A-Z0-9_]+)[ ]+1/\1/p' $c1 \
     | set -w enabled_have [string_set]
-  sed -n -e 's/^[ ]*#[ ]*define[ ]+(ARCH_[A-Z0-9_]+)[ ]+1/\1/p' $c2 \
+  sed -n -e 's/^[ ]*#[ ]*define[ ]+(ARCH_[A-Z0-9_]+)[ ]+1/\1/p' $c1 \
     | set -w enabled_arch [string_set]
 
   enabled_groups = [string_set] ( \

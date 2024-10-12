@@ -4,13 +4,19 @@ cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
 tgt_macos = [bool] ($c.target.system == 'darwin')
 
-./: lib{config}: h{config config_cpu config_components} file{config.asm}: update = match
+./: lib{config}: h{config config_components} file{config.asm}: update = match
 
 file{config.asm}: h{config}
 {{
   diag configure $>
   cat $path($<) | sed -n -e 's/^#define(.+)$/%define \1/p' >$path($>)
 }}
+
+./: h{config}
+
+./: file{hello}: h{config}
+% update clean
+recipe c++ print_defines.cxx
 
 h{config}: in{config}
 {
