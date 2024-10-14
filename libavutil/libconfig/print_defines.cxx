@@ -3,8 +3,11 @@
 #include "../../../../libconfig/config.h"
 #include <stdio.h>
 
-#include <unordered_map>
+#include <fstream>
+#include <format>
+#include <iostream>
 #include <string>
+#include <unordered_map>
 
 const auto defines = std::unordered_map<std::string, int>
 {
@@ -8377,12 +8380,20 @@ const auto defines = std::unordered_map<std::string, int>
 #endif
 };
 
-void print_defines()
+void print_defines(const auto& t)
 {
+  auto out = t.out_dir().posix_string() + '/' +  t.name + '.' + *t.ext();
+  std::cout << out << "\n";
+  std::ofstream f;
+  f.open (out);
   for(const auto& [def, val]: defines)
   {
-    printf("%s %d\n", def.c_str(), val);
+    if(val == 1)
+    {
+      f << std::format("{} {}\n", def, val);
+    }
   }
+  f.close();
 }
 
 --
@@ -8391,7 +8402,7 @@ recipe
 apply (action a, target& t) const override
 {
   text (recipe_loc) << "Hello, " << t << " " << a;
-  if(a.meta_operation() == build2::configure_id || a.operation() == build2::update_id)
-      print_defines();
+  if(a.operation() == build2::update_id)
+      print_defines(t);
   return noop_recipe;
 }

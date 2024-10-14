@@ -14,7 +14,7 @@ file{config.asm}: h{config}
 
 ./: h{config}
 
-./: file{hello}: h{config}
+./: file{configs.d}: h{config}
 % update clean
 recipe c++ print_defines.cxx
 
