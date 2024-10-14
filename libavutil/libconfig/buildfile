@@ -6,15 +6,16 @@ tgt_macos = [bool] ($c.target.system == 'darwin')
 
 ./: lib{config}: h{config config_components} file{config.asm}: update = match
 
-file{config.asm}: h{config}
-{{
-  diag configure $>
-  cat $path($<) | sed -n -e 's/^#define(.+)$/%define \1/p' >$path($>)
-}}
+# YASM uses '%' for preprocessor checks and ';' for comments
+# file{config.asm}: h{config}
+# {{
+#   diag configure $>
+#   cat $path($<) | sed -e 's/#[ ]*/%/g' \
+#                       -e 's|//|;|g' \
+#                       -e 's/defined\((.+)\)/defined \1/g' >$path($>)
+# }}
 
-./: h{config}
-
-./: file{configs.d}: h{config}
+./: file{config.groups} file{config.asm}: h{config}
 % update clean
 recipe c++ print_defines.cxx
 

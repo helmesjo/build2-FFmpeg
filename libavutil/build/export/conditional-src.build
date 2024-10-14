@@ -2,6 +2,7 @@ assert (!$empty($conditional_src)) 'specify conditional source files'
 if (!$defined(config))
 {
   import config = libavutil%lib{config}
+  import config_groups = file{config.groups}
 }
 
 [rule_hint=c] \
@@ -15,38 +16,20 @@ define [see_through] impl_target: group
 define asm: file
 asm{*}: extension = asm
 
-<file{all_groups enabled_groups enabled_source}>: $config
+<file{all_groups enabled_groups enabled_source}>: $config_groups
 {{
   o = [dir_path] $directory($>[0])
 
-  c1 = [path] $($config: out_base)/config.h
+  c1 = [path] $($config: out_base)/config.groups
   depdb hash $c1
 
   # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
-  sed -n -e 's/^[ ]*#[ ]*define[ ]+(CONFIG_[A-Z0-9_]+)[ ]+1/\1/p' $c1 \
-    | set -w enabled_configs [string_set]
-  sed -n -e 's/^[ ]*#[ ]*define[ ]+(HAVE_[A-Z0-9_]+)[ ]+1/\1/p' $c1 \
-    | set -w enabled_have [string_set]
-  sed -n -e 's/^[ ]*#[ ]*define[ ]+(ARCH_[A-Z0-9_]+)[ ]+1/\1/p' $c1 \
-    | set -w enabled_arch [string_set]
+  sed -n -e 's/^([A-Z0-9_]+)[ ]+1/\1/p' $c1 \
+    | set -w enabled_groups [string_set]
+  sed -n -e 's/^([A-Z0-9_]+)[ ]+[0-1]/\1/p' $c1 \
+    | set -w all_groups [string_set]
 
-  enabled_groups = [string_set] ( \
-    $enabled_configs \
-    $enabled_components \
-    $enabled_have \
-    $enabled_arch \
-    OBJS \
-  )
-
-  sed -n -e 's/^[ ]*#[ ]*define[ ]+([A-Z0-9_]+) .*$/\1/p' $c1 \
-    | set -w all_components [string_set]
-  sed -n -e 's/^[ ]*#[ ]*define[ ]+([A-Z0-9_]+) .*$/\1/p' $c2 \
-    | set -w all_configs [string_set]
-
-  all_groups = [string_set] ( \
-    $all_configs \
-    $all_components \
-  )
+  enabled_groups += [string_set] OBJS
 
   enabled_source = [json_array]
   for str: [strings] $conditional_src
@@ -88,14 +71,13 @@ asm{*}: extension = asm
   echo $enabled_source >$path($>[2]) &$path($>[2])
 }}
 
-$project/impl_target{conditional-src}: file{enabled_groups enabled_source}: update = match
+$project/impl_target{conditional-src}: file{enabled_groups enabled_source all_groups}: update = match
 $project/impl_target{conditional-src}: h{**} c{**}
 {{
   o = [dir_path] $directory($>)
   n = [name] $project
   s = [dir_path] $src_base/$n
   d = "$o/conditional_src.d"
-  cat $path($<[0]) | set -w enabled_groups [string_set]
   enabled_source = [json] $json.load($path($<[1]))
 
   # append enabled sources
@@ -123,7 +105,7 @@ $project/impl_target{conditional-src}: h{**} c{**}
     --format lines \
     --file "$d" \
     -- \
-      echo $SRCS | tr ' ' '\n' >$d && \
+      echo ($SRCS) | tr ' ' '\n' >$d && \
       echo '' >>$d && echo $path.representation([dir_path] $o) >>$d
 
   diag src ($>)
@@ -183,7 +165,7 @@ $project/impl_target{conditional-asm-obja}: asm{**}
     dst = $path.posix_string($o/$file)
     mkdir --no-cleanup --parents $directory($dst)
     yasm "-I$out_base" "-I$src_base" -f win64 --arch=x86 "-Pconfig.asm" \
-          $c.poptions $lib_poptions $c.coptions -o $dst $src
+          $c.poptions $lib_poptions -o $dst $src
   end
 }}
 
@@ -197,7 +179,7 @@ $project/impl_target{conditional-asm-objs}: asm{**}
   lib_poptions = $c.lib_poptions(libus{conditional-src-meta}, objs)
   depdb hash $lib_poptions
 
-  cat $path($<[0]) | set -w enabled_groups [string_set]
+  # cat $path($<[0]) | set -w enabled_groups [string_set]
   enabled_source = [json] $json.load($path($<[1]))
 
   # append enabled sources
@@ -234,6 +216,6 @@ $project/impl_target{conditional-asm-objs}: asm{**}
     dst = $path.posix_string($o/$file)
     mkdir --no-cleanup --parents $directory($dst)
     yasm "-I$out_base" "-I$src_base" -f win64 --arch=x86 "-Pconfig.asm" \
-          $c.poptions $lib_poptions $c.coptions -o $dst $src
+          $c.poptions $lib_poptions -o $dst $src
   end
 }}

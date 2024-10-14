@@ -36,12 +36,17 @@
 #  define ARCH_MIPS 0
 #endif
 
-// Check for x86 (32-bit)
-#if defined(__i386__) || defined(_M_IX86)
+// Check for either x86 (32-bit) or x64 (64-bit)
+#if defined(__i386__) || defined(_M_IX86) || defined(__x86_64__) || defined(_M_X64)
 #  define ARCH_X86 1
-#  define ARCH_X86_32 1
 #else
 #  define ARCH_X86 0
+#endif
+
+// Check for x86 (32-bit)
+#if defined(__i386__) || defined(_M_IX86)
+#  define ARCH_X86_32 1
+#else
 #  define ARCH_X86_32 0
 #endif
 
@@ -64,11 +69,11 @@
 #undef CONFIG_THIS_YEAR
 
 // config.h
-#undef ARCH_AARCH64
-#undef ARCH_ALPHA
-#undef ARCH_ARM
-#undef ARCH_AVR32
-#undef ARCH_AVR32_AP
+//#undef ARCH_AARCH64
+//#undef ARCH_ALPHA
+//#undef ARCH_ARM
+//#undef ARCH_AVR32
+//#undef ARCH_AVR32_AP
 //#undef ARCH_AVR32_UC
 //#undef ARCH_BFIN
 //#undef ARCH_IA64
@@ -88,9 +93,9 @@
 //#undef ARCH_SPARC64
 //#undef ARCH_TILEGX
 //#undef ARCH_TILEPRO
-#undef ARCH_X86
-#undef ARCH_X86_32
-#undef ARCH_X86_64
+//#undef ARCH_X86
+//#undef ARCH_X86_32
+//#undef ARCH_X86_64
 //#undef HAVE_ARMV5TE
 //#undef HAVE_ARMV6
 //#undef HAVE_ARMV6T2
@@ -171,10 +176,6 @@
 //#undef HAVE_FMA4_EXTERNAL
 //#undef HAVE_MMX_EXTERNAL
 //#undef HAVE_MMXEXT_EXTERNAL
-//#undef HAVE_SSE_EXTERNAL
-//#undef HAVE_SSE2_EXTERNAL
-//#undef HAVE_SSE3_EXTERNAL
-//#undef HAVE_SSE4_EXTERNAL
 //#undef HAVE_SSE42_EXTERNAL
 //#undef HAVE_SSSE3_EXTERNAL
 //#undef HAVE_XOP_EXTERNAL
@@ -820,135 +821,6 @@
 #undef CONFIG_VP8DSP
 #undef CONFIG_WMA_FREQS
 #undef CONFIG_WMV2DSP
-
-// Defaulted defines (used in compiled contexts or 0/1 preprocessor check)
-#ifndef HAVE_ALIGNED_STACK
-#  define HAVE_ALIGNED_STACK 0
-#endif
-#ifndef HAVE_ALTIVEC
-#  define HAVE_ALTIVEC 0
-#endif
-#ifndef HAVE_BIGENDIAN
-#  define HAVE_BIGENDIAN 0
-#endif
-#ifndef HAVE_MMX
-#  define HAVE_MMX 0
-#endif
-#ifndef HAVE_LASX
-#  define HAVE_LASX 0
-#endif
-#ifndef HAVE_LSX
-#  define HAVE_LSX 0
-#endif
-#ifndef HAVE_MMX
-#  define HAVE_MMX 0
-#endif
-#ifndef HAVE_NEON
-#  define HAVE_NEON 0
-#endif
-#ifndef HAVE_LSX
-#  define HAVE_LSX 0
-#endif
-#ifndef HAVE_LASX
-#  define HAVE_LASX 0
-#endif
-#ifndef HAVE_MMX
-#  define HAVE_MMX 0
-#endif
-#ifndef HAVE_NEON
-#  define HAVE_NEON 0
-#endif
-#ifndef HAVE_MMX
-#  define HAVE_MMX 0
-#endif
-#ifndef HAVE_LASX
-#  define HAVE_LASX 0
-#endif
-#ifndef HAVE_LSX
-#  define HAVE_LSX 0
-#endif
-#ifndef HAVE_MMX
-#  define HAVE_MMX 0
-#endif
-#ifndef HAVE_MMXEXT
-#  define HAVE_MMXEXT 0
-#endif
-#ifndef HAVE_NEON
-#  define HAVE_NEON 0
-#endif
-#ifndef HAVE_LSX
-#  define HAVE_LSX 0
-#endif
-#ifndef HAVE_LASX
-#  define HAVE_LASX 0
-#endif
-#ifndef HAVE_MMX
-#  define HAVE_MMX 0
-#endif
-#ifndef HAVE_NEON
-#  define HAVE_NEON 0
-#endif
-#ifndef HAVE_PRAGMA_DEPRECATED
-#  define HAVE_PRAGMA_DEPRECATED 0
-#endif
-#ifndef HAVE_PTHREAD
-#  define HAVE_PTHREAD 0
-#endif
-#ifndef HAVE_W32THREADS
-#  define HAVE_W32THREADS 0
-#endif
-#ifndef HAVE_OS2THREADS
-#  define HAVE_OS2THREADS 0
-#endif
-#ifndef HAVE_THREADS
-#  define HAVE_THREADS (HAVE_PTHREADS || HAVE_W32THREADS || HAVE_OS2THREADS)
-#endif
-
-#ifndef CONFIG_MEMORY_POISONING
-#  define CONFIG_MEMORY_POISONING 0
-#endif
-
-// Ignored defines
-#define HAVE_ARMV5TE 0
-#define HAVE_ARMV5TE_EXTERNAL 0
-#define HAVE_ARMV5TE_INLINE 0
-#define HAVE_ARMV6 0
-#define HAVE_ARMV6T2 0
-#define HAVE_ARMV6T2_EXTERNAL 0
-#define HAVE_ARMV6T2_INLINE 0
-#define HAVE_ARMV6_EXTERNAL 0
-#define HAVE_ARMV6_INLINE 0
-#define HAVE_ASM_MOD_Q 0
-#define HAVE_AVX2_EXTERNAL 0
-#define HAVE_AVX512ICL_EXTERNAL 0
-#define HAVE_AVX512_EXTERNAL 0
-#define HAVE_AVX_EXTERNAL 0
-#define HAVE_CDIO_PARANOIA_PARANOIA_H 0
-#define HAVE_FMA3_EXTERNAL 0
-#define HAVE_FMA4_EXTERNAL 0
-#define HAVE_MIPS32R2 0
-#define HAVE_MIPS32R6 0
-#define HAVE_MIPS64R2 0
-#define HAVE_MIPS64R6 0
-#define HAVE_MIPSDSP 0
-#define HAVE_MIPSFPU 0
-#define HAVE_MMXEXT_EXTERNAL 0
-#define HAVE_MMXEXT_INLINE 0
-#define HAVE_MMX_EXTERNAL 0
-#define HAVE_MMX_INLINE 0 // - asm moveq for old motorola
-#define HAVE_NEON_INLINE 0
-#define HAVE_POWER8 0
-#define HAVE_SIMD_ALIGN_16 0
-#define HAVE_SIMD_ALIGN_32 0
-#define HAVE_SIMD_ALIGN_64 0
-#define HAVE_SSE2_EXTERNAL 0
-#define HAVE_SSE2_INLINE 0
-#define HAVE_SSE3_EXTERNAL 0
-#define HAVE_SSE4_EXTERNAL 0
-#define HAVE_SSE_INLINE 0
-#define HAVE_SSSE3_EXTERNAL 0
-#define HAVE_SSSE3_INLINE 0
-#define HAVE_XOP_EXTERNAL 0
 
 // config_components.h
 #define CONFIG_AAC_ADTSTOASC_BSF @CONFIG_AAC_ADTSTOASC_BSF@
@@ -3158,5 +3030,167 @@
 #define CONFIG_LIBZMQ_PROTOCOL @CONFIG_LIBZMQ_PROTOCOL@
 #define CONFIG_IPFS_GATEWAY_PROTOCOL @CONFIG_IPFS_GATEWAY_PROTOCOL@
 #define CONFIG_IPNS_GATEWAY_PROTOCOL @CONFIG_IPNS_GATEWAY_PROTOCOL@
+
+// Defaulted defines (used in compiled contexts or 0/1 preprocessor check)
+#ifndef HAVE_ALIGNED_STACK
+#  define HAVE_ALIGNED_STACK 0
+#endif
+#ifndef HAVE_ALTIVEC
+#  define HAVE_ALTIVEC 0
+#endif
+#ifndef HAVE_BIGENDIAN
+#  define HAVE_BIGENDIAN 0
+#endif
+#ifndef HAVE_GMTIME_R
+#  define HAVE_GMTIME_R 0
+#endif
+#ifndef HAVE_MMX
+#  define HAVE_MMX 0
+#endif
+#ifndef HAVE_LASX
+#  define HAVE_LASX 0
+#endif
+#ifndef HAVE_LSX
+#  define HAVE_LSX 0
+#endif
+#ifndef HAVE_MMX
+#  define HAVE_MMX 0
+#endif
+#ifndef HAVE_NEON
+#  define HAVE_NEON 0
+#endif
+#ifndef HAVE_LSX
+#  define HAVE_LSX 0
+#endif
+#ifndef HAVE_LASX
+#  define HAVE_LASX 0
+#endif
+#ifndef HAVE_MMX
+#  define HAVE_MMX 0
+#endif
+#ifndef HAVE_NEON
+#  define HAVE_NEON 0
+#endif
+#ifndef HAVE_MMX
+#  define HAVE_MMX 0
+#endif
+#ifndef HAVE_LASX
+#  define HAVE_LASX 0
+#endif
+#ifndef HAVE_LSX
+#  define HAVE_LSX 0
+#endif
+#ifndef HAVE_MMX
+#  define HAVE_MMX 0
+#endif
+#ifndef HAVE_MMXEXT
+#  define HAVE_MMXEXT 0
+#endif
+#ifndef HAVE_NEON
+#  define HAVE_NEON 0
+#endif
+#ifndef HAVE_LSX
+#  define HAVE_LSX 0
+#endif
+#ifndef HAVE_LASX
+#  define HAVE_LASX 0
+#endif
+#ifndef HAVE_MMX
+#  define HAVE_MMX 0
+#endif
+#ifndef HAVE_NEON
+#  define HAVE_NEON 0
+#endif
+#ifndef HAVE_PRAGMA_DEPRECATED
+#  define HAVE_PRAGMA_DEPRECATED 0
+#endif
+#ifndef HAVE_PTHREAD
+#  define HAVE_PTHREAD 0
+#endif
+#ifndef HAVE_SIMD_ALIGN_16
+#  define HAVE_SIMD_ALIGN_16 0
+#endif
+#ifndef HAVE_SIMD_ALIGN_32
+#  define HAVE_SIMD_ALIGN_32 0
+#endif
+#ifndef HAVE_SIMD_ALIGN_64
+#  define HAVE_SIMD_ALIGN_64 0
+#endif
+#ifndef HAVE_W32THREADS
+#  define HAVE_W32THREADS 0
+#endif
+#ifndef HAVE_OS2THREADS
+#  define HAVE_OS2THREADS 0
+#endif
+#ifndef HAVE_THREADS
+#  if defined(HAVE_PTHREADS) && HAVE_PTHREADS == 1
+#    define HAVE_THREADS 1
+#  elif defined(HAVE_W32THREADS) && HAVE_W32THREADS == 1
+#    define HAVE_THREADS 1
+#  elif defined(HAVE_OS2THREADS) && HAVE_OS2THREADS == 1
+#    define HAVE_THREADS 1
+#  endif
+#endif
+
+#ifdef HAVE_SSE
+#  define HAVE_SSE_EXTERNAL HAVE_SSE
+#else
+#  define HAVE_SSE_EXTERNAL 0
+#endif
+#ifdef HAVE_SSE2
+#  define HAVE_SSE2_EXTERNAL HAVE_SSE2
+#else
+#  define HAVE_SSE2_EXTERNAL 0
+#endif
+#ifdef HAVE_SSE3
+#  define HAVE_SSE3_EXTERNAL HAVE_SSE3
+#else
+#  define HAVE_SSE3_EXTERNAL 0
+#endif
+#ifdef HAVE_SSE4
+#  define HAVE_SSE4_EXTERNAL HAVE_SSE4
+#else
+#  define HAVE_SSE4_EXTERNAL 0
+#endif
+
+#ifndef CONFIG_MEMORY_POISONING
+#  define CONFIG_MEMORY_POISONING 0
+#endif
+
+// Ignored defines
+#define HAVE_ARMV5TE 0
+#define HAVE_ARMV5TE_EXTERNAL 0
+#define HAVE_ARMV5TE_INLINE 0
+#define HAVE_ARMV6 0
+#define HAVE_ARMV6T2 0
+#define HAVE_ARMV6T2_EXTERNAL 0
+#define HAVE_ARMV6T2_INLINE 0
+#define HAVE_ARMV6_EXTERNAL 0
+#define HAVE_ARMV6_INLINE 0
+#define HAVE_ASM_MOD_Q 0
+#define HAVE_AVX2_EXTERNAL 0
+#define HAVE_AVX512ICL_EXTERNAL 0
+#define HAVE_AVX512_EXTERNAL 0
+#define HAVE_AVX_EXTERNAL 0
+#define HAVE_CDIO_PARANOIA_PARANOIA_H 0
+#define HAVE_FMA3_EXTERNAL 0
+#define HAVE_FMA4_EXTERNAL 0
+#define HAVE_MIPS32R2 0
+#define HAVE_MIPS32R6 0
+#define HAVE_MIPS64R2 0
+#define HAVE_MIPS64R6 0
+#define HAVE_MIPSDSP 0
+#define HAVE_MIPSFPU 0
+#define HAVE_MMXEXT_EXTERNAL 0
+#define HAVE_MMXEXT_INLINE 0
+#define HAVE_MMX_EXTERNAL 0
+#define HAVE_MMX_INLINE 0 // - asm moveq for old motorola
+#define HAVE_NEON_INLINE 0
+#define HAVE_POWER8 0
+#define HAVE_SSE2_INLINE 0
+#define HAVE_SSE_INLINE 0
+#define HAVE_SSSE3_EXTERNAL 0
+#define HAVE_SSSE3_INLINE 0
+#define HAVE_XOP_EXTERNAL 0
 
 #endif
