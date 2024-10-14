@@ -167,10 +167,10 @@ lib{avutil}:
   c.export.libs = $intf_libs $sys_libs
 }
 # workaround: <libavutil/md5.c> doesn't prefix with AV_
-# libavutil/obj{md5}:
-# {
-#   c.poptions =+ -DHAVE_FAST_UNALIGNED=1
-# }
+libavutil/obj{md5}:
+{
+  c.poptions =+ -DHAVE_FAST_UNALIGNED=1
+}
 
 # For pre-releases use the complete version to make sure they cannot
 # be used in place of another pre-release or the final version. See
