@@ -9,26 +9,39 @@ cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
 tgt_macos = [bool] ($c.target.system == 'darwin')
 
-./: lib{config}: h{config}
-lib{config}: $intf_libs
+./: lib{config}: h{config} $intf_libs
+lib{config}: file{config.asm}: update = ($tgt_win32)
 
-./: groups{config.groups} asm{config.asm}: liba{config} cxx{print_defines} h{config}
+h{config}: cxx{print_defines} h{autoconf}
 {{
-  s = $path($<[1])
+  s = $path($<[0])
   n = $path.leaf($s)
   o = $path.base($path($>)).$extension($>).obj
   r = $(o).cli
 
   diag configure ($>)
 
-  echo -nologo $c.poptions $cc.poptions $cc.coptions $c.mode $cxx.mode -Fo$o -c $s >$r &!$r
-  $effect($cxx.path) "@$r" | sed -e "s/^($n)\$//" >$path($>)
-  if ($extension($>) == 'asm')
-    sed -i -e 's/#define/%define/g' $path($>)
-  end
+  echo -nologo $c.poptions $cc.poptions $cc.coptions $c.mode $cxx.mode -Fo$o -c $s >$r &$r
+  $effect($cxx.path) "@$r" | set tmp [string_set]
+  tmp = $regex.replace($tmp, '^((?!#).*$)', '//\1')
+
+  echo "$tmp" >$path($>)
 }}
 
-h{config}: in{config}
+file{config.asm}: h{config}
+{{
+  s = $path($<)
+
+  diag configure ($>)
+
+  cat $s | set tmp [string_set]
+  tmp = $regex.replace($tmp, '^#', '%')
+  tmp = $regex.replace($tmp, '^//', '; ')
+
+  echo "$tmp" >$path($>)
+}}
+
+h{autoconf}: in{config}
 {
   FFMPEG_CONFIGURATION                 = "\"$c.target.system\""
   FFMPEG_LICENSE                       = "\"LGPL version 2.1 or later\""
@@ -2666,6 +2679,15 @@ src_pfx = [dir_path] $src_root/libconfig/
 
 c.poptions += "-I$out_pfx" "-I$out_pfx/libconfig/" "-I$src_pfx"
 
+liba{config}:
+{
+  c.poptions += -DCONFIG_STATIC
+}
+libs{config}:
+{
+  c.poptions += -DCONFIG_SHARED
+}
+
 switch $c.target.system
 {
   case 'win32-msvc'
@@ -2681,6 +2703,7 @@ lib{config}:
   c.export.poptions += "-I$out_pfx"  "-I$out_pfx/libconfig/" "-I$src_pfx" -DHAVE_AV_CONFIG_H
   c.export.libs += $intf_libs
 }
+
 liba{config}:
 {
   c.export.poptions += -DCONFIG_STATIC

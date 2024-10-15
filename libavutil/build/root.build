@@ -12,15 +12,52 @@ using cxx
 h{*}: extension = h
 c{*}: extension = c
 
-define asm: file
-asm{*}: extension = asm
-
-define groups: file
-groups{*}: extension = groups
-
 # The test target for cross-testing (running tests under Wine, etc).
 #
 test.target = $c.target
+
+# Optimization options
+# config [bool] config.libavutil.disable_asm                   ?= false # disable all assembly optimizations
+# config [bool] config.libavutil.disable_altivec               ?= false # disable AltiVec optimizations
+# config [bool] config.libavutil.disable_vsx                   ?= false # disable VSX optimizations
+# config [bool] config.libavutil.disable_power8                ?= false # disable POWER8 optimizations
+# config [bool] config.libavutil.disable_amd3dnow              ?= false # disable 3DNow! optimizations
+# config [bool] config.libavutil.disable_amd3dnowext           ?= false # disable 3DNow! extended optimizations
+# config [bool] config.libavutil.disable_mmx                   ?= false # disable MMX optimizations
+# config [bool] config.libavutil.disable_mmxext                ?= false # disable MMXEXT optimizations
+# config [bool] config.libavutil.disable_sse                   ?= false # disable SSE optimizations
+# config [bool] config.libavutil.disable_sse2                  ?= false # disable SSE2 optimizations
+# config [bool] config.libavutil.disable_sse3                  ?= false # disable SSE3 optimizations
+# config [bool] config.libavutil.disable_ssse3                 ?= false # disable SSSE3 optimizations
+# config [bool] config.libavutil.disable_sse4                  ?= false # disable SSE4 optimizations
+# config [bool] config.libavutil.disable_sse42                 ?= false # disable SSE4.2 optimizations
+# config [bool] config.libavutil.disable_avx                   ?= false # disable AVX optimizations
+# config [bool] config.libavutil.disable_xop                   ?= false # disable XOP optimizations
+# config [bool] config.libavutil.disable_fma3                  ?= false # disable FMA3 optimizations
+# config [bool] config.libavutil.disable_fma4                  ?= false # disable FMA4 optimizations
+# config [bool] config.libavutil.disable_avx2                  ?= false # disable AVX2 optimizations
+# config [bool] config.libavutil.disable_avx512                ?= false # disable AVX-512 optimizations
+# config [bool] config.libavutil.disable_avx512icl             ?= false # disable AVX-512ICL optimizations
+# config [bool] config.libavutil.disable_aesni                 ?= false # disable AESNI optimizations
+# config [bool] config.libavutil.disable_armv5te               ?= false # disable armv5te optimizations
+# config [bool] config.libavutil.disable_armv6                 ?= false # disable armv6 optimizations
+# config [bool] config.libavutil.disable_armv6t2               ?= false # disable armv6t2 optimizations
+# config [bool] config.libavutil.disable_vfp                   ?= false # disable VFP optimizations
+# config [bool] config.libavutil.disable_neon                  ?= false # disable NEON optimizations
+# config [bool] config.libavutil.disable_dotprod               ?= false # disable DOTPROD optimizations
+# config [bool] config.libavutil.disable_i8mm                  ?= false # disable I8MM optimizations
+# config [bool] config.libavutil.disable_inline-asm            ?= false # disable use of inline assembly
+# config [bool] config.libavutil.disable_x86asm                ?= false # disable use of standalone x86 assembly
+# config [bool] config.libavutil.disable_mipsdsp               ?= false # disable MIPS DSP ASE R1 optimizations
+# config [bool] config.libavutil.disable_mipsdspr2             ?= false # disable MIPS DSP ASE R2 optimizations
+# config [bool] config.libavutil.disable_msa                   ?= false # disable MSA optimizations
+# config [bool] config.libavutil.disable_mipsfpu               ?= false # disable floating point MIPS optimizations
+# config [bool] config.libavutil.disable_mmi                   ?= false # disable Loongson MMI optimizations
+# config [bool] config.libavutil.disable_lsx                   ?= false # disable Loongson LSX optimizations
+# config [bool] config.libavutil.disable_lasx                  ?= false # disable Loongson LASX optimizations
+# config [bool] config.libavutil.disable_rvv                   ?= false # disable RISC-V Vector optimizations
+# config [bool] config.libavutil.disable_fast-unaligned        ?= false # consider unaligned accesses slow
+
 
 # Configuration Options
 config [bool] config.libavutil.doc                           ?= false

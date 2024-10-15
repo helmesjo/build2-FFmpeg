@@ -1,11 +1,18 @@
 assert (!$empty($conditional_src)) 'specify conditional source files'
+
+define [see_through] impl_target: group
+
+define asm: file
+asm{*}: extension = asm
+
+define groups: file
+groups{*}: extension = groups
+
 if (!$defined(config))
 {
   import config = libavutil%lib{config}
 }
-import config_groups = groups{config.groups}
-import config_h = h{config.h}
-import config_asm = asm{config.asm}
+import config_h = libavutil%h{config}
 
 [rule_hint=c] \
 libul{conditional-src-meta}: $impl_libs $intf_libs
@@ -13,11 +20,11 @@ libul{conditional-src-meta}: $impl_libs $intf_libs
 import libaconfig = libavutil%liba{config}
 import libsconfig = libavutil%libs{config}
 
-<file{all_groups enabled_groups enabled_source}>: $config_groups $config_h $config_asm
+<file{all_groups enabled_groups enabled_source}>: $config_h
 {{
   o = [dir_path] $directory($>[0])
 
-  configs = [path] $($config: out_base)/config.groups
+  configs = [path] $path($config_h)
   depdb hash $configs
 
   # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
@@ -69,7 +76,7 @@ import libsconfig = libavutil%libs{config}
 }}
 
 $project/impl_target{conditional-src}: file{enabled_groups enabled_source all_groups}: update = match
-$project/impl_target{conditional-src}: h{**} c{**}
+$project/impl_target{conditional-src}: file{enabled_groups enabled_source all_groups} $project/h{**} $project/c{**}
 {{
   o = [dir_path] $directory($>)
   n = [name] $project
@@ -102,7 +109,7 @@ $project/impl_target{conditional-src}: h{**} c{**}
     --format lines \
     --file "$d" \
     -- \
-      echo ($SRCS) | tr ' ' '\n' >$d && \
+      echo ($SRCS $HDRS) | tr ' ' '\n' >$d && \
       echo '' >>$d && echo $path.representation([dir_path] $o) >>$d
 
   diag src ($>)
@@ -110,8 +117,8 @@ $project/impl_target{conditional-src}: h{**} c{**}
   for file: [paths] ($HDRS $SRCS $SRCS_ALL)
     src = $path.posix_string($s/$file)
     dst = $path.posix_string($o/$file)
-    mkdir --no-cleanup --parents $directory($dst)
-    cp --no-cleanup $src $dst
+    mkdir --parents $directory($dst)
+    cp $src $dst &$dst
   end
 }}
 
@@ -152,7 +159,7 @@ $project/impl_target{conditional-asm-obja}: asm{**}
     --format lines \
     --file "$d" \
     -- \
-      echo ($SRCS) | tr ' ' '\n' >$d && \
+      echo ($d $SRCS) | tr ' ' '\n' >$d && \
       echo '' >>$d && echo $path.representation([dir_path] $o) >>$d
 
   diag yasm ($>)
@@ -160,10 +167,11 @@ $project/impl_target{conditional-asm-obja}: asm{**}
   for file: [paths] $SRCS
     src = $path.posix_string($s/$path.base($file).asm)
     dst = $path.posix_string($o/$file)
-    mkdir --no-cleanup --parents $directory($dst)
+    mkdir --parents $directory($dst)
     yasm "-I$out_base" "-I$src_base" -f win64 --arch=x86 "-Pconfig.asm" \
           $c.poptions $lib_poptions -o $dst $src
   end
+  touch $d
 }}
 
 $project/impl_target{conditional-asm-objs}: file{enabled_groups enabled_source} libus{conditional-src-meta}: update = match
@@ -176,7 +184,6 @@ $project/impl_target{conditional-asm-objs}: asm{**}
   lib_poptions = $c.lib_poptions(libus{conditional-src-meta}, objs)
   depdb hash $lib_poptions
 
-  # cat $path($<[0]) | set -w enabled_groups [string_set]
   enabled_source = [json] $json.load($path($<[1]))
 
   # append enabled sources
@@ -203,7 +210,7 @@ $project/impl_target{conditional-asm-objs}: asm{**}
     --format lines \
     --file "$d" \
     -- \
-      echo ($SRCS) | tr ' ' '\n' >$d && \
+      echo ($d $SRCS) | tr ' ' '\n' >$d && \
       echo '' >>$d && echo $path.representation([dir_path] $o) >>$d
 
   diag yasm ($>)
@@ -211,8 +218,9 @@ $project/impl_target{conditional-asm-objs}: asm{**}
   for file: [paths] $SRCS
     src = $path.posix_string($s/$path.base($file).asm)
     dst = $path.posix_string($o/$file)
-    mkdir --no-cleanup --parents $directory($dst)
+    mkdir --parents $directory($dst)
     yasm "-I$out_base" "-I$src_base" -f win64 --arch=x86 "-Pconfig.asm" \
           $c.poptions $lib_poptions -o $dst $src
   end
+  touch $d
 }}

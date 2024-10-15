@@ -4,31 +4,17 @@ $out_root/
   include libconfig/
 }
 
-# tgt = $name($import.target)
+name = $name($import.target)
 
-# print $path($import.target) # access violation
-print $import.target
-print $name($import.target)
-
-file = $name($import.target)
-
-if ($name($import.target) == 'avutil')
+if ($name == 'avutil')
 {
   export $out_root/src/$import.target
 }
-elif ($file == 'config.h')
+elif ($name == 'config')
 {
   export $out_root/libconfig/$import.target
 }
-elif ($file == 'config.asm')
-{
-  export $out_root/libconfig/asm{$file}
-}
-elif ($file == 'config.groups')
-{
-  export $out_root/libconfig/$import.target
-}
-else
+elif ($name == 'config.groups')
 {
   export $out_root/libconfig/$import.target
 }

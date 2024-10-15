@@ -3,15 +3,8 @@ import libs = \
   libavfilter%lib{avfilter} \
   libavutil%lib{config}
 
-# TESTPROGS = \
-#   drawutils \
-#   filtfmts \
-#   formats \
-#   integral
-
-# TESTOBJS += dctref.c
-
-for t : tests/c{*}
+# need upstream/tests/checkasm/ lib that conditionally builds the asm files.
+for t : tests/c{* -integral}
 {
   c = $($avutil: libavutil.$name($t))
   ./: exe{$name($t)}: $t $libs testscript: include = ($c == [null] || $c)
