@@ -68,55 +68,27 @@
 #undef FFMPEG_LICENSE
 #undef CONFIG_THIS_YEAR
 
+#undef SWS_MAX_FILTER_SIZE
+
 // config.h
-//#undef ARCH_AARCH64
-//#undef ARCH_ALPHA
-//#undef ARCH_ARM
-//#undef ARCH_AVR32
-//#undef ARCH_AVR32_AP
-//#undef ARCH_AVR32_UC
-//#undef ARCH_BFIN
-//#undef ARCH_IA64
-//#undef ARCH_LOONGARCH
-//#undef ARCH_LOONGARCH32
-//#undef ARCH_LOONGARCH64
-//#undef ARCH_M68K
-//#undef ARCH_MIPS
-//#undef ARCH_MIPS64
-//#undef ARCH_PARISC
-//#undef ARCH_PPC
-//#undef ARCH_PPC64
-//#undef ARCH_RISCV
-//#undef ARCH_S390
-//#undef ARCH_SH4
-//#undef ARCH_SPARC
-//#undef ARCH_SPARC64
-//#undef ARCH_TILEGX
-//#undef ARCH_TILEPRO
-//#undef ARCH_X86
-//#undef ARCH_X86_32
-//#undef ARCH_X86_64
-//#undef HAVE_ARMV5TE
-//#undef HAVE_ARMV6
-//#undef HAVE_ARMV6T2
 #undef HAVE_ARMV8
-//#undef HAVE_DOTPROD
+//unused: #undef HAVE_DOTPROD
 #undef HAVE_I8MM
 #undef HAVE_NEON
 #undef HAVE_VFP
 #undef HAVE_VFPV3
-//#undef HAVE_SETEND
+//unused: #undef HAVE_SETEND
 #undef HAVE_ALTIVEC
 #undef HAVE_DCBZL
 #undef HAVE_LDBRX
-//#undef HAVE_POWER8
+//unused: #undef HAVE_POWER8
 #undef HAVE_PPC4XX
 #undef HAVE_VSX
 #undef HAVE_RV
 #undef HAVE_RVV
-//#undef HAVE_AESNI
-//#undef HAVE_AMD3DNOW
-//#undef HAVE_AMD3DNOWEXT
+//unused: #undef HAVE_AESNI
+//unused: #undef HAVE_AMD3DNOW
+//unused: #undef HAVE_AMD3DNOWEXT
 #undef HAVE_AVX
 #undef HAVE_AVX2
 #undef HAVE_AVX512
@@ -129,18 +101,18 @@
 #undef HAVE_SSE2
 #undef HAVE_SSE3
 #undef HAVE_SSE4
-//#undef HAVE_SSE42
+//unused: #undef HAVE_SSE42
 #undef HAVE_SSSE3
 #undef HAVE_XOP
 #undef HAVE_I686
-//#undef HAVE_MIPSFPU
-//#undef HAVE_MIPS32R2
-//#undef HAVE_MIPS32R5
-//#undef HAVE_MIPS64R2
-//#undef HAVE_MIPS32R6
-//#undef HAVE_MIPS64R6
-//#undef HAVE_MIPSDSP
-//#undef HAVE_MIPSDSPR2
+//ignored: #undef HAVE_MIPSFPU
+//ignored: #undef HAVE_MIPS32R2
+//ignored: #undef HAVE_MIPS32R5
+//ignored: #undef HAVE_MIPS64R2
+//ignored: #undef HAVE_MIPS32R6
+//ignored: #undef HAVE_MIPS64R6
+//ignored: #undef HAVE_MIPSDSP
+//ignored: #undef HAVE_MIPSDSPR2
 #undef HAVE_MSA
 #undef HAVE_LOONGSON2
 #undef HAVE_LOONGSON3
@@ -269,7 +241,7 @@
 #undef HAVE_ARPA_INET_H
 #undef HAVE_ASM_TYPES_H
 #undef HAVE_CDIO_PARANOIA_H
-//#undef HAVE_CDIO_PARANOIA_PARANOIA_H
+#undef HAVE_CDIO_PARANOIA_PARANOIA_H
 //#undef HAVE_CUDA_H
 //#undef HAVE_DISPATCH_DISPATCH_H
 #undef HAVE_DEV_BKTR_IOCTL_BT848_H

@@ -11,7 +11,7 @@ define patch: alias
 
 conditional_src  = [strings] \
   '{"HAVE_X86ASM": "x86/cpuid.asm x86/fixed_dsp.asm x86/float_dsp.asm x86/imgutils.asm x86/lls.asm x86/tx_float.asm x86/x86inc.asm x86/x86util.asm"}' \
-  '{"HAVE_MMX_EXTERNAL": "x86/emms.asm"}' \
+  '{"HAVE_MMX_INLINE HAVE_MMX_EXTERNAL HAVE_MM_EMPTY": "x86/emms.asm"}' \
   '{"HAVE_X86ASM CONFIG_PIXELUTILS":      "x86/pixelutils.asm"}' \
   '{"HAVE_AARCH64":           "aarch64/asm.S"}' \
   '{"HAVE_AARCH64 HAVE_NEON": "aarch64/float_dsp_neon.S aarch64/tx_float_neon.S"}' \

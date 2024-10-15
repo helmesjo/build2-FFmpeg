@@ -2,8 +2,10 @@ assert (!$empty($conditional_src)) 'specify conditional source files'
 if (!$defined(config))
 {
   import config = libavutil%lib{config}
-  import config_groups = file{config.groups}
 }
+import config_groups = groups{config.groups}
+import config_h = h{config.h}
+import config_asm = asm{config.asm}
 
 [rule_hint=c] \
 libul{conditional-src-meta}: $impl_libs $intf_libs
@@ -11,22 +13,17 @@ libul{conditional-src-meta}: $impl_libs $intf_libs
 import libaconfig = libavutil%liba{config}
 import libsconfig = libavutil%libs{config}
 
-define [see_through] impl_target: group
-
-define asm: file
-asm{*}: extension = asm
-
-<file{all_groups enabled_groups enabled_source}>: $config_groups
+<file{all_groups enabled_groups enabled_source}>: $config_groups $config_h $config_asm
 {{
   o = [dir_path] $directory($>[0])
 
-  c1 = [path] $($config: out_base)/config.groups
-  depdb hash $c1
+  configs = [path] $($config: out_base)/config.groups
+  depdb hash $configs
 
   # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
-  sed -n -e 's/^([A-Z0-9_]+)[ ]+1/\1/p' $c1 \
+  sed -n -e 's/^[#%A-Za-z0-9_]+ ([A-Z0-9_]+)[ ]+1/\1/p' $configs \
     | set -w enabled_groups [string_set]
-  sed -n -e 's/^([A-Z0-9_]+)[ ]+[0-1]/\1/p' $c1 \
+  sed -n -e 's/^[#%A-Za-z0-9_]+ ([A-Z0-9_]+)[ ]+[0-1]/\1/p' $configs \
     | set -w all_groups [string_set]
 
   enabled_groups += [string_set] OBJS
