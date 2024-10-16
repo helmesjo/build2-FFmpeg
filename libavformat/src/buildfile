@@ -668,10 +668,7 @@ libavformat/c{protocol_list}: libavformat/c{protocols} file{enabled_groups}
   for c: $format_LIST
     group = $string.ucase(CONFIG_$c)
     if ($enabled_groups[$group])
-      echo "SI: $group"
       echo "    &ff_$c," >> $path($>)
-    else
-      echo "NEIN: $group"
     end
   end
   echo "    NULL };" >> $path($>)
@@ -696,10 +693,7 @@ libavformat/c{demuxer_list}: libavformat/c{allformats} file{enabled_groups}
   for c: $format_LIST
     group = $string.ucase(CONFIG_$c)
     if ($enabled_groups[$group])
-      echo "SI: $group"
       echo "    &ff_$c," >> $path($>)
-    else
-      echo "NEIN: $group"
     end
   end
   echo "    NULL };" >> $path($>)
@@ -723,10 +717,7 @@ libavformat/c{muxer_list}: libavformat/c{allformats} file{enabled_groups}
   for c: $format_LIST
     group = $string.ucase(CONFIG_$c)
     if ($enabled_groups[$group])
-      echo "SI: $group"
       echo "    &ff_$c," >> $path($>)
-    else
-      echo "NEIN: $group"
     end
   end
   echo "    NULL };" >> $path($>)

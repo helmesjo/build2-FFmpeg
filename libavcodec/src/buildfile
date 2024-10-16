@@ -1636,10 +1636,7 @@ libavcodec/c{codec_list}: libavcodec/c{allcodecs} file{enabled_groups}
   for c: $codec_LIST
     group = $string.ucase(CONFIG_$c)
     if ($enabled_groups[$group])
-      echo "SI: $group"
       echo "    &ff_$c," >> $path($>)
-    else
-      echo "NEIN: $group"
     end
   end
   echo "    NULL };" >> $path($>)
@@ -1663,10 +1660,7 @@ libavcodec/c{parser_list}: libavcodec/c{allcodecs} file{enabled_groups}
   for c: $parser_LIST
     group = $string.ucase(CONFIG_$c)
     if ($enabled_groups[$group])
-      echo "SI: $group"
       echo "    &ff_$c," >> $path($>)
-    else
-      echo "NEIN: $group"
     end
   end
   echo "    NULL };" >> $path($>)
@@ -1689,10 +1683,7 @@ libavcodec/c{bsf_list}: libavcodec/c{allcodecs} file{enabled_groups}
   for c: $bsf_LIST
     group = $string.ucase(CONFIG_$c)
     if ($enabled_groups[$group])
-      echo "SI: $group"
       echo "    &ff_$c," >> $path($>)
-    else
-      echo "NEIN: $group"
     end
   end
   echo "    NULL };" >> $path($>)

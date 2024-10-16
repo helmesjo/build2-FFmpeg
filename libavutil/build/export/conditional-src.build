@@ -75,6 +75,8 @@ import libsconfig = libavutil%libs{config}
   echo $enabled_source >$path($>[2]) &$path($>[2])
 }}
 
+# TODO: Dont depend on all source files since we do patching in libavutil/buildfile
+#       which means that it'll rerun this target each update
 $project/impl_target{conditional-src}: file{enabled_groups enabled_source all_groups}: update = match
 $project/impl_target{conditional-src}: file{enabled_groups enabled_source all_groups} $project/h{**} $project/c{**}
 {{
@@ -98,7 +100,7 @@ $project/impl_target{conditional-src}: file{enabled_groups enabled_source all_gr
     end
   end
 
-  HDRS += [paths] $filesystem.path_search('**.h', $s)
+  HDRS = [paths] $filesystem.path_search('**.h', $s)
   SRCS_ALL = [paths] $filesystem.path_search('**.c', $s)
 
   depdb dyndep \
@@ -117,8 +119,8 @@ $project/impl_target{conditional-src}: file{enabled_groups enabled_source all_gr
   for file: [paths] ($HDRS $SRCS $SRCS_ALL)
     src = $path.posix_string($s/$file)
     dst = $path.posix_string($o/$file)
-    mkdir --parents $directory($dst)
-    cp $src $dst &$dst
+    mkdir --no-cleanup --parents $directory($dst)
+    cp $src $dst
   end
 }}
 
@@ -148,8 +150,6 @@ $project/impl_target{conditional-asm-obja}: asm{**}
       end
     end
   end
-
-  ASM_ALL = [paths] $filesystem.path_search('**.asm', $s)
 
   depdb dyndep \
     --dyn-target \
@@ -199,8 +199,6 @@ $project/impl_target{conditional-asm-objs}: asm{**}
       end
     end
   end
-
-  ASM_ALL = [paths] $filesystem.path_search('**.asm', $s)
 
   depdb dyndep \
     --dyn-target \

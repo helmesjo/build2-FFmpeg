@@ -70,35 +70,48 @@ libul{avutil}: libavutil/file{patch_exports.d}:
   update = match
 }
 
-# TODO: Fix this, it's to add "includable" source files
-# libul{libavutil}: libavutil/c{tx_template}: include = adhoc
-
-libavutil/file{patch_exports.d}: libavutil/h{**} libavutil/impl_target{conditional-src}
+# tx_template.c is included, not built.
+libul{avutil}: libavutil/c{tx_template}: include = adhoc
+libavutil/c{tx_template}:
 {{
-  s = [dir_path] $src_base/libavutil
-  d = $directory($>)
+  diag copy $>
+  o = $path($>)
+  s = "$src_base/$path.relative($o, $out_base)"
+  cp $s $o
+}}
+
+libavutil/file{patch_exports.d}: libavutil/h{**}
+{{
+  o = [dir_path] $directory($>)
   all_headers = [paths] $path($<)
 
-  HDRS = [paths] "$d/emms.h"
+  HDRS = [paths] $o/emms.h
 
-  for hdr: [paths] ($all_headers)
-    dst = [path] "$hdr"
-    # insert 'av_export_avutil' before any global and explicitly 'extern' variables
-    sed -n -e 's|^(extern [a-zA-Z ]* [\S]*;)$|\1|gp' $dst | set has_export
-    # make sure 'internal.h' is included to access 'av_export_avutil'.
+  for hdr: [paths] $all_headers
+    sed -n -e 's|^(extern [a-zA-Z ]* [\S]*;)$|\1|gp' $hdr | set has_export
     if (!$empty($has_export) && $empty($has_include))
-      HDRS += $dst
+      HDRS += [paths] $hdr
     end
   end
 
-  # fix symbol importation on MSVC of global variables
   diag patch $>
 
+  # fix symbol importation on MSVC of global variables
+
+  # manually deal with avpriv_emms_asm because it doesn't have 'extern'
   echo >$path($>)
   for hdr: [paths] ($HDRS)
-    dst = [path] "$hdr"
-    echo ($dst) >>$path($>)
-    sed -i -e 's|^(#define AVUTIL_'"$ucase($name($dst))"'_H)$|\1\n#include <libavutil/internal.h>|g' $dst
+    echo "      $path.relative($hdr, $src_base)"
+    echo $hdr >>$path($>)
+    if ($path.leaf($hdr) == 'emms.h')
+      sed -i -e 's|^(#define AVUTIL_'"$ucase($name($hdr))"'_H)$|\1\n#include <libavutil/internal.h>|g' $hdr
+      sed -i -e 's|^(void avpriv_emms_asm\(.*\);)$|av_export_avutil \1|gp' $hdr
+    else
+      # make sure 'internal.h' is included to access 'av_export_avutil'.
+      sed -i -e 's|^(#define AVUTIL_'"$ucase($name($hdr))"'_H)$|\1\n#include <libavutil/internal.h>|g' $hdr
+      # insert 'av_export_avutil' before any global and explicitly 'extern' variables
+      sed -i -e 's|^(extern [a-zA-Z ]* [\S]*;)$|av_export_avutil \1|gp' $hdr
+    end
   end
 }}
 

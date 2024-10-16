@@ -732,10 +732,7 @@ libavfilter/c{filter_list}: libavfilter/c{allfilters} file{enabled_groups}
   for c: $filter_LIST
     group = $string.ucase(CONFIG_$c)
     if ($enabled_groups[$group])
-      echo "SI: $group"
       echo "    &ff_$c," >> $path($>)
-    else
-      echo "NEIN: $group"
     end
   end
   echo "    NULL };" >> $path($>)
