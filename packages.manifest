@@ -15,3 +15,6 @@ location: libavformat/
 
 :
 location: libswresample/
+
+:
+location: libavdevice/
