@@ -109,7 +109,7 @@ libswscale/x86/c{rgb2rgb_template}:
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
-c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_swscale=
+c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_swscale
 
 obj{**}: c.poptions += -Dav_export_swscale=
 

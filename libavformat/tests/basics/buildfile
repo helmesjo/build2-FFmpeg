@@ -35,7 +35,7 @@ for t : tests/c{*.c}
       }
       if(!$e)
       {
-        info "skip test: libavformat/tests/$n.$extension($t) \(requires: $s\)"
+        text "skip test: libavformat/tests/$n.$extension($t) \(requires: $s\)"
       }
     }
   }

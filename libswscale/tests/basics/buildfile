@@ -32,7 +32,7 @@ for t : tests/c{*.c}
       }
       if(!$e)
       {
-        info "skip test: libswscale/tests/$n.$extension($t) \(requires: $s\)"
+        text "skip test: libswscale/tests/$n.$extension($t) \(requires: $s\)"
       }
     }
   }
