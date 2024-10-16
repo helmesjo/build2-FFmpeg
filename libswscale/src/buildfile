@@ -43,6 +43,37 @@ import [once] libavutil%buildfile{conditional-src}
 libua{swscale}: libswscale/impl_target{conditional-asm-obja}
 libus{swscale}: libswscale/impl_target{conditional-asm-objs}
 libul{swscale}: libswscale/impl_target{conditional-src}
+libul{swscale}: libswscale/file{patch_exports.d}:
+{
+  include = $tgt_win32
+  update = match
+}
+
+libswscale/file{patch_exports.d}: libswscale/h{**}
+{{
+  o = [dir_path] $directory($>)
+  all_headers = [paths] $path($<)
+
+  HDRS = [paths]
+
+  for hdr: [paths] $all_headers
+    sed -n -e 's|^(extern .* [\S]*;)$|\1|gp' $hdr | set has_export
+    if (!$empty($has_export) && $empty($has_include))
+      HDRS += [paths] $hdr
+    end
+  end
+
+  diag patch $>
+
+  # fix symbol importation on MSVC of global variables
+  echo >$path($>)
+  for hdr: [paths] ($HDRS)
+    echo "      $path.relative($hdr, $src_base)"
+    echo $hdr >>$path($>)
+    # insert 'av_export_swscale' before any global and explicitly 'extern' variables
+    sed -i -e 's|^(extern .* [\S]*;)$|av_export_swscale \1|gp' $hdr
+  end
+}}
 
 # Build options.
 #
@@ -81,7 +112,7 @@ if ($c.target.system == 'mingw32')
 #
 lib{swscale}:
 {
-  c.export.poptions = "-I$out_pfx" "-I$src_pfx"
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx" "-Dav_export_swscale=__declspec(dllimport)"
   c.export.libs = $intf_libs $sys_libs
 }
 

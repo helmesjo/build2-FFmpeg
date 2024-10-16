@@ -1,18 +1,186 @@
+using autoconf
+
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
-#import xxxx_libs += libhello%lib{hello}
 
-lib{avdevice}: libul{avdevice}: {h c}{**} $impl_libs $intf_libs
+import config = libavutil%lib{config}
+impl_libs += $config
+import intf_libs += \
+  libavutil%lib{avutil} \
+  libavformat%lib{avformat}
 
-libs{avdevice}: def{avdevice}: include = ($c.target.system == 'win32-msvc')
-def{avdevice}: libul{avdevice}
+cpu = [string] $c.target.cpu
+tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
+tgt_macos = [bool] ($c.target.system == 'darwin')
+
+lib{avdevice}: libul{avdevice}: \
+                libavdevice/h{**} \
+                $impl_libs $intf_libs
+
+conditional_src = [strings] \
+  '{"HEADERS": "avdevice.h version.h version_major.h"} ' \
+  '{"OBJS": "alldevices.c avdevice.c utils.c version.c"} ' \
+  '{"SKIPHEADERS": "decklink_common.h"}' \
+  '{"HAVE_LIBC_MSVCRT": "file_open.c"}' \
+  '{"CONFIG_ALSA_INDEV": "alsa_dec.c alsa.c timefilter.c"}' \
+  '{"CONFIG_ALSA_OUTDEV": "alsa_enc.c alsa.c"}' \
+  '{"CONFIG_ANDROID_CAMERA_INDEV": "android_camera.c"}' \
+  '{"CONFIG_AUDIOTOOLBOX_OUTDEV": "audiotoolbox.m"}' \
+  '{"CONFIG_AVFOUNDATION_INDEV": "avfoundation.m"}' \
+  '{"CONFIG_BKTR_INDEV": "bktr.c"}' \
+  '{"CONFIG_CACA_OUTDEV": "caca.c"}' \
+  '{"CONFIG_DECKLINK_OUTDEV": "decklink_enc.cpp decklink_enc_c.c decklink_common.cpp"}' \
+  '{"CONFIG_DECKLINK_INDEV": "decklink_dec.cpp decklink_dec_c.c decklink_common.cpp"}' \
+  '{"CONFIG_DSHOW_INDEV": "dshow_crossbar.c dshow.c dshow_enummediatypes.c dshow_enumpins.c dshow_filter.c dshow_pin.c dshow_common.c"}' \
+  '{"CONFIG_FBDEV_INDEV": "fbdev_dec.c fbdev_common.c"}' \
+  '{"CONFIG_FBDEV_OUTDEV": "fbdev_enc.c fbdev_common.c"}' \
+  '{"CONFIG_GDIGRAB_INDEV": "gdigrab.c"}' \
+  '{"CONFIG_IEC61883_INDEV": "iec61883.c"}' \
+  '{"CONFIG_JACK_INDEV": "jack.c timefilter.c"}' \
+  '{"CONFIG_KMSGRAB_INDEV": "kmsgrab.c"}' \
+  '{"CONFIG_LAVFI_INDEV": "lavfi.c"}' \
+  '{"CONFIG_OPENAL_INDEV": "openal-dec.c"}' \
+  '{"CONFIG_OPENGL_OUTDEV": "opengl_enc.c"}' \
+  '{"CONFIG_OSS_INDEV": "oss_dec.c oss.c"}' \
+  '{"CONFIG_OSS_OUTDEV": "oss_enc.c oss.c"}' \
+  '{"CONFIG_PULSE_INDEV": "pulse_audio_dec.c pulse_audio_common.c timefilter.c"}' \
+  '{"CONFIG_PULSE_OUTDEV": "pulse_audio_enc.c pulse_audio_common.c"}' \
+  '{"CONFIG_SDL2_OUTDEV": "sdl2.c"}' \
+  '{"CONFIG_SNDIO_INDEV": "sndio_dec.c sndio.c"}' \
+  '{"CONFIG_SNDIO_OUTDEV": "sndio_enc.c sndio.c"}' \
+  '{"CONFIG_V4L2_INDEV": "v4l2.c v4l2-common.c timefilter.c"}' \
+  '{"CONFIG_V4L2_OUTDEV": "v4l2enc.c v4l2-common.c"}' \
+  '{"CONFIG_VFWCAP_INDEV": "vfwcap.c"}' \
+  '{"CONFIG_XCBGRAB_INDEV": "xcbgrab.c"}' \
+  '{"CONFIG_XV_OUTDEV": "xv.c"}' \
+  '{"CONFIG_LIBCDIO_INDEV": "libcdio.c"}' \
+  '{"CONFIG_LIBDC1394_INDEV": "libdc1394.c"}' \
+  '{"CONFIG_DECKLINK_INDEV": "reverse.c"}' \
+  '{"CONFIG_DECKLINK_OUTDEV": "ccfifo.c"}' \
+  '{"HAVE_GNU_WINDRES": "avdeviceres.rc"}' \
+  '{"CONFIG_DECKLINK": "decklink_enc.h decklink_dec.h decklink_common_c.h"}' \
+  '{"CONFIG_DSHOW_INDEV": "dshow_capture.h"}' \
+  '{"CONFIG_FBDEV_INDEV": "fbdev_common.h"}' \
+  '{"CONFIG_FBDEV_OUTDEV": "fbdev_common.h"}' \
+  '{"CONFIG_LIBPULSE": "pulse_audio_common.h"}' \
+  '{"CONFIG_V4L2_INDEV": "v4l2-common.h"}' \
+  '{"CONFIG_V4L2_OUTDEV": "v4l2-common.h"}' \
+  '{"CONFIG_ALSA": "alsa.h"}' \
+  '{"CONFIG_SNDIO": "sndio.h"}' \
+  '{"HEADERS": "avdevice.h version.h version_major.h"} ' \
+  '{"OBJS": "alldevices.c avdevice.c utils.c version.c"} ' \
+  '{"SKIPHEADERS": "decklink_common.h"}'
+
+# conditional source & assembly
+import [once] libavutil%buildfile{conditional-src}
+libua{avdevice}: libavdevice/impl_target{conditional-asm-obja}
+libus{avdevice}: libavdevice/impl_target{conditional-asm-objs}
+libul{avdevice}: libavdevice/impl_target{conditional-src}
+
+libul{avdevice}: libavdevice/c{ \
+                  outdev_list \
+                  indev_list \
+                }: include = adhoc
+
+# OUTDEV_LIST=$(find_things_extern muxer FFOutputFormat libavdevice/alldevices.c outdev)
+# INDEV_LIST=$(find_things_extern demuxer FFInputFormat libavdevice/alldevices.c indev)
+# print_enabled_components libavdevice/indev_list.c FFInputFormat indev_list $INDEV_LIST
+# print_enabled_components libavdevice/outdev_list.c FFOutputFormat outdev_list $OUTDEV_LIST
+libavdevice/c{outdev_list}: libavdevice/c{alldevices} file{enabled_groups}
+{{
+  diag generate ($>)
+
+  s = $path($<[0])     # Source file.
+  f = $path($>)        # Target file.
+  cat $path($<[1]) | set -w enabled_groups [string_set]
+  pattern = "FFOutputFormat"
+  thing = "outdev"
+  struct_name = "FFOutputFormat"
+  name = "outdev_list"
+
+                # indev_list)
+                #     c=${c%_indev}_demuxer
+                # ;;
+                # outdev_list)
+                #     c=${c%_outdev}_muxer
+                # ;;
+  sed -n -e "s/^[^#]*extern.*$pattern *ff_\([^ ]*\)_$thing;/\1_demuxer/p" $s | set -n codec_LIST
+  # sed -n -e "s/^extern const AVFilter ff_[avfsinkrc]\{2,5\}_\([[:alnum:]_]\{1,\}\);/\1_filter/p" $s | set -n filter_LIST
+  # assert ($size($codec_LIST) > 0)
+  echo "static const $struct_name * const $name[] = {" > $f
+  for c: $codec_LIST
+    group = $string.ucase(CONFIG_$c)
+    if ($enabled_groups[$group])
+      echo "    &ff_$c," >> $path($>)
+    end
+  end
+  echo "    NULL };" >> $path($>)
+}}
+  
+libavdevice/c{indev_list}: libavdevice/c{alldevices} file{enabled_groups}
+{{
+  diag generate ($>)
+
+  s = $path($<[0])     # Source file.
+  f = $path($>)        # Target file.
+  cat $path($<[1]) | set -w enabled_groups [string_set]
+  pattern = "FFOutputFormat"
+  thing = "indev"
+  struct_name = "FFOutputFormat"
+  name = "indev_list"
+  sed -n -e "s/^[^#]*extern.*$pattern *ff_\([^ ]*\)_$thing;/\1_muxer/p" $s | set -n codec_LIST
+  echo "static const $struct_name * const $name[] = {" > $f
+  for c: $codec_LIST
+    group = $string.ucase(CONFIG_$c)
+    if ($enabled_groups[$group])
+      echo "    &ff_$c," >> $path($>)
+    end
+  end
+  echo "    NULL };" >> $path($>)
+}}
 
 # Build options.
 #
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
-c.poptions =+ "-I$out_pfx" "-I$src_pfx"
+c.poptions += "-I$out_pfx" "-I$src_pfx" "-I$src_pfx/libavdevice/" -DBUILDING_avdevice
+
+# System libraries
+sys_libs =
+switch $c.target.class, $c.target.system
+{
+  case 'windows', 'win32-msvc'
+    sys_libs += bcrypt.lib \
+                gdi32.lib \
+                mfuuid.lib \
+                ole32.lib \
+                oleaut32.lib \
+                psapi.lib \
+                secur32.lib \
+                shell32.lib \
+                shlwapi.lib \
+                strmiids.lib \
+                user32.lib \
+                uuid.lib \
+                vfw32.lib \
+                ws2_32.lib
+  case 'windows', 'mingw32'
+    sys_libs += -lbcrypt
+}
+c.libs += $sys_libs
+
+switch ($c.target.system)
+{
+  case 'win32-msvc'
+  {
+    c.coptions += -wd4018 -wd4146 -wd4244 -wd4305 -wd4554 -wd4133 -wd4333
+    c.poptions += -DWIN32_LEAN_AND_MEAN -D_USE_MATH_DEFINES -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_WARNINGS
+  }
+}
+
+libs{avdevice}: def{avdevice}: include = ($c.target.system == 'win32-msvc')
+def{avdevice}: libul{avdevice}
 
 if ($c.target.system == 'mingw32')
   c.loptions += -Wl,--export-all-symbols
@@ -22,7 +190,7 @@ if ($c.target.system == 'mingw32')
 lib{avdevice}:
 {
   c.export.poptions = "-I$out_pfx" "-I$src_pfx"
-  c.export.libs = $intf_libs
+  c.export.libs = $intf_libs $sys_libs
 }
 
 # For pre-releases use the complete version to make sure they cannot

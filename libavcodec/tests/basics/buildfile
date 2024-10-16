@@ -1,34 +1,50 @@
-import avutil = libavutil%lib{avutil}
+import config = libavutil%lib{config}
 import libs = \
   libavcodec%lib{avcodec} \
-  libavutil%lib{config}
+  $config
 
-TESTPROGS = avcodec                   \
-            avpacket                  \
-            bitstream_be              \
-            bitstream_le              \
-            celp_math                 \
-            codec_desc                \
-            htmlsubtitles             \
-            jpeg2000dwt               \
-            mathops                   \
-            av1_levels                \
-            cabac                     \
-            golomb                    \
-            dct                       \
-            iirfilter                 \
-            mjpegenc_huffman          \
-            motion                    \
-            mpeg12framerate           \
-            h264_levels               \
-            h265_levels               \
-            rangecoder                \
-            snowenc
+requirements = [string_set] \
+  '{"av1_levels":       "av1_vaapi_encoder"}' \
+  '{"cabac":            "cabac"}' \
+  '{"golomb":           "golomb"}' \
+  '{"dct":              "idctdsp"}' \
+  '{"iirfilter":        "iirfilter"}' \
+  '{"mjpegenc_huffman": "mjpeg_encoder"}' \
+  '{"motion":           "have_mmx"}' \
+  '{"mpeg12framerate":  "mpegvideo"}' \
+  '{"h264_levels":      "h264_metadata_bsf"}' \
+  '{"h265_levels":      "hevc_metadata_bsf"}' \
+  '{"rangecoder":       "rangecoder"}' \
+  '{"snowenc":          "snow_encoder"}'
 
-# TESTOBJS += dctref.c
-
-for t : tests/c{avcodec}
+# need upstream/tests/checkasm/ lib that conditionally builds the asm files.
+for t : tests/c{*.c}
 {
-  c = $($avutil: libavutil.$name($t))
-  ./: exe{$name($t)}: $t $libs: include = ($c == [null] || $c)
+  n = [string] $name($t)
+  e = [bool] true
+  for str: [string_set] $requirements
+  {
+    pair = [json] $json.parse($str)
+    k = [string] $member_name($pair)
+    if ($k == $n)
+    {
+      s = [string] "$member_value($pair)"
+      v = [strings] $regex.split($s, ' ', ' ')
+      for r: [strings] ($v)
+      {
+        c = $($config: libavutil.$r)
+        if($c != 1)
+        {
+          e = false
+        }
+      }
+      if(!$e)
+      {
+        print "skip test: libavcodec/tests/$n.$extension($t) \(requires: $s\)"
+      }
+    }
+  }
+
+  exe{$n}: $t $libs
+  ./: exe{$n}: include = $e
 }

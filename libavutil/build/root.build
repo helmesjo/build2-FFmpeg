@@ -11,6 +11,7 @@ using cxx
 
 h{*}: extension = h
 c{*}: extension = c
+cxx{*}: extension = cpp
 
 # The test target for cross-testing (running tests under Wine, etc).
 #

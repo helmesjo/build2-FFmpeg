@@ -1,3 +1,39 @@
-import libs = libavdevice%lib{avdevice}
+import config = libavutil%lib{config}
+import libs = \
+  libavdevice%lib{avdevice} \
+  $config
 
-exe{driver}: {h c}{**} $libs testscript{**}
+requirements = [string_set] \
+  '{"timefilter": "alsa_indev"}'
+
+# need upstream/tests/checkasm/ lib that conditionally builds the asm files.
+for t : tests/c{*.c}
+{
+  n = [string] $name($t)
+  e = [bool] true
+  for str: [string_set] $requirements
+  {
+    pair = [json] $json.parse($str)
+    k = [string] $member_name($pair)
+    if ($k == $n)
+    {
+      s = [string] "$member_value($pair)"
+      v = [strings] $regex.split($s, ' ', ' ')
+      for r: [strings] ($v)
+      {
+        c = $($config: libavutil.$r)
+        if($c != 1)
+        {
+          e = false
+        }
+      }
+      if(!$e)
+      {
+        print "skip test: libavdevice/tests/$n.$extension($t) \(requires: $s\)"
+      }
+    }
+  }
+
+  exe{$n}: $t $libs
+  ./: exe{$n}: include = $e
+}

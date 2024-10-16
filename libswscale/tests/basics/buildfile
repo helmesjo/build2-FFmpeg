@@ -1,8 +1,42 @@
+import config = libavutil%lib{config}
 import libs = \
   libswscale%lib{swscale} \
-  libavutil%lib{config}
+  $config
 
-for t : tests/c{* -colorspace}
+requirements = [string_set] \
+  '{"colorspace":     ""}' \
+  '{"floatimg_cmp":   ""}' \
+  '{"pixdesc_query":  ""}' \
+  '{"swscale":        ""}'
+
+# need upstream/tests/checkasm/ lib that conditionally builds the asm files.
+for t : tests/c{*.c}
 {
-  ./: exe{$name($t)}: $t $libs
+  n = [string] $name($t)
+  e = [bool] true
+  for str: [string_set] $requirements
+  {
+    pair = [json] $json.parse($str)
+    k = [string] $member_name($pair)
+    if ($k == $n)
+    {
+      s = [string] "$member_value($pair)"
+      v = [strings] $regex.split($s, ' ', ' ')
+      for r: [strings] ($v)
+      {
+        c = $($config: libavutil.$r)
+        if($c != 1)
+        {
+          e = false
+        }
+      }
+      if(!$e)
+      {
+        print "skip test: libswscale/tests/$n.$extension($t) \(requires: $s\)"
+      }
+    }
+  }
+
+  exe{$n}: $t $libs
+  ./: exe{$n}: include = $e
 }

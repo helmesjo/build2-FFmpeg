@@ -1,14 +1,43 @@
-import avutil = libavutil%lib{avutil}
+import config = libavutil%lib{config}
 import libs = \
   libavutil%lib{avutil} \
-  libavutil%lib{config}
+  $config
 
 # these tests are not run by upstream (ran with 'make fate -j 1 | grep libavutil')
 # -utf8 -rational
-for t : tests/c{* -lzo -utf8 -rational -pixelutils}
+requirements = [string_set] \
+  '{"pixelutils": "pixelutils and derp"}'
+
+# need upstream/tests/checkasm/ lib that conditionally builds the asm files.
+for t : tests/c{*.c -lzo}
 {
-  c = $($avutil: libavutil.$name($t))
-  ./: exe{$name($t)}: $t $libs testscript: include = ($c == [null] || $c)
+  n = [string] $name($t)
+  e = [bool] true
+  for str: [string_set] $requirements
+  {
+    pair = [json] $json.parse($str)
+    k = [string] $member_name($pair)
+    if ($k == $n)
+    {
+      s = [string] "$member_value($pair)"
+      v = [strings] $regex.split($s, ' ', ' ')
+      for r: [strings] ($v)
+      {
+        c = $($config: libavutil.$r)
+        if($c != 1)
+        {
+          e = false
+        }
+      }
+      if(!$e)
+      {
+        print "skip test: libavutil/tests/$n.$extension($t) \(requires: $s\)"
+      }
+    }
+  }
+
+  exe{$n}: $t $libs
+  ./: exe{$n}: include = $e
 }
 
 # SET ARGS HERE FOR EACH EXE WHEN EXECUTED BY TESTSCRIPT. SEE libavutil.mak
