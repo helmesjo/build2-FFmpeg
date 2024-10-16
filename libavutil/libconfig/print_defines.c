@@ -1,7 +1,7 @@
 #include <libconfig/autoconf.h>
 
-#define XSTR(x) STR(x)
 #define STR(x) #x
+#define XSTR(x) STR(x)
 
 #ifdef FFMPEG_CONFIGURATION
  #pragma message("#define FFMPEG_CONFIGURATION " XSTR(FFMPEG_CONFIGURATION))

@@ -1,13 +1,45 @@
+import config = libavutil%lib{config}
 import libs = \
   libavformat%lib{avformat} \
-  libavutil%lib{config}
+  $config
 
-TESTPROGS = seek                                                        \
-            url                                                         \
-            seek_utils
-#           async                                                       \
+requirements = [string_set] \
+  '{"fifo_muxer": "network"}' \
+  '{"network": "fifo_muxer"}' \
+  '{"rtmpdh": "ffrtmpcrypt_protocol"}' \
+  '{"movenc": "mov_muxer"}' \
+  '{"noproxy": "network"}' \
+  '{"srtp": "srtp"}' \
+  '{"imf": "imf_demuxer"}'
 
-for t : tests/c{$TESTPROGS}
+# need upstream/tests/checkasm/ lib that conditionally builds the asm files.
+for t : tests/c{*.c}
 {
-  ./: exe{$name($t)}: $t $libs
+  n = [string] $name($t)
+  e = [bool] true
+  for str: [string_set] $requirements
+  {
+    pair = [json] $json.parse($str)
+    k = [string] $member_name($pair)
+    if ($k == $n)
+    {
+      s = [string] "$member_value($pair)"
+      v = [strings] $regex.split($s, ' ', ' ')
+      for r: [strings] ($v)
+      {
+        c = $($config: libavutil.$r)
+        if($c != 1)
+        {
+          e = false
+        }
+      }
+      if(!$e)
+      {
+        info "skip test: libavformat/tests/$n.$extension($t) \(requires: $s\)"
+      }
+    }
+  }
+
+  exe{$n}: $t $libs
+  ./: exe{$n}: include = $e
 }

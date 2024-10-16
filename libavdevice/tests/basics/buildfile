@@ -29,7 +29,7 @@ for t : tests/c{*.c}
       }
       if(!$e)
       {
-        print "skip test: libavdevice/tests/$n.$extension($t) \(requires: $s\)"
+        info "skip test: libavdevice/tests/$n.$extension($t) \(requires: $s\)"
       }
     }
   }

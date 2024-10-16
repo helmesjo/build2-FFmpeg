@@ -7,16 +7,16 @@ define groups: file
 groups{*}: extension = groups
 
 if (!$defined(config))
-{
   import config = libavutil%lib{config}
-}
-import config_h = libavutil%h{config}
+if (!$defined(config_h))
+  import config_h = libavutil%h{config}
+if (!$defined(libaconfig))
+  import libaconfig = libavutil%liba{config}
+if (!$defined(libsconfig))
+  import libsconfig = libavutil%libs{config}
 
 [rule_hint=c] \
 libul{conditional-src-meta}: $impl_libs $intf_libs
-
-import libaconfig = libavutil%liba{config}
-import libsconfig = libavutil%libs{config}
 
 <file{all_groups enabled_groups enabled_source}>: $config_h
 {{

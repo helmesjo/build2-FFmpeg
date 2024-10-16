@@ -713,6 +713,44 @@ import [once] libavutil%buildfile{conditional-src}
 libua{avfilter}: libavfilter/impl_target{conditional-asm-obja}
 libus{avfilter}: libavfilter/impl_target{conditional-asm-objs}
 libul{avfilter}: libavfilter/impl_target{conditional-src}
+libul{avfilter}: libavfilter/file{patch_exports.d}:
+{
+  include = $tgt_win32
+  update = match
+}
+
+libavfilter/file{patch_exports.d}: libavfilter/h{**}
+{{
+  o = [dir_path] $directory($>)
+  all_headers = [paths] $path($<)
+
+  HDRS = [paths] $o/vf_nlmeans.h
+
+  for hdr: [paths] $all_headers
+    sed -n -e 's|^(extern .* [\S]*;)$|\1|gp' $hdr | set has_export
+    if (!$empty($has_export) && $empty($has_include))
+      HDRS += [paths] $hdr
+    end
+  end
+
+  diag patch $>
+
+  # fix symbol importation on MSVC of global variables
+  echo >$path($>)
+  for hdr: [paths] ($HDRS)
+    echo "      $path.relative($hdr, $src_base)"
+    echo $hdr >>$path($>)
+    # insert 'av_export_avfilter' before any global and explicitly 'extern' variables
+    if ($path.leaf($hdr) == 'vf_nlmeans.h')
+# void ff_nlmeans_init_aarch64(NLMeansDSPContext *dsp);
+# void ff_nlmeans_init_x86(NLMeansDSPContext *dsp);
+      sed -i -e 's|^(void ff_nlmeans_init_aarch64\(.*\);)$|av_export_avfilter \1|gp' $hdr
+      sed -i -e 's|^(void ff_nlmeans_init_x86\(.*\);)$|av_export_avfilter \1|gp' $hdr
+    else
+      sed -i -e 's|^(extern .* [\S]*;)$|av_export_avfilter \1|gp' $hdr
+    end
+  end
+}}
 
 libavfilter/c{filter_list}: libavfilter/c{allfilters} file{enabled_groups}
 {{
@@ -742,7 +780,7 @@ libavfilter/c{filter_list}: libavfilter/c{allfilters} file{enabled_groups}
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
-c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_avfilter
+c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_avfilter -Dav_export_avfilter=
 
 # System libraries
 sys_libs =
@@ -774,7 +812,7 @@ if ($c.target.system == 'mingw32')
 #
 lib{avfilter}:
 {
-  c.export.poptions = "-I$out_pfx" "-I$src_pfx"
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx" "-Dav_export_avfilter=__declspec\(dllimport\)"
   c.export.libs = $intf_libs $sys_libs
 }
 

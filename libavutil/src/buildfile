@@ -5,6 +5,10 @@ impl_libs = # Implementation dependencies.
 
 include ../libconfig/
 config = ../libconfig/lib{config}
+config_h = ../libconfig/h{config}
+libaconfig = ../libconfig/liba{config}
+libsconfig = ../libconfig/libs{config}
+
 impl_libs += $config
 
 conditional_src  = [strings] \
@@ -70,7 +74,7 @@ libul{avutil}: libavutil/file{patch_exports.d}:
   update = match
 }
 
-# tx_template.c is included, not built.
+# these c files are included, not built.
 libul{avutil}: libavutil/c{tx_template}: include = adhoc
 libavutil/c{tx_template}:
 {{

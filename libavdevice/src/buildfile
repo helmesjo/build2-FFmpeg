@@ -82,10 +82,6 @@ libul{avdevice}: libavdevice/c{ \
                   indev_list \
                 }: include = adhoc
 
-# OUTDEV_LIST=$(find_things_extern muxer FFOutputFormat libavdevice/alldevices.c outdev)
-# INDEV_LIST=$(find_things_extern demuxer FFInputFormat libavdevice/alldevices.c indev)
-# print_enabled_components libavdevice/indev_list.c FFInputFormat indev_list $INDEV_LIST
-# print_enabled_components libavdevice/outdev_list.c FFOutputFormat outdev_list $OUTDEV_LIST
 libavdevice/c{outdev_list}: libavdevice/c{alldevices} file{enabled_groups}
 {{
   diag generate ($>)
@@ -98,15 +94,7 @@ libavdevice/c{outdev_list}: libavdevice/c{alldevices} file{enabled_groups}
   struct_name = "FFOutputFormat"
   name = "outdev_list"
 
-                # indev_list)
-                #     c=${c%_indev}_demuxer
-                # ;;
-                # outdev_list)
-                #     c=${c%_outdev}_muxer
-                # ;;
   sed -n -e "s/^[^#]*extern.*$pattern *ff_\([^ ]*\)_$thing;/\1_demuxer/p" $s | set -n codec_LIST
-  # sed -n -e "s/^extern const AVFilter ff_[avfsinkrc]\{2,5\}_\([[:alnum:]_]\{1,\}\);/\1_filter/p" $s | set -n filter_LIST
-  # assert ($size($codec_LIST) > 0)
   echo "static const $struct_name * const $name[] = {" > $f
   for c: $codec_LIST
     group = $string.ucase(CONFIG_$c)
@@ -128,6 +116,7 @@ libavdevice/c{indev_list}: libavdevice/c{alldevices} file{enabled_groups}
   thing = "indev"
   struct_name = "FFOutputFormat"
   name = "indev_list"
+
   sed -n -e "s/^[^#]*extern.*$pattern *ff_\([^ ]*\)_$thing;/\1_muxer/p" $s | set -n codec_LIST
   echo "static const $struct_name * const $name[] = {" > $f
   for c: $codec_LIST

@@ -40,7 +40,7 @@ for t : tests/c{*.c}
       }
       if(!$e)
       {
-        print "skip test: libavcodec/tests/$n.$extension($t) \(requires: $s\)"
+        info "skip test: libavcodec/tests/$n.$extension($t) \(requires: $s\)"
       }
     }
   }

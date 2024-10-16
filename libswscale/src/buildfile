@@ -75,12 +75,43 @@ libswscale/file{patch_exports.d}: libswscale/h{**}
   end
 }}
 
+libul{swscale}: libswscale/c{ \
+                  bayer_template \
+                  x86/yuv2rgb_template \
+                  x86/rgb2rgb_template \
+                }: include = adhoc
+# these c files are included, not built.
+libswscale/c{bayer_template}:
+{{
+  diag copy $>
+  o = $path($>)
+  s = "$src_base/$path.relative($o, $out_base)"
+  cp $s $o
+}}
+libswscale/x86/c{yuv2rgb_template}:
+{{
+  diag copy $>
+  o = $path($>)
+  s = "$src_base/$path.relative($o, $out_base)"
+  cp $s $o
+}}
+
+libswscale/x86/c{rgb2rgb_template}:
+{{
+  diag copy $>
+  o = $path($>)
+  s = "$src_base/$path.relative($o, $out_base)"
+  cp $s $o
+}}
+
 # Build options.
 #
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
-c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_swscale
+c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_swscale=
+
+obj{**}: c.poptions += -Dav_export_swscale=
 
 # System libraries
 sys_libs =
@@ -112,7 +143,7 @@ if ($c.target.system == 'mingw32')
 #
 lib{swscale}:
 {
-  c.export.poptions = "-I$out_pfx" "-I$src_pfx" "-Dav_export_swscale=__declspec(dllimport)"
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx" "-Dav_export_swscale=__declspec\(dllimport\)"
   c.export.libs = $intf_libs $sys_libs
 }
 
