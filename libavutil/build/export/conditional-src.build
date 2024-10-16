@@ -68,9 +68,9 @@ libul{conditional-src-meta}: $impl_libs $intf_libs
   end
 
   diag configure $>
-  echo $all_groups >$path($>[0]) &$path($>[0])
-  echo $enabled_groups >$path($>[1]) &$path($>[1])
-  echo $enabled_source >$path($>[2]) &$path($>[2])
+  echo $all_groups >$path($>[0])
+  echo $enabled_groups >$path($>[1])
+  echo $enabled_source >$path($>[2])
 }}
 
 # TODO: Dont depend on all source files since we do patching in libavutil/buildfile

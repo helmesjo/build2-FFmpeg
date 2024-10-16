@@ -643,8 +643,7 @@ conditional_src = [strings] \
 # conditional source & assembly
 import [once] libavutil%buildfile{conditional-src}
 libul{avformat}: libavformat/impl_target{conditional-src}
-
-libul{avcodec}: libavformat/c{ \
+libul{avformat}: libavformat/c{ \
                   protocol_list \
                   demuxer_list \
                   muxer_list \
@@ -663,7 +662,7 @@ libavformat/c{protocol_list}: libavformat/c{protocols} file{enabled_groups}
   name = "url_protocols"
 
   sed -n -e "s/^[^#]*extern.*$pattern *ff_\([^ ]*\)_$thing;/\1_$thing/p" $s | set -n format_LIST
-  # assert ($size($format_LIST) > 0)
+
   echo "static const $struct_name * const $name[] = {" > $f
   for c: $format_LIST
     group = $string.ucase(CONFIG_$c)
@@ -674,7 +673,6 @@ libavformat/c{protocol_list}: libavformat/c{protocols} file{enabled_groups}
   echo "    NULL };" >> $path($>)
 }}
 
-# print_enabled_components libavformat/demuxer_list.c FFInputFormat demuxer_list $DEMUXER_LIST
 libavformat/c{demuxer_list}: libavformat/c{allformats} file{enabled_groups}
 {{
   diag generate ($>)
@@ -688,7 +686,7 @@ libavformat/c{demuxer_list}: libavformat/c{allformats} file{enabled_groups}
   name = "demuxer_list"
 
   sed -n -e "s/^[^#]*extern.*$pattern *ff_\([^ ]*\)_$thing;/\1_$thing/p" $s | set -n format_LIST
-  # assert ($size($format_LIST) > 0)
+
   echo "static const $struct_name * const $name[] = {" > $f
   for c: $format_LIST
     group = $string.ucase(CONFIG_$c)
@@ -712,7 +710,7 @@ libavformat/c{muxer_list}: libavformat/c{allformats} file{enabled_groups}
   name = "muxer_list"
 
   sed -n -e "s/^[^#]*extern.*$pattern *ff_\([^ ]*\)_$thing;/\1_$thing/p" $s | set -n format_LIST
-  # assert ($size($format_LIST) > 0)
+
   echo "static const $struct_name * const $name[] = {" > $f
   for c: $format_LIST
     group = $string.ucase(CONFIG_$c)

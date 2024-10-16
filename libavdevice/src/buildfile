@@ -76,7 +76,7 @@ import [once] libavutil%buildfile{conditional-src}
 libua{avdevice}: libavdevice/impl_target{conditional-asm-obja}
 libus{avdevice}: libavdevice/impl_target{conditional-asm-objs}
 libul{avdevice}: libavdevice/impl_target{conditional-src}
-
+# these c files are included, not built.
 libul{avdevice}: libavdevice/c{ \
                   outdev_list \
                   indev_list \

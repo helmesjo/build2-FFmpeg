@@ -30,62 +30,6 @@ libua{postproc}: libpostproc/impl_target{conditional-asm-obja}
 libus{postproc}: libpostproc/impl_target{conditional-asm-objs}
 libul{postproc}: libpostproc/impl_target{conditional-src}
 
-# libul{postproc}: libpostproc/c{ \
-#                   outdev_list \
-#                   indev_list \
-#                 }: include = adhoc
-
-libpostproc/c{outdev_list}: libpostproc/c{alldevices} file{enabled_groups}
-{{
-  diag generate ($>)
-
-  s = $path($<[0])     # Source file.
-  f = $path($>)        # Target file.
-  cat $path($<[1]) | set -w enabled_groups [string_set]
-  pattern = "FFOutputFormat"
-  thing = "outdev"
-  struct_name = "FFOutputFormat"
-  name = "outdev_list"
-
-                # indev_list)
-                #     c=${c%_indev}_demuxer
-                # ;;
-                # outdev_list)
-                #     c=${c%_outdev}_muxer
-                # ;;
-  sed -n -e "s/^[^#]*extern.*$pattern *ff_\([^ ]*\)_$thing;/\1_demuxer/p" $s | set -n codec_LIST
-  echo "static const $struct_name * const $name[] = {" > $f
-  for c: $codec_LIST
-    group = $string.ucase(CONFIG_$c)
-    if ($enabled_groups[$group])
-      echo "    &ff_$c," >> $path($>)
-    end
-  end
-  echo "    NULL };" >> $path($>)
-}}
-  
-libpostproc/c{indev_list}: libpostproc/c{alldevices} file{enabled_groups}
-{{
-  diag generate ($>)
-
-  s = $path($<[0])     # Source file.
-  f = $path($>)        # Target file.
-  cat $path($<[1]) | set -w enabled_groups [string_set]
-  pattern = "FFOutputFormat"
-  thing = "indev"
-  struct_name = "FFOutputFormat"
-  name = "indev_list"
-  sed -n -e "s/^[^#]*extern.*$pattern *ff_\([^ ]*\)_$thing;/\1_muxer/p" $s | set -n codec_LIST
-  echo "static const $struct_name * const $name[] = {" > $f
-  for c: $codec_LIST
-    group = $string.ucase(CONFIG_$c)
-    if ($enabled_groups[$group])
-      echo "    &ff_$c," >> $path($>)
-    end
-  end
-  echo "    NULL };" >> $path($>)
-}}
-
 # Build options.
 #
 out_pfx = [dir_path] $out_root/src/

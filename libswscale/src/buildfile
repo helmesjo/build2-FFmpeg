@@ -43,6 +43,19 @@ import [once] libavutil%buildfile{conditional-src}
 libua{swscale}: libswscale/impl_target{conditional-asm-obja}
 libus{swscale}: libswscale/impl_target{conditional-asm-objs}
 libul{swscale}: libswscale/impl_target{conditional-src}
+libul{swscale}: libswscale/c{**_template}: include = adhoc
+# these c files are included, not built.
+for t: libswscale/c{**_template}
+{
+  $t:
+  {{
+    diag copy $>
+    o = $path($>)
+    s = "$src_base/$path.relative($o, $out_base)"
+    cp $s $o
+  }}
+}
+
 libul{swscale}: libswscale/file{patch_exports.d}:
 {
   include = $tgt_win32
@@ -73,35 +86,6 @@ libswscale/file{patch_exports.d}: libswscale/h{**}
     # insert 'av_export_swscale' before any global and explicitly 'extern' variables
     sed -i -e 's|^(extern .* [\S]*;)$|av_export_swscale \1|gp' $hdr
   end
-}}
-
-libul{swscale}: libswscale/c{ \
-                  bayer_template \
-                  x86/yuv2rgb_template \
-                  x86/rgb2rgb_template \
-                }: include = adhoc
-# these c files are included, not built.
-libswscale/c{bayer_template}:
-{{
-  diag copy $>
-  o = $path($>)
-  s = "$src_base/$path.relative($o, $out_base)"
-  cp $s $o
-}}
-libswscale/x86/c{yuv2rgb_template}:
-{{
-  diag copy $>
-  o = $path($>)
-  s = "$src_base/$path.relative($o, $out_base)"
-  cp $s $o
-}}
-
-libswscale/x86/c{rgb2rgb_template}:
-{{
-  diag copy $>
-  o = $path($>)
-  s = "$src_base/$path.relative($o, $out_base)"
-  cp $s $o
 }}
 
 # Build options.

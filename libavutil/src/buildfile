@@ -75,14 +75,17 @@ libul{avutil}: libavutil/file{patch_exports.d}:
 }
 
 # these c files are included, not built.
-libul{avutil}: libavutil/c{tx_template}: include = adhoc
-libavutil/c{tx_template}:
-{{
-  diag copy $>
-  o = $path($>)
-  s = "$src_base/$path.relative($o, $out_base)"
-  cp $s $o
-}}
+libul{avutil}: libavutil/c{**_template}: include = adhoc
+for t: libavutil/c{**_template}
+{
+  $t:
+  {{
+    diag copy $>
+    o = $path($>)
+    s = "$src_base/$path.relative($o, $out_base)"
+    cp $s $o
+  }}
+}
 
 libavutil/file{patch_exports.d}: libavutil/h{**}
 {{

@@ -47,8 +47,8 @@ libus{swresample}: libswresample/impl_target{conditional-asm-objs}
 libul{swresample}: libswresample/impl_target{conditional-src}
 
 # these c files are included, not built.
-libul{swresample}: libswresample/c{**_template}: include = adhoc
-for t: libswresample/c{**_template}
+libul{swresample}: libswresample/c{**_template noise_shaping_data}: include = adhoc
+for t: libswresample/c{**_template noise_shaping_data}
 {
   $t:
   {{
