@@ -16,7 +16,39 @@ tgt_macos = [bool] ($c.target.system == 'darwin')
 ./: lib{config}: h{autoconf config config_components} $intf_libs
 lib{config}: asm{config.asm}: update = ($tgt_win32)
 
-h{config}: c{print_defines} h{autoconf}
+c{print_defines}: h{autoconf}
+{{
+  s = $path($<)
+
+  diag gen $>
+
+  file = [strings]
+  file += '#include <libconfig/autoconf.h>'
+  file += '#define STR(x) #x'
+  file += '#define XSTR(x) STR(x)'
+  file += ''
+  cat $s | for -n line
+    if ($regex.find_match($line, '#[ ]*(define|undef)[ ]+.*$'))
+      c = $regex.apply($line, '#[ ]*?(define|undef)[ ]+([A-Z0-9_]+).*$', '\2', format_no_copy)
+      if (!$empty($c))
+        file += "#ifndef $c"
+        file += "#  pragma message\(\"#define $c \" XSTR\($c\)\)"
+        file += "#else $c"
+        file += "#  pragma message\(\"#define $c 0\"\)"
+        file += "#endif"
+      end
+    end
+  end
+
+  echo '// generated' >$path($>)
+  # TODO: Do this with one write, looping is slow as hell.
+  for line: [strings] $file
+    echo $line >>$path($>)
+  end
+}}
+
+h{config}: c{print_defines}: include = adhoc
+h{config}: c{print_defines}
 {{
   s = $path($<[0])
   n = $path.leaf($s)
