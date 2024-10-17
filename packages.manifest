@@ -21,3 +21,6 @@ location: libavdevice/
 
 :
 location: libpostproc/
+
+:
+location: libconfig/

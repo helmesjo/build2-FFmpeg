@@ -3,7 +3,7 @@ using autoconf
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 
-import config = libavutil%lib{config}
+import config = libconfig%lib{config}
 impl_libs += $config
 import intf_libs += \
   libavutil%lib{avutil} \
@@ -20,12 +20,10 @@ lib{postproc}: libul{postproc}: \
 conditional_src = [strings] \
   '{"HEADERS": "postprocess.h version.h version_major.h"} ' \
   '{"OBJS": "postprocess.c version.c"} ' \
-  '{"HAVE_GNU_WINDRES": "postprocres.rc"}' \
-  '{"HEADERS": "postprocess.h version.h version_major.h"} ' \
-  '{"OBJS": "postprocess.c version.c"} '
+  '{"HAVE_GNU_WINDRES": "postprocres.rc"}'
 
 # conditional source & assembly
-import [once] libavutil%buildfile{conditional-src}
+import [once] libconfig%buildfile{conditional-src}
 libua{postproc}: libpostproc/impl_target{conditional-asm-obja}
 libus{postproc}: libpostproc/impl_target{conditional-asm-objs}
 libul{postproc}: libpostproc/impl_target{conditional-src}

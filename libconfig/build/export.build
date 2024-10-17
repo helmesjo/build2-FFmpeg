@@ -1,0 +1,6 @@
+$out_root/
+{
+  include libconfig/
+}
+
+export $out_root/libconfig/$import.target

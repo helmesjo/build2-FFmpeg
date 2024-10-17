@@ -1,4 +1,4 @@
-import config = libavutil%lib{config}
+import config = libconfig%lib{config}
 import libs = \
   libavformat%lib{avformat} \
   $config

@@ -3,7 +3,7 @@ using autoconf
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 
-import config = libavutil%lib{config}
+import config = libconfig%lib{config}
 impl_libs += $config
 import intf_libs += \
   libavutil%lib{avutil} \
@@ -709,7 +709,7 @@ conditional_src = [strings] \
   '{"HAVE_RVV":                         "riscv/af_afir_rvv.S"}'
 
 # conditional source & assembly
-import [once] libavutil%buildfile{conditional-src}
+import [once] libconfig%buildfile{conditional-src}
 libua{avfilter}: libavfilter/impl_target{conditional-asm-obja}
 libus{avfilter}: libavfilter/impl_target{conditional-asm-objs}
 libul{avfilter}: libavfilter/impl_target{conditional-src}
@@ -718,6 +718,10 @@ libul{avfilter}: libavfilter/file{patch_exports.d}:
   include = $tgt_win32
   update = match
 }
+
+libul{avfilter}: libavfilter/c{ \
+                  filter_list \
+                }: include = adhoc
 
 libavfilter/file{patch_exports.d}: libavfilter/h{**}
 {{

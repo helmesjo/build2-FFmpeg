@@ -1,4 +1,4 @@
-import config = libavutil%lib{config}
+import config = libconfig%lib{config}
 import libs = \
   libavdevice%lib{avdevice} \
   $config

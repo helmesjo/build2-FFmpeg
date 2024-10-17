@@ -3,7 +3,7 @@ using autoconf
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 
-import config = libavutil%lib{config}
+import config = libconfig%lib{config}
 impl_libs += $config
 import intf_libs += \
   libavutil%lib{avutil} \
@@ -72,7 +72,7 @@ conditional_src = [strings] \
   '{"SKIPHEADERS": "decklink_common.h"}'
 
 # conditional source & assembly
-import [once] libavutil%buildfile{conditional-src}
+import [once] libconfig%buildfile{conditional-src}
 libua{avdevice}: libavdevice/impl_target{conditional-asm-obja}
 libus{avdevice}: libavdevice/impl_target{conditional-asm-objs}
 libul{avdevice}: libavdevice/impl_target{conditional-src}

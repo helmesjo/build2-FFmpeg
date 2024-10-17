@@ -1,20 +1,6 @@
 $out_root/
 {
   include src/
-  include libconfig/
 }
 
-name = $name($import.target)
-
-if ($name == 'avutil')
-{
-  export $out_root/src/$import.target
-}
-elif ($name == 'config')
-{
-  export $out_root/libconfig/$import.target
-}
-elif ($name == 'config.groups')
-{
-  export $out_root/libconfig/$import.target
-}
+export $out_root/src/$import.target

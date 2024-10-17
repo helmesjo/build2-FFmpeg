@@ -3,7 +3,7 @@ using autoconf
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 
-import config = libavutil%lib{config}
+import config = libconfig%lib{config}
 impl_libs += $config
 import intf_libs += \
   libavutil%lib{avutil} \
@@ -20,15 +20,13 @@ lib{avcodec}: libul{avcodec}: \
 
 conditional_src = [strings] \
   '{"ARCH_HEADERS":                       "mathops.h"}' \
-  '{"HEADERS":                            "ac3_parser.h adts_parser.h avcodec.h avdct.h avfft.h bsf.h codec.h codec_desc.h codec_id.h codec_par.h d3d11va.h defs.h dirac.h dv_profile.h dxva2.h jni.h mediacodec.h packet.h qsv.h vdpau.h version.h version_major.h videotoolbox.h vorbis_parser.h"}'  \
-  '{"OBJS":                               "ac3_parser.c adts_parser.c allcodecs.c avcodec.c avdct.c avfft.c avpacket.c bitstream.c bitstream_filters.c bsf.c codec_desc.c codec_par.c d3d11va.c decode.c dirac.c dv_profile.c encode.c get_buffer.c imgconvert.c jni.c mathtables.c mediacodec.c mpeg12framerate.c options.c parser.c parsers.c profiles.c qsv_api.c raw.c refstruct.c utils.c version.c vlc.c vorbis_parser.c xiph.c"}'  \
+  '{"HEADERS":                            "ac3_parser.h adts_parser.h avcodec.h avdct.h avfft.h bsf.h codec.h codec_desc.h codec_id.h codec_par.h d3d11va.h defs.h dirac.h dv_profile.h dxva2.h jni.h mediacodec.h packet.h qsv.h vdpau.h version.h version_major.h videotoolbox.h vorbis_parser.h"}' \
+  '{"OBJS":                               "ac3_parser.c adts_parser.c allcodecs.c avcodec.c avdct.c avfft.c avpacket.c bitstream.c bitstream_filters.c bsf.c codec_desc.c codec_par.c d3d11va.c decode.c dirac.c dv_profile.c encode.c get_buffer.c imgconvert.c jni.c mathtables.c mediacodec.c mpeg12framerate.c options.c parser.c parsers.c profiles.c qsv_api.c raw.c refstruct.c utils.c version.c vlc.c vorbis_parser.c xiph.c"}' \
   '{"SHLIBOBJS":                          "log2_tab.c reverse.c"}' \
   '{"SKIPHEADERS":                        "  tableprint.h tableprint_vlc.h aaccoder_twoloop.h aaccoder_trellis.h aacenc_quantization.h aacenc_quantization_misc.h bitstream_template.h "}'  \
   '{"TESTOBJS":                           "dctref.c"}' \
-  '{"CLEANFILES":                         " "}'  \
-  '{"GEN_HEADERS":                        "           "}' \
-  '{"ARCH_HEADERS":                       "  cabac.h  "}'  \
-  '{"OBJS":                               "x86/constants.c"}'  \
+  '{"ARCH_HEADERS":                       "cabac.h"}' \
+  '{"OBJS":                               "x86/constants.c"}' \
   '{"CONFIG_FMTCONVERT":                  "aarch64/fmtconvert_init.c"}' \
   '{"CONFIG_H264CHROMA":                  "aarch64/h264chroma_init_aarch64.c"}' \
   '{"CONFIG_H264DSP":                     "aarch64/h264dsp_init_aarch64.c"}' \
@@ -1600,14 +1598,12 @@ conditional_src = [strings] \
   '{"SHLIBOBJS":                          "log2_tab.c reverse.c"}' \
   '{"SKIPHEADERS":                        "  tableprint.h tableprint_vlc.h aaccoder_twoloop.h aaccoder_trellis.h aacenc_quantization.h aacenc_quantization_misc.h bitstream_template.h "}'  \
   '{"TESTOBJS":                           "dctref.c"}' \
-  '{"CLEANFILES":                         " "}'  \
-  '{"GEN_HEADERS":                        "           "}' \
-  '{"ARCH_HEADERS":                       "  cabac.h  "}'  \
+  '{"ARCH_HEADERS":                       "cabac.h"}'  \
   '{"HAVE_MMI":                           "mips/constants.c"}' \
   '{"OBJS":                               "x86/constants.c"}'
 
 # conditional source & assembly
-import [once] libavutil%buildfile{conditional-src}
+import [once] libconfig%buildfile{conditional-src}
 libua{avcodec}: libavcodec/impl_target{conditional-asm-obja}
 libus{avcodec}: libavcodec/impl_target{conditional-asm-objs}
 libul{avcodec}: libavcodec/impl_target{conditional-src}

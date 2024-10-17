@@ -3,7 +3,7 @@ using autoconf
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 
-import config = libavutil%lib{config}
+import config = libconfig%lib{config}
 impl_libs += $config
 import intf_libs += libavutil%lib{avutil}
 
@@ -39,7 +39,7 @@ conditional_src = [strings] \
   '{"HAVE_MMX":                  "x86/hscale_fast_bilinear_simd.c"}'
 
 # conditional source & assembly
-import [once] libavutil%buildfile{conditional-src}
+import [once] libconfig%buildfile{conditional-src}
 libua{swscale}: libswscale/impl_target{conditional-asm-obja}
 libus{swscale}: libswscale/impl_target{conditional-asm-objs}
 libul{swscale}: libswscale/impl_target{conditional-src}

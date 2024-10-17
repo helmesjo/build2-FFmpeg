@@ -3,11 +3,8 @@ using autoconf
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 
-include ../libconfig/
-config = ../libconfig/lib{config}
-config_h = ../libconfig/h{config}
-libaconfig = ../libconfig/liba{config}
-libsconfig = ../libconfig/libs{config}
+# include ../libconfig/
+import config = libconfig%lib{config}
 
 impl_libs += $config
 
@@ -61,10 +58,7 @@ libul{avutil}: compat/windows/{h c}{*} \
                : include = $tgt_win32
 
 # conditional source & assembly
-libaconfig = ../libconfig/liba{config}
-libsconfig = ../libconfig/libs{config}
-
-source ../build/export/conditional-src.build
+import [once] libconfig%buildfile{conditional-src}
 libua{avutil}: libavutil/impl_target{conditional-asm-obja}: include = $tgt_win32
 libus{avutil}: libavutil/impl_target{conditional-asm-objs}: include = $tgt_win32
 libul{avutil}: libavutil/impl_target{conditional-src}
@@ -192,7 +186,7 @@ if ($c.target.system == 'mingw32')
 #
 lib{avutil}:
 {
-  c.export.poptions += "-I$out_pfx" "-I$src_pfx" -DHAVE_AV_CONFIG_H
+  c.export.poptions += "-I$out_pfx" "-I$src_pfx"
   c.export.libs = $intf_libs $sys_libs
 }
 

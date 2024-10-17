@@ -9,14 +9,14 @@ groups{*}: extension = groups
 if (!$defined(config))
   import config = libconfig%lib{config}
 if (!$defined(config_h))
-  import config_h = libavutil%h{config}
+  import config_h = libconfig%h{config}
 if (!$defined(libaconfig))
   import libaconfig = libconfig%liba{config}
 if (!$defined(libsconfig))
   import libsconfig = libconfig%libs{config}
 
 [rule_hint=c] \
-libul{conditional-src-meta}: $impl_libs $intf_libs
+libul{conditional-src-meta}: $impl_libs $intf_libs $config
 
 <file{all_groups enabled_groups enabled_source}>: $config_h
 {{
@@ -73,8 +73,6 @@ libul{conditional-src-meta}: $impl_libs $intf_libs
   echo $enabled_source >$path($>[2])
 }}
 
-# TODO: Dont depend on all source files since we do patching in libavutil/buildfile
-#       which means that it'll rerun this target each update
 $project/impl_target{conditional-src}: file{enabled_groups enabled_source all_groups}: update = match
 $project/impl_target{conditional-src}: $src_base/$name($project)/{c h hxx cxx}{**}
 {{
