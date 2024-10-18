@@ -19,40 +19,35 @@ lib{config}: asm{config.asm}: update = ($tgt_win32)
 c{print_defines}: h{autoconf}
 {{
   s = [path] "$src_base/config.h.in"
-  if ($c.target.system == 'win32-msvc')
-    print = [string] "#pragma message"
-  else
-    print = [string] "#pragma warning"
-  end
-
+  print = [string] "#pragma message"
 
   diag gen $>
 
   defs = [string_set]
   file = [strings]
-  file += '#include "autoconf.h"'
-  file += '#define STR(...) #__VA_ARGS__'
-  file += '#define XSTR(...) STR(__VA_ARGS__)'
-  file += ''
-  file += "$print\(\"#ifndef FFMPEG_CONFIG_H\"\)"
-  file += "$print\(\"#define FFMPEG_CONFIG_H\"\)"
+
+  file += "#include \"autoconf.h\""
+  file += "#define VALUE_TO_STRING\(x\) #x"
+  file += "#define VALUE\(x\) VALUE_TO_STRING\(x\)"
+  file += "#define VAR_NAME_VALUE\(var\) #var \"=\"  VALUE\(var\)"
+  file += ""
   cat $s | for -n line
     if ($regex.find_match($line, '#[ ]*(define|undef)[ ]+.*$'))
       c = $regex.apply($line, '#[ ]*?(define|undef)[ ]+([A-Z0-9_]+).*$', '\2', format_no_copy)
       if (!$empty($c) && !$defs[$c])
         defs += $c
-        file += "#ifdef $c"
-        file += "  $print\(\"#define $c \" XSTR\($c\)\)"
-        file += "#else"
-        file += "#  define $c 0"
-        file += "  $print\(\"#define $c 0\"\)"
+        file += "#ifndef $c"
+        file += "  #define $c 0"
         file += "#endif"
+        file += "$print\(\"{#define \"VAR_NAME_VALUE\($c\)\"}\"\)"
       end
     end
   end
   file += "$print\(\"#endif\"\)"
+  file = $regex.apply($file, '^(.*)$', "\1\n", format_no_copy)
 
-  echo $regex.merge($file, '(.+)', '\1\n') >>$path($>)
+  echo '// generated' >$path($>)
+  echo $file >>$path($>)
 }}
 
 h{config}: c{print_defines}: include = adhoc
@@ -66,16 +61,21 @@ h{config}: c{print_defines}
   diag configure ($>)
 
   if ($c.target.system == 'win32-msvc')
-    echo -nologo $c.poptions $cc.poptions $cc.coptions $c.mode $cxx.mode -c $s -Fo$o >$r &$r &$o
-    $effect($cxx.path) "@$r" | set tmp [string_set]
+    echo -nologo $c.poptions $cc.poptions $c.mode -c $s -Fo$o >$r &$r &$o
+    $effect($c.path) "@$r" | set tmp [string_set]
   else
-    $effect($cxx.path) $c.poptions $cc.poptions $cc.coptions $c.mode $cxx.mode -E $s -o $o >$r &$r &$o \
-                       | set tmp [string_set]
+    $effect($c.path) $c.poptions $cc.poptions $c.mode -E $s 2>! \
+                     | set tmp [string_set]
   end
-  tmp = $regex.replace($tmp, '^((?!#).*$)', '//\1')
+  tmp = $regex.apply($tmp, '\{(\#[a-z]+ [A-Za-z0-9_]+)=([0-1])\}', "\1 \2\n", format_no_copy)
+  tmp = $regex.replace($tmp, '^\s+((?!#).*$)', '//\1')
 
   echo '// generated' >$path($>)
+  echo '#ifndef FFMPEG_CONFIG_H' >>$path($>)
+  echo '#define FFMPEG_CONFIG_H' >>$path($>)
+  echo '' >>$path($>)
   echo "$tmp" >>$path($>)
+  echo '#endif' >>$path($>)
 }}
 
 asm{config.asm}: h{config}
@@ -85,7 +85,7 @@ asm{config.asm}: h{config}
   diag configure ($>)
 
   cat $s | set tmp [string_set]
-  tmp = $regex.replace($tmp, '^#[ ]*', '%')
+  tmp = $regex.replace($tmp, '\s+#[ ]*', '%')
   tmp = $regex.replace($tmp, '^//', '; ')
 
   echo "$tmp" >$path($>)
