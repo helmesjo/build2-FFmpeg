@@ -41,7 +41,7 @@ libul{conditional-src-meta}: $impl_libs $intf_libs $config
 
     filtered_srcs = [strings]
     for src: [paths] $srcs
-      # if in a immediate subdir, treat as group 'ARCH_<DIR>', eg. 'ARCH_ARM'
+      # if in an immediate subdir, treat as group 'ARCH_<DIR>', eg. 'ARCH_ARM'
       dir = $directory($src)
       dir = $regex.match($dir, '(.*)/', return_subs)
       arch_dir = $string.ucase("ARCH_$dir")
