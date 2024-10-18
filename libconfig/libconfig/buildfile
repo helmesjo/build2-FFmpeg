@@ -19,6 +19,12 @@ lib{config}: asm{config.asm}: update = ($tgt_win32)
 c{print_defines}: h{autoconf}
 {{
   s = [path] "$src_base/config.h.in"
+  if ($c.target.system == 'win32-msvc')
+    print = [string] "#pragma message"
+  else
+    print = [string] "#pragma warning"
+  end
+
 
   diag gen $>
 
@@ -28,25 +34,24 @@ c{print_defines}: h{autoconf}
   file += '#define STR(...) #__VA_ARGS__'
   file += '#define XSTR(...) STR(__VA_ARGS__)'
   file += ''
-  file += "#pragma message\(\"#ifndef FFMPEG_CONFIG_H\"\)"
-  file += "#pragma message\(\"#define FFMPEG_CONFIG_H\"\)"
+  file += "$print\(\"#ifndef FFMPEG_CONFIG_H\"\)"
+  file += "$print\(\"#define FFMPEG_CONFIG_H\"\)"
   cat $s | for -n line
     if ($regex.find_match($line, '#[ ]*(define|undef)[ ]+.*$'))
       c = $regex.apply($line, '#[ ]*?(define|undef)[ ]+([A-Z0-9_]+).*$', '\2', format_no_copy)
       if (!$empty($c) && !$defs[$c])
         defs += $c
         file += "#ifdef $c"
-        file += "#  pragma message\(\"#define $c \" XSTR\($c\)\)"
+        file += "  $print\(\"#define $c \" XSTR\($c\)\)"
         file += "#else"
         file += "#  define $c 0"
-        file += "#  pragma message\(\"#define $c 0\"\)"
+        file += "  $print\(\"#define $c 0\"\)"
         file += "#endif"
       end
     end
   end
-  file += "#pragma message\(\"#endif\"\)"
+  file += "$print\(\"#endif\"\)"
 
-  echo '// generated' >$path($>)
   echo $regex.merge($file, '(.+)', '\1\n') >>$path($>)
 }}
 
@@ -60,11 +65,16 @@ h{config}: c{print_defines}
 
   diag configure ($>)
 
-  echo -nologo $c.poptions $cc.poptions $cc.coptions $c.mode $cxx.mode -Fo$o -c $s >$r &$r &$o
-  $effect($cxx.path) "@$r" | set tmp [string_set]
+  if ($c.target.system == 'win32-msvc')
+    echo -nologo $c.poptions $cc.poptions $cc.coptions $c.mode $cxx.mode -c $s -Fo$o >$r &$r &$o
+    $effect($cxx.path) "@$r" | set tmp [string_set]
+  else
+    $effect($cxx.path) $c.poptions $cc.poptions $cc.coptions $c.mode $cxx.mode -E $s -o $o >$r &$r &$o \
+                       | set tmp [string_set]
+  end
   tmp = $regex.replace($tmp, '^((?!#).*$)', '//\1')
 
-  echo '' >$path($>)
+  echo '// generated' >$path($>)
   echo "$tmp" >>$path($>)
 }}
 
