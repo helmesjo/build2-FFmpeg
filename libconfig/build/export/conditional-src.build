@@ -26,9 +26,9 @@ libul{conditional-src-meta}: $impl_libs $intf_libs $config
   depdb hash $configs
 
   # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
-  sed -n -e 's/[#define[ ]+([A-Z0-9_]+)[ ]+1/\1/p' $configs \
+  sed -n -e 's/[#define[ ]+([A-Z0-9_]+)[ ]+1$/\1/p' $configs \
     | set -w enabled_groups [string_set]
-  sed -n -e 's/#define[ ]+([A-Z0-9_]+)[ ]+[0-1]/\1/p' $configs \
+  sed -n -e 's/#define[ ]+([A-Z0-9_]+)[ ]+[0-1]$/\1/p' $configs \
     | set -w all_groups [string_set]
 
   enabled_groups += [string_set] OBJS
@@ -48,11 +48,7 @@ libul{conditional-src-meta}: $impl_libs $intf_libs $config
       have_dir = $string.ucase("HAVE_$dir")
       enabled = [bool] true
       for group: $groups
-        if (!$enabled_groups[$group])
-          enabled = false
-        elif ($all_groups[$arch_dir] && !$enabled_groups[$arch_dir])
-          enabled = false
-        elif ($all_groups[$have_dir] && !$enabled_groups[$have_dir])
+        if (!$enabled_groups[$group] && !$enabled_groups[$arch_dir] && !$enabled_groups[$have_dir])
           enabled = false
         end
       end
@@ -68,6 +64,7 @@ libul{conditional-src-meta}: $impl_libs $intf_libs $config
   end
 
   diag configure $>
+
   echo $all_groups >$path($>[0])
   echo $enabled_groups >$path($>[1])
   echo $enabled_source >$path($>[2])
