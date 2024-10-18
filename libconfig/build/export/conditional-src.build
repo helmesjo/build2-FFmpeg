@@ -26,9 +26,9 @@ libul{conditional-src-meta}: $impl_libs $intf_libs $config
   depdb hash $configs
 
   # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
-  sed -n -e 's/^[#%A-Za-z0-9_]+ ([A-Z0-9_]+)[ ]+1/\1/p' $configs \
+  sed -n -e 's/[#define[ ]+([A-Z0-9_]+)[ ]+1/\1/p' $configs \
     | set -w enabled_groups [string_set]
-  sed -n -e 's/^[#%A-Za-z0-9_]+ ([A-Z0-9_]+)[ ]+[0-1]/\1/p' $configs \
+  sed -n -e 's/#define[ ]+([A-Z0-9_]+)[ ]+[0-1]/\1/p' $configs \
     | set -w all_groups [string_set]
 
   enabled_groups += [string_set] OBJS
