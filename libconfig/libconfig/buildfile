@@ -47,10 +47,7 @@ c{print_defines}: h{autoconf}
   file += "#pragma message\(\"#endif\"\)"
 
   echo '// generated' >$path($>)
-  # TODO: Do this with one write, looping is slow as hell.
-  for line: [strings] $file
-    echo $line >>$path($>)
-  end
+  echo $regex.merge($file, '(.+)', '\1\n') >>$path($>)
 }}
 
 h{config}: c{print_defines}: include = adhoc
