@@ -34,7 +34,6 @@ c{print_defines}: h{autoconf}
   cat $s | for -n line
     if ($regex.find_match($line, '#[ ]*(define|undef)[ ]+.*$'))
       c = $regex.apply($line, '#[ ]*?(define|undef)[ ]+([A-Z0-9_]+).*$', '\2', format_no_copy)
-        echo $c
       if (!$empty($c) && !$defs[$c])
         defs += $c
         file += "#ifndef $c"
@@ -46,7 +45,6 @@ c{print_defines}: h{autoconf}
   end
   file += "$print\(\"#endif\"\)"
   file = $regex.apply($file, '^(.*)$', "\1\n", format_no_copy)
-  echo $file
 
   echo '// generated' >$path($>)
   echo $file >>$path($>)
@@ -63,11 +61,13 @@ h{config}: c{print_defines}
   diag configure ($>)
 
   if ($c.target.system == 'win32-msvc')
-    echo -nologo $c.poptions $cc.poptions $c.mode -c $s -Fo$o >$r &$r &$o
+    echo -nologo $c.poptions $cc.poptions $c.coptions $c.mode -c $s -Fo$o >$r &$r &$o
     $effect($c.path) "@$r" | set tmp [string_set]
   else
-    $effect($c.path) $c.poptions $cc.poptions $c.mode -E $s 2>! \
+    $effect($c.path) $c.poptions $cc.poptions $c.coptions $c.mode -E $s 2>! \
                      | set tmp [string_set]
+    # quotes are printed as unicode for some reason
+    tmp = $regex.replace($tmp, '\\042', '"')
   end
   tmp = $regex.apply($tmp, '\{(\#[a-z]+ [A-Za-z0-9_]+)=(.*)\}', "\1 \2\n", format_no_copy)
   tmp = $regex.replace($tmp, '^\s+((?!#).*$)', '//\1')
@@ -96,7 +96,7 @@ asm{config.asm}: h{config}
 h{autoconf}: in{config}
 {
   FFMPEG_CONFIGURATION                 = "\"$c.target.system\""
-  FFMPEG_LICENSE                       = "\"LGPL version 2.1 or later\""
+  FFMPEG_LICENSE                       = '"LGPL version 2.1 or later"'
   SWS_MAX_FILTER_SIZE                  = 256
 
   OS_NAME                              = ($c.target.class)
