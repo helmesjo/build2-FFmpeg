@@ -22,13 +22,14 @@ makefiles=$(find ./ -type f -name "Makefile" -exec echo \; -exec cat {} \; -exec
 mandatory=$(echo "$makefiles" | sed -rne 's/^([A-Z0-9_]+)[ \+=]+(.*\.[ho])/{"\1": "\2"},/p')
 # extract all 'SOME_VAR_$(CONDITION) += files'
 conditional=$(echo "$makefiles" | sed -rne 's/^[-A-Z0-9_]+\$\(([A-Z0-9_]+)\)[ \+=]+(.*\.[a-z]+)/{"\1": "\2"},/p')
-# # extract all 'PLATFORM_VAR += files'
+# extract all 'PLATFORM_VAR += files'
 platform=$(echo "$makefiles" | sed -rne 's/^([-A-Z0-9_]+)[ \+=]+(.*\.[a-z]+)/{"\1": "\2"},/p')
 
 # change all X-OBJ -> HAVE_X
-all_files=$(echo "$mandatory" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/gp' | sort | uniq)
-all_files+=$(echo && echo "$conditional" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/gp' | sort | uniq)
-all_files+=$(echo && echo "$platform" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/gp' | sort | uniq)
+all_files=$(echo "$mandatory" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/gp')
+all_files+=$(echo && echo "$conditional" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/gp')
+all_files+=$(echo && echo "$platform" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/gp')
+all_files=$(echo "$all_files" | sort -u)
 
 if echo "$all_files" | grep -q "#"; then
   echo "$all_files"
