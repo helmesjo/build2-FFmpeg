@@ -38,7 +38,20 @@ for t : tests/c{*.c -lzo}
   ./: exe{$n}: include = $e
 }
 
-# SET ARGS HERE FOR EACH EXE WHEN EXECUTED BY TESTSCRIPT. SEE libavutil.mak
-
 c.poptions += -D_USE_MATH_DEFINES
+
+switch $c.target.system
+{
+  case 'win32-msvc'
+  {
+  }
+  case 'darwin'
+  {
+    c.coptions += -Wno-pointer-sign \
+                  -Wno-parentheses \
+                  -Wno-switch
+  }
+}
+
+# SET ARGS HERE FOR EACH EXE WHEN EXECUTED BY TESTSCRIPT. SEE libavutil.mak
 # exe{lzo}: tests/c{lzo}: include = ($c.find_system_header("lzo/lzo1x.h") != [null])
