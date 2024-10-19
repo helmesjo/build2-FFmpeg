@@ -19,11 +19,11 @@ makefiles=$(find ./ -type f -name "Makefile" -exec echo \; -exec cat {} \; -exec
 )
 
 # extract all 'SOME_VAR += files'
-mandatory=$(echo "$makefiles" | sed -rne 's/^([A-Z0-9_]+)[ \+=]+(.*\.[ho])/{"\1": "\2"}/p')
+mandatory=$(echo "$makefiles" | sed -rne 's/^([A-Z0-9_]+)[ \+=]+(.*\.[ho])/{"\1": "\2"},/p')
 # extract all 'SOME_VAR_$(CONDITION) += files'
-conditional=$(echo "$makefiles" | sed -rne 's/^[-A-Z0-9_]+\$\(([A-Z0-9_]+)\)[ \+=]+(.*\.[a-z]+)/{"\1": "\2"}/p')
+conditional=$(echo "$makefiles" | sed -rne 's/^[-A-Z0-9_]+\$\(([A-Z0-9_]+)\)[ \+=]+(.*\.[a-z]+)/{"\1": "\2"},/p')
 # # extract all 'PLATFORM_VAR += files'
-platform=$(echo "$makefiles" | sed -rne 's/^([-A-Z0-9_]+)[ \+=]+(.*\.[a-z]+)/{"\1": "\2"}/p')
+platform=$(echo "$makefiles" | sed -rne 's/^([-A-Z0-9_]+)[ \+=]+(.*\.[a-z]+)/{"\1": "\2"},/p')
 
 # change all X-OBJ -> HAVE_X
 all_files=$(echo "$mandatory" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/gp' | sort | uniq)
@@ -41,7 +41,7 @@ elif echo "$all_files" | grep -q '\\'; then
 fi
 
 while IFS= read -r line; do
-  files=$(sed -nre 's/^.*: \"(.*)\"\}/\1/p' <<< $line)
+  files=$(sed -nre 's/^.*: \"(.*)\"\},/\1/p' <<< $line)
   for file in ${files[@]}; do
     filename="${file//.*/.}"
     printf '%s' "check: $file" >&3
@@ -91,7 +91,9 @@ while IFS= read -r line; do
   done
 done <<< ${all_files[@]}
 
-echo "${all_files[@]}"
+echo '['
+echo "${all_files[@]::-1}"
+echo ']'
 
 for file in "${missing[@]}"; do
   echo "Missing: $file" >&2
