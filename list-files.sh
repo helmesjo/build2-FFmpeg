@@ -26,9 +26,9 @@ conditional=$(echo "$makefiles" | sed -rne 's/^[-A-Z0-9_]+\$\(([A-Z0-9_]+)\)[ \+
 platform=$(echo "$makefiles" | sed -rne 's/^([-A-Z0-9_]+)[ \+=]+(.*\.[a-z]+)/{"\1": "\2"}/p')
 
 # change all X-OBJ -> HAVE_X
-all_files=$(echo "$mandatory" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/gp')
-all_files+=$(echo && echo "$conditional" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/gp')
-all_files+=$(echo && echo "$platform" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/gp')
+all_files=$(echo "$mandatory" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/gp' | sort | uniq)
+all_files+=$(echo && echo "$conditional" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/gp' | sort | uniq)
+all_files+=$(echo && echo "$platform" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/gp' | sort | uniq)
 
 if echo "$all_files" | grep -q "#"; then
   echo "$all_files"
@@ -92,7 +92,6 @@ while IFS= read -r line; do
 done <<< ${all_files[@]}
 
 echo "${all_files[@]}"
-# echo "${all_files[@]}" >&3
 
 for file in "${missing[@]}"; do
   echo "Missing: $file" >&2
