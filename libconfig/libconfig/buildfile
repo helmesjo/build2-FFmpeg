@@ -32,8 +32,8 @@ c{print_defines}: h{autoconf}
   file += "#define VAR_NAME_VALUE\(var\) #var \"=\"  VALUE\(var\)"
   file += ""
   cat $s | for -n line
-    if ($regex.find_match($line, '#[ ]*(define|undef)[ ]+.*$'))
-      c = $regex.apply($line, '#[ ]*?(define|undef)[ ]+([A-Z0-9_]+).*$', '\2', format_no_copy)
+    if ($regex.find_match($line, '[ ]*#[ ]*?(define|undef)[ ]+.*$'))
+      c = $regex.apply($line, '[ ]*#[ ]*?(define|undef)[ ]+([A-Z0-9_]+).*$', '\2', format_no_copy)
       if (!$empty($c) && !$defs[$c])
         defs += $c
         file += "#ifndef $c"

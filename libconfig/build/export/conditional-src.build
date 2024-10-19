@@ -31,7 +31,7 @@ libul{conditional-src-meta}: $impl_libs $intf_libs $config
   sed -n -e 's/#define[ ]+([A-Z0-9_]+)[ ]+[0-1]$/\1/p' $configs \
     | set -w all_groups [string_set]
 
-  enabled_groups += [string_set] OBJS
+  enabled_groups += [string_set] OBJS ARCH_
 
   enabled_source = [json_array]
   for str: [strings] $conditional_src
@@ -48,7 +48,8 @@ libul{conditional-src-meta}: $impl_libs $intf_libs $config
       have_dir = $string.ucase("HAVE_$dir")
       enabled = [bool] true
       for group: $groups
-        if (!$enabled_groups[$group] && !$enabled_groups[$arch_dir] && !$enabled_groups[$have_dir])
+        if (!$enabled_groups[$group] || (!$enabled_groups[$arch_dir] && !$enabled_groups[$have_dir]))
+          disabled += "$group, $arch_dir, $have_dir"
           enabled = false
         end
       end
