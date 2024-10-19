@@ -13,8 +13,8 @@ cd "$1"
 # 3. remove empty lines
 makefiles=$(find ./ -type f -name "Makefile" -exec echo \; -exec cat {} \; -exec echo \; \
             | sed -r 's%\s*#.*$%%g' \
-            | sed -r ':x; :\\$: { N; s%\\\n%%; bx }' \
-            | sed -r 's%\s+% %g' \
+            | sed -re :a -e '/\\$/N; s/\\\n//; ta' \
+            | sed -r 's%[ ]+% %g' \
             | sed -r '/^\s*$/d' \
 )
 
@@ -31,10 +31,12 @@ all_files+=$(echo && echo "$conditional" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/g
 all_files+=$(echo && echo "$platform" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/gp')
 
 if echo "$all_files" | grep -q "#"; then
+  echo "$all_files"
   echo "Error: COMMENT FOUND!!!" >&2
   exit 1
 elif echo "$all_files" | grep -q '\\'; then
-  echo "Error ESCAPE FOUND!!!" >&2
+  echo "$all_files"
+  echo "Error: ESCAPE FOUND!!!" >&2
   exit 1
 fi
 
