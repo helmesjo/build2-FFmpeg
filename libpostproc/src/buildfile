@@ -17,10 +17,7 @@ lib{postproc}: libul{postproc}: \
                 libpostproc/h{**} \
                 $impl_libs $intf_libs
 
-conditional_src = [strings] \
-  '{"HEADERS": "postprocess.h version.h version_major.h"} ' \
-  '{"OBJS": "postprocess.c version.c"} ' \
-  '{"HAVE_GNU_WINDRES": "postprocres.rc"}'
+conditional_src  = $json.load($src_base/files.json)
 
 # conditional source & assembly
 import [once] libconfig%buildfile{conditional-src}

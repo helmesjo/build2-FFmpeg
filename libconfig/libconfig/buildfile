@@ -5363,6 +5363,36 @@ lib{config}:
   libconfig.ipns_gateway_protocol         = $libconfig.ipns_gateway_protocol
 }
 
+nowarn_flags = [strings]
+switch $c.target.system
+{
+  case 'win32-msvc'
+  {
+    nowarn_flags = -wd4018 \
+                   -wd4133 \
+                   -wd4146 \
+                   -wd4244 \
+                   -wd4305 \
+                   -wd4333 \
+                   -wd4554
+  }
+  case 'darwin'
+  {
+    nowarn_flags = -Wno-deprecated-declarations \
+                   -Wno-deprecated-pragma \
+                   -Wno-implicit-const-int-float-conversion \
+                   -Wno-implicit-function-declaration \
+                   -Wno-incompatible-pointer-types \
+                   -Wno-parentheses \
+                   -Wno-pointer-sign \
+                   -Wno-switch
+  }
+}
+
+lib{config}:
+{
+  c.export.poptions += $nowarn_flags
+}
 liba{config}:
 {
   c.export.poptions += -DCONFIG_STATIC

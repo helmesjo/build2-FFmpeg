@@ -34,8 +34,7 @@ libul{conditional-src-meta}: $impl_libs $intf_libs $config
   enabled_groups += [string_set] OBJS ARCH_
 
   enabled_source = [json_array]
-  for str: [strings] $conditional_src
-    pair = [json] $json.parse($str)
+  for pair: [json] $conditional_src
     echo $member_name($pair)  | set -w groups [strings]
     echo $member_value($pair) | set -w srcs [paths]
 
