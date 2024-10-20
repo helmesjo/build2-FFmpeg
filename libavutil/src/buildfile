@@ -26,8 +26,8 @@ libul{avutil}: compat/windows/{h c}{*} \
 
 # conditional source & assembly
 import [once] libconfig%buildfile{conditional-src}
-libua{avutil}: libavutil/impl_target{conditional-asm-obja}: include = $tgt_win32
-libus{avutil}: libavutil/impl_target{conditional-asm-objs}: include = $tgt_win32
+libua{avutil}: libavutil/impl_target{conditional-asm-obja}
+libus{avutil}: libavutil/impl_target{conditional-asm-objs}
 libul{avutil}: libavutil/impl_target{conditional-src}
 libul{avutil}: libavutil/file{patch_exports.d}:
 {

@@ -13,8 +13,7 @@ cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
 tgt_macos = [bool] ($c.target.system == 'darwin')
 
-./: lib{config}: h{autoconf config config_components} $intf_libs
-lib{config}: asm{config.asm}: update = ($tgt_win32)
+./: lib{config}: h{autoconf config config_components} asm{config.asm} $intf_libs
 
 c{print_defines}: h{autoconf}
 {{

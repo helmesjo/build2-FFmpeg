@@ -166,8 +166,8 @@ $project/impl_target{conditional-asm-obja}: $src_base/$name($project)/asm{**}
     src = $path.posix_string($s/$path.base($file).asm)
     dst = $path.posix_string($o/$file)
     mkdir --parents $directory($dst)
-    yasm "-I$out_base" "-I$src_base" -f win64 --arch=x86 "-Pconfig.asm" \
-          $c.poptions $lib_poptions -o $dst $src
+    yasm "-I$out_base" "-I$src_base" --arch=x86 "-Pconfig.asm" \
+          $c.coptions $c.poptions $cc.coptions $cc.poptions $lib_poptions -o $dst $src
   end
   touch $d
 }}
@@ -215,8 +215,8 @@ $project/impl_target{conditional-asm-objs}: $src_base/$name($project)/asm{**}
     src = $path.posix_string($s/$path.base($file).asm)
     dst = $path.posix_string($o/$file)
     mkdir --parents $directory($dst)
-    yasm "-I$out_base" "-I$src_base" -f win64 --arch=x86 "-Pconfig.asm" \
-          $c.poptions $lib_poptions -o $dst $src
+    yasm "-I$out_base" "-I$src_base" --arch=x86 "-Pconfig.asm" \
+          $c.coptions $c.poptions $cc.coptions $cc.poptions $lib_poptions -o $dst $src
   end
   touch $d
 }}
