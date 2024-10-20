@@ -42,7 +42,7 @@ c{print_defines}: h{autoconf}
         file += "#ifndef $c"
         file += "  #define $c 0"
         file += "#endif"
-        file += "$print $tmp"
+        file += "$print\($tmp\)"
       end
     end
   end
@@ -68,11 +68,11 @@ h{config}: c{print_defines}
   else
     $effect($c.path) $c.poptions $cc.poptions $c.coptions $c.mode -E $s 2>! \
                      | set tmp [string_set]
-    # quotes are printed as unicode for some reason (macos)
+    # quotes are printed as unicode with clang
     tmp = $regex.replace($tmp, '\\042', '"')
   end
 
-  tmp = $regex.apply($tmp, '\{(#[a-zA-Z]+) \\\"([A-Za-z0-9_]+)\\\"=(.*)\}', "\1 \2 \3\n", format_no_copy)
+  tmp = $regex.apply($tmp, '\{(#[a-zA-Z]+) [\\"]{1,2}([A-Za-z0-9_]+)[\\"]{1,2}=(.*)\}', "\1 \2 \3\n", format_no_copy)
   tmp = $regex.replace($tmp, '^\s+((?!#).*$)', '//\1')
   tmp = $regex.replace($tmp, '\\\"', '"')
 
