@@ -51,7 +51,6 @@ c{print_defines}: h{autoconf}
   echo $file >>$path($>)
 }}
 
-h{config}: c{print_defines}: include = adhoc
 h{config}: c{print_defines}
 {{
   s = $path($<)
