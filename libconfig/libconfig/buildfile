@@ -26,20 +26,21 @@ c{print_defines}: h{autoconf}
   defs = [string_set]
   file = [strings]
 
-  file += "#include \"autoconf.h\""
-  file += "#define VALUE_TO_STRING\(x\) #x"
-  file += "#define VALUE\(x\) VALUE_TO_STRING\(x\)"
-  file += "#define VAR_NAME_VALUE\(var\) #var \"=\"  VALUE\(var\)"
+  file += '#include "autoconf.h"'
+  file += '#define STRINGIFY(x) #x'
+  file += '#define TOSTRING(x) STRINGIFY(x)'
   file += ""
   cat $s | for -n line
     if ($regex.find_match($line, '[ ]*#[ ]*?(define|undef)[ ]+.*$'))
       c = $regex.apply($line, '[ ]*#[ ]*?(define|undef)[ ]+([A-Z0-9_]+).*$', '\2', format_no_copy)
-      if (!$empty($c) && !$defs[$c])
+      if (!$empty($c) && $c != 'FFMPEG_CONFIG_H' && !$defs[$c])
         defs += $c
+        tmp = [string] '"{#define DEF=" TOSTRING(DEF) "}"'
+        tmp = $string.replace($tmp, 'DEF', "$c")
         file += "#ifndef $c"
         file += "  #define $c 0"
         file += "#endif"
-        file += "$print\(\"{#define \"VAR_NAME_VALUE\($c\)\"}\"\)"
+        file += "$print\($tmp\)"
       end
     end
   end
@@ -66,7 +67,7 @@ h{config}: c{print_defines}
   else
     $effect($c.path) $c.poptions $cc.poptions $c.coptions $c.mode -E $s 2>! \
                      | set tmp [string_set]
-    # quotes are printed as unicode for some reason
+    # quotes are printed as unicode for some reason (macos)
     tmp = $regex.replace($tmp, '\\042', '"')
   end
   tmp = $regex.apply($tmp, '\{(\#[a-z]+ [A-Za-z0-9_]+)=(.*)\}', "\1 \2\n", format_no_copy)
