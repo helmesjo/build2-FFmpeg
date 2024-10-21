@@ -138,10 +138,6 @@ switch $c.target.system
       lib{avutil}: c.export.poptions += "-I$src_pfx/compat/atomics/win32/"
     }
   }
-  case 'darwin'
-  {
-    c.loptions += -Wl,-dynamic,-search_paths_first
-  }
 }
 
 libs{avutil}: def{avutil}: include = ($c.target.system == 'win32-msvc')
