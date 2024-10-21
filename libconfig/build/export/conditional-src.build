@@ -6,6 +6,27 @@ asm{*}: extension = asm
 define groups: file
 groups{*}: extension = groups
 
+as_format = [string_map] \
+  'linux-gnu-x86_64'@elf64   \
+  'linux-gnu-i686'@elf32     \
+  'linux-musl-x86_64'@elf64  \
+  'linux-musl-i686'@elf32    \
+  'linux-gnu-elbrus'@elf64   \
+  'win32-msvc-x86_64'@win64  \
+  'win32-msvc-i686'@win32    \
+  'win32-mingw-x86_64'@win64 \
+  'win32-mingw-i686'@win32   \
+  'darwin-x86_64'@macho64    \
+  'darwin-i686'@macho32      \
+  'freebsd-x86_64'@elf64     \
+  'freebsd-i686'@elf32       \
+  'netbsd-x86_64'@elf64      \
+  'netbsd-i686'@elf32        \
+  'openbsd-x86_64'@elf64     \
+  'openbsd-i686'@elf32       \
+  'solaris-x86_64'@elf64     \
+  'solaris-i686'@elf32
+
 if (!$defined(config))
   import config = libconfig%lib{config}
 if (!$defined(config_h))
@@ -155,14 +176,16 @@ $project/impl_target{conditional-asm-obja}: $src_base/$name($project)/asm{**}
       echo ($d $SRCS) | tr ' ' '\n' >$d && \
       echo '' >>$d && echo $path.representation([dir_path] $o) >>$d
 
-  diag yasm ($>)
+  diag nasm ($>)
 
+  key = [string] "$c.target.system-$c.target.cpu"
+  format = ($as_format[$key])
   for file: [paths] $SRCS
     src = $path.posix_string($s/$path.base($file).asm)
     dst = $path.posix_string($o/$file)
     mkdir --parents $directory($dst)
-    yasm "-I$out_base" "-I$src_base" -f win64 --arch=x86 "-Pconfig.asm" \
-          $c.poptions $lib_poptions -o $dst $src
+    nasm -f $format "-Pconfig.asm" \
+         $c.poptions $lib_poptions -o $dst $src
   end
   touch $d
 }}
@@ -204,14 +227,16 @@ $project/impl_target{conditional-asm-objs}: $src_base/$name($project)/asm{**}
       echo ($d $SRCS) | tr ' ' '\n' >$d && \
       echo '' >>$d && echo $path.representation([dir_path] $o) >>$d
 
-  diag yasm ($>)
+  diag nasm ($>)
 
+  key = [string] "$c.target.system-$c.target.cpu"
+  format = ($as_format[$key])
   for file: [paths] $SRCS
     src = $path.posix_string($s/$path.base($file).asm)
     dst = $path.posix_string($o/$file)
     mkdir --parents $directory($dst)
-    yasm "-I$out_base" "-I$src_base" -f win64 --arch=x86 "-Pconfig.asm" \
-          $c.poptions $lib_poptions -o $dst $src
+    nasm -f $format "-Pconfig.asm" \
+         $c.poptions $lib_poptions -o $dst $src
   end
   touch $d
 }}
