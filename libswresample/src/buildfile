@@ -40,6 +40,8 @@ for t: libswresample/c{**_template noise_shaping_data}
 
 # Build options.
 #
+import [once] libconfig%buildfile{common-configs}
+
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 

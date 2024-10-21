@@ -1,0 +1,64 @@
+switch $c.target.system
+{
+  case 'win32-msvc'
+  {
+    if(!$empty($c.coptions))
+    {
+      if(($string.find($c.coptions, "-Od") || $string.find($c.coptions, '/Od')) \
+         && (!$find($c.coptions, '-Og') && !$find($c.coptions, '/Og')))
+      {
+        warn "/Od is not supported with MSVC, complementing with /Og"
+        c.coptions += -Og
+      }
+    }
+  }
+}
+
+# see upstream ./configure line 5671
+switch $c.target.system
+{
+  case 'win32-msvc'
+  {
+    c.coptions += -wd4018 \
+                  -wd4133 \
+                  -wd4146 \
+                  -wd4244 \
+                  -wd4305 \
+                  -wd4333 \
+                  -wd4554
+    c.loptions  = -LARGEADDRESSAWARE
+    c.poptions  = -DWIN32_LEAN_AND_MEAN \
+                  -D_USE_MATH_DEFINES \
+                  -D_CRT_SECURE_NO_WARNINGS \
+                  -D_CRT_NONSTDC_NO_WARNINGS
+  }
+  default
+  {
+    c.coptions +  = -Wno-deprecated-declarations \
+                    -Wno-deprecated-pragma \
+                    -Wno-implicit-const-int-float-conversion \
+                    -Wno-implicit-function-declaration \
+                    -Wno-incompatible-pointer-types \
+                    -Wno-parentheses \
+                    -Wno-pointer-sign \
+                    -Wno-shift-op-parentheses \
+                    -Wno-switch
+
+    switch $c.target.class: path.match
+    {
+      case 'macos'
+      {
+        c.loptions += -Wl,-dynamic,-search_paths_first
+      }
+      case '*'
+      {
+        c.loptions += -Wl,-Bsymbolic
+        c.poptions += -D_POSIX_SOURCE \
+                      -D_ISOC11_SOURCE \
+                      -D__STDC_CONSTANT_MACROS \
+                      -D_POSIX_C_SOURCE=200112 \
+                      -D_XOPEN_SOURCE=600
+      }
+    }
+  }
+}

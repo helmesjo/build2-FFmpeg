@@ -78,6 +78,8 @@ libavdevice/c{indev_list}: libavdevice/c{alldevices} file{enabled_groups}
 
 # Build options.
 #
+import [once] libconfig%buildfile{common-configs}
+
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 

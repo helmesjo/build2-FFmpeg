@@ -27,6 +27,8 @@ libul{postproc}: libpostproc/impl_target{conditional-src}
 
 # Build options.
 #
+import [once] libconfig%buildfile{common-configs}
+
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
