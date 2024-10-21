@@ -110,6 +110,16 @@ lib{swscale}:
   c.export.libs = $intf_libs $sys_libs
 }
 
+liba{swscale}:
+{
+  c.export.poptions += -Dav_export_swscale=
+}
+
+libs{swscale}:
+{
+  c.export.poptions += -Dav_export_swscale=__declspec\(dllimport\)
+}
+
 # For pre-releases use the complete version to make sure they cannot
 # be used in place of another pre-release or the final version. See
 # the version module for details on the version.* variable values.

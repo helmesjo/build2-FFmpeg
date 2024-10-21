@@ -65,7 +65,7 @@ libavutil/file{patch_exports.d}: libavutil/h{**}
   HDRS = [paths] $o/emms.h
 
   for hdr: [paths] $all_headers
-    sed -n -e 's|^(extern [a-zA-Z ]* [\S]*;)$|\1|gp' $hdr | set has_export
+    sed -n -e 's|^(extern [ \S]*;)$|\1|gp' $hdr | set has_export
     if (!$empty($has_export))
       HDRS += [paths] $hdr
     end
@@ -91,7 +91,7 @@ libavutil/file{patch_exports.d}: libavutil/h{**}
         sed -i -e 's|^(#define AVUTIL_'"$ucase($name($hdr))"'_H)$|\1\n#include <libavutil/internal.h>|g' $hdr
       end
       # insert 'av_export_avutil' before any global and explicitly 'extern' variables
-      sed -i -e 's|^(extern [a-zA-Z ]* [\S]*;)$|av_export_avutil \1|gp' $hdr
+      sed -i -e 's|^(extern [ \S]*;)$|av_export_avutil \1|gp' $hdr
     end
   end
 }}

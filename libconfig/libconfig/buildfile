@@ -3,9 +3,6 @@ using autoconf
 define asm: file
 asm{*}: extension = asm
 
-define groups: file
-groups{*}: extension = groups
-
 intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 

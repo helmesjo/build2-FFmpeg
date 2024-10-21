@@ -3,9 +3,6 @@ define [see_through] impl_target: group
 define asm: file
 asm{*}: extension = asm
 
-define groups: file
-groups{*}: extension = groups
-
 as_format = [string_map] \
   'linux-gnu-x86_64'@elf64   \
   'linux-gnu-i686'@elf32     \
