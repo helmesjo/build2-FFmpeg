@@ -34,17 +34,39 @@ switch $c.target.system
   }
   default
   {
-    c.coptions += -Wno-deprecated-declarations \
-                  -Wno-deprecated-pragma \
-                  -Wno-implicit-const-int-float-conversion \
-                  -Wno-implicit-function-declaration \
-                  -Wno-incompatible-pointer-types \
-                  -Wno-parentheses \
-                  -Wno-pointer-sign \
-                  -Wno-shift-op-parentheses \
-                  -Wno-switch
-
     objs{**}: c.poptions += -DCONFIG_PIC=1 -DPIC=1
+
+    switch $c.id: path.match
+    {
+      case 'clang*'
+      {
+        c.coptions += -Wno-deprecated-declarations \
+                      -Wno-deprecated-pragma \
+                      -Wno-format \
+                      -Wno-implicit-const-int-float-conversion \
+                      -Wno-implicit-function-declaration \
+                      -Wno-incompatible-pointer-types \
+                      -Wno-parentheses \
+                      -Wno-pointer-sign \
+                      -Wno-shift-op-parentheses \
+                      -Wno-switch \
+                      -Wno-unused-function \
+                      -Wno-unused-variable
+      }
+      case 'gcc'
+      {
+        c.coptions += -Wno-deprecated-declarations \
+                      -Wno-format \
+                      -Wno-implicit-function-declaration \
+                      -Wno-incompatible-pointer-types \
+                      -Wno-maybe-uninitialized \
+                      -Wno-parentheses \
+                      -Wno-pointer-sign \
+                      -Wno-switch \
+                      -Wno-unused-function \
+                      -Wno-unused-variable
+      }
+    }
 
     switch $c.target.class: path.match
     {
