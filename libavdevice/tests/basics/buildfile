@@ -34,7 +34,10 @@ for t : tests/c{*.c}
     }
   }
 
-  exe{test-$n}: $t $libs
+  exe{test-$n}: $t $libs testscript
+  {
+    cwd = [path] $path.posix_representation($src_base/tests/)
+  }
   ./: exe{test-$n}: include = $e
 }
 
