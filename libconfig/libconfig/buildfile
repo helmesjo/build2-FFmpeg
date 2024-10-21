@@ -2740,6 +2740,7 @@ pflags    = [strings]
 spflags   = [strings]
 lflags    = [strings]
 sys_libs  = [strings]
+# see upstream ./configure line 5671
 switch $c.target.system
 {
   case 'win32-msvc'
@@ -2752,27 +2753,43 @@ switch $c.target.system
              -wd4333 \
              -wd4554
     lflags = -LARGEADDRESSAWARE
+    pflags = -DWIN32_LEAN_AND_MEAN \
+             -D_USE_MATH_DEFINES \
+             -D_CRT_SECURE_NO_WARNINGS \
+             -D_CRT_NONSTDC_NO_WARNINGS
   }
   default
   {
-    cflags = -Wno-deprecated-declarations \
-             -Wno-deprecated-pragma \
-             -Wno-implicit-const-int-float-conversion \
-             -Wno-implicit-function-declaration \
-             -Wno-incompatible-pointer-types \
-             -Wno-parentheses \
-             -Wno-pointer-sign \
-             -Wno-shift-op-parentheses \
-             -Wno-switch
-    pflags = -D_POSIX_SOURCE \
-             -D_ISOC11_SOURCE -D__STDC_CONSTANT_MACROS -D_POSIX_C_SOURCE=200112 -D_XOPEN_SOURCE=600
-    spflags = -DCONFIG_PIC=1 -DPIC=1
-    lflags = -Wl,-Bsymbolic
+    cflags   = -Wno-deprecated-declarations \
+               -Wno-deprecated-pragma \
+               -Wno-implicit-const-int-float-conversion \
+               -Wno-implicit-function-declaration \
+               -Wno-incompatible-pointer-types \
+               -Wno-parentheses \
+               -Wno-pointer-sign \
+               -Wno-shift-op-parentheses \
+               -Wno-switch
+    spflags  = -DCONFIG_PIC=1 -DPIC=1
     sys_libs = -lm
 
-    if($c.id == 'clang-apple')
+    switch $c.target.class: regex.match
     {
-      spflags += -Wl,-dynamic,-search_paths_first
+      case 'macos'
+      {
+        lflags += -Wl,-dynamic,-search_paths_first
+      }
+      case 'linux'
+      {
+        lflags += -Wl,-Bsymbolic
+      }
+      case '*'
+      {
+        pflags += -D_POSIX_SOURCE \
+                  -D_ISOC11_SOURCE \
+                  -D__STDC_CONSTANT_MACROS \
+                  -D_POSIX_C_SOURCE=200112 \
+                  -D_XOPEN_SOURCE=600
+      }
     }
   }
 }
@@ -2792,9 +2809,9 @@ libs{config}:
 #
 lib{config}:
 {
-  c.export.poptions += "-I$out_pfx"  "-I$out_pfx/libconfig/" "-I$src_pfx" -DHAVE_AV_CONFIG_H $pflags
+  c.export.poptions += "-I$out_pfx"  "-I$out_pfx/libconfig/" "-I$src_pfx" -DHAVE_AV_CONFIG_H
   # c.export.coptions is ignored for binless targets, so add it to poptions instead
-  c.export.poptions += $cflags
+  c.export.poptions += $pflags $cflags
   c.export.loptions += $lflags
   c.export.libs     += $intf_libs $sys_libs
 }

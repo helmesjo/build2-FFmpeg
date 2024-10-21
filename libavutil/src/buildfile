@@ -128,8 +128,6 @@ switch $c.target.system
 {
   case 'win32-msvc'
   {
-    c.poptions += -DWIN32_LEAN_AND_MEAN -D_USE_MATH_DEFINES -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_WARNINGS
-
     # <stdatomic.h> compatibility
     use_compat_atomics = [bool] $tgt_win32 # ($c.find_system_header("stdatomic.h") == [null]) # NEED TO CHECK $c.std <= 17 (but handle case when not defined)
     if ($use_compat_atomics)
