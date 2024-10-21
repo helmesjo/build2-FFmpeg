@@ -2772,18 +2772,15 @@ switch $c.target.system
     spflags  = -DCONFIG_PIC=1 -DPIC=1
     sys_libs = -lm
 
-    switch $c.target.class: regex.match
+    switch $c.target.class: path.match
     {
       case 'macos'
       {
         lflags += -Wl,-dynamic,-search_paths_first
       }
-      case 'linux'
-      {
-        lflags += -Wl,-Bsymbolic
-      }
       case '*'
       {
+        lflags += -Wl,-Bsymbolic
         pflags += -D_POSIX_SOURCE \
                   -D_ISOC11_SOURCE \
                   -D__STDC_CONSTANT_MACROS \
