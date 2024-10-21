@@ -26,23 +26,25 @@ switch $c.target.system
                   -wd4305 \
                   -wd4333 \
                   -wd4554
-    c.loptions  = -LARGEADDRESSAWARE
-    c.poptions  = -DWIN32_LEAN_AND_MEAN \
+    c.loptions += -LARGEADDRESSAWARE
+    c.poptions += -DWIN32_LEAN_AND_MEAN \
                   -D_USE_MATH_DEFINES \
                   -D_CRT_SECURE_NO_WARNINGS \
                   -D_CRT_NONSTDC_NO_WARNINGS
   }
   default
   {
-    c.coptions +  = -Wno-deprecated-declarations \
-                    -Wno-deprecated-pragma \
-                    -Wno-implicit-const-int-float-conversion \
-                    -Wno-implicit-function-declaration \
-                    -Wno-incompatible-pointer-types \
-                    -Wno-parentheses \
-                    -Wno-pointer-sign \
-                    -Wno-shift-op-parentheses \
-                    -Wno-switch
+    c.coptions += -Wno-deprecated-declarations \
+                  -Wno-deprecated-pragma \
+                  -Wno-implicit-const-int-float-conversion \
+                  -Wno-implicit-function-declaration \
+                  -Wno-incompatible-pointer-types \
+                  -Wno-parentheses \
+                  -Wno-pointer-sign \
+                  -Wno-shift-op-parentheses \
+                  -Wno-switch
+
+    objs{**}: c.poptions += -DCONFIG_PIC=1 -DPIC=1
 
     switch $c.target.class: path.match
     {
