@@ -60,9 +60,9 @@ libavdevice/c{indev_list}: libavdevice/c{alldevices} file{enabled_groups}
   s = $path($<[0])     # Source file.
   f = $path($>)        # Target file.
   cat $path($<[1]) | set -w enabled_groups [string_set]
-  pattern = "FFOutputFormat"
+  pattern = "FFInputFormat"
   thing = "indev"
-  struct_name = "FFOutputFormat"
+  struct_name = "FFInputFormat"
   name = "indev_list"
 
   sed -n -e "s/^[^#]*extern.*$pattern *ff_\([^ ]*\)_$thing;/\1_muxer/p" $s | set -n codec_LIST
