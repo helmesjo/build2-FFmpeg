@@ -34,8 +34,8 @@ for t : tests/c{*.c -lzo}
     }
   }
 
-  exe{$n}: $t $libs
-  ./: exe{$n}: include = $e
+  exe{test-$n}: $t $libs
+  ./: exe{test-$n}: include = $e
 }
 
 c.poptions += -D_USE_MATH_DEFINES

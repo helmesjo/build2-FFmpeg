@@ -34,6 +34,6 @@ for t : tests/c{*.c}
     }
   }
 
-  exe{$n}: $t $libs
-  ./: exe{$n}: include = $e
+  exe{test-$n}: $t $libs
+  ./: exe{test-$n}: include = $e
 }
