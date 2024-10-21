@@ -34,11 +34,12 @@ for t : tests/c{*.c -lzo}
     }
   }
 
-  exe{test-$n}: $t $libs
+  exe{test-$n}: $t $libs testscript
+  {
+    cwd = [path] $src_base/tests/
+  }
   ./: exe{test-$n}: include = $e
 }
 
-c.poptions += -D_USE_MATH_DEFINES
-
-# SET ARGS HERE FOR EACH EXE WHEN EXECUTED BY TESTSCRIPT. SEE libavutil.mak
-# exe{lzo}: tests/c{lzo}: include = ($c.find_system_header("lzo/lzo1x.h") != [null])
+# needs some (any) file as input
+exe{test-utf8}: test.arguments = "$src_base/tests/file.c"
