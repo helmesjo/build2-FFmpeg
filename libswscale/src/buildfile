@@ -76,8 +76,6 @@ src_pfx = [dir_path] $src_root/src/
 
 c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_swscale
 
-obj{**}: c.poptions += -Dav_export_swscale=
-
 # System libraries
 sys_libs =
 switch $c.target.class, $c.target.system
@@ -108,7 +106,7 @@ if ($c.target.system == 'mingw32')
 #
 lib{swscale}:
 {
-  c.export.poptions = "-I$out_pfx" "-I$src_pfx" "-Dav_export_swscale=__declspec\(dllimport\)"
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx"
   c.export.libs = $intf_libs $sys_libs
 }
 
@@ -117,9 +115,12 @@ liba{swscale}:
   c.export.poptions += -Dav_export_swscale=
 }
 
-libs{swscale}:
+if ($c.target.system == 'win32-msvc')
 {
-  c.export.poptions += -Dav_export_swscale=__declspec\(dllimport\)
+  libs{swscale}:
+  {
+    c.export.poptions += -Dav_export_swscale=__declspec\(dllimport\)
+  }
 }
 
 # For pre-releases use the complete version to make sure they cannot

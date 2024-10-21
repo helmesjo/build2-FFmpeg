@@ -121,8 +121,8 @@ switch $c.target.class, $c.target.system
     sys_libs += bcrypt.lib
   case 'windows', 'mingw32'
     sys_libs += -lbcrypt
-  case 'macos'
-    sys_libs += -pthread
+  default
+    sys_libs += -pthread -lm
 }
 c.libs += $sys_libs
 
