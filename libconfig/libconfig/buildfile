@@ -324,7 +324,6 @@ h{autoconf}: in{config}
   CONFIG_MEMORY_POISONING              = ($config.libconfig.memory_poisoning ? 1 : 0)
   CONFIG_NEON_CLOBBER_TEST             = ($config.libconfig.neon_clobber_test ? 1 : 0)
   CONFIG_OSSFUZZ                       = ($config.libconfig.ossfuzz ? 1 : 0)
-  CONFIG_PIC                           = ($config.libconfig.pic ? 1 : 0)
   CONFIG_PTX_COMPRESSION               = ($config.libconfig.ptx_compression ? 1 : 0)
   CONFIG_THUMB                         = ($config.libconfig.thumb ? 1 : 0)
   CONFIG_VALGRIND_BACKTRACE            = ($config.libconfig.valgrind_backtrace ? 1 : 0)
@@ -5402,7 +5401,7 @@ liba{config}:
 }
 libs{config}:
 {
-  c.export.poptions += -DCONFIG_SHARED
+  c.export.poptions += -DCONFIG_SHARED -DPIC -DCONFIG_PIC=1
 }
 
 # For pre-releases use the complete version to make sure they cannot
