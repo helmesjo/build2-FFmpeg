@@ -43,3 +43,7 @@ for t : tests/c{*.c -lzo}
 
 # needs some (any) file as input
 exe{test-utf8}: test.arguments = $path.posix_string($src_base/tests/file.c)
+
+## Build options.
+#
+import [once] libconfig%buildfile{common-configs}

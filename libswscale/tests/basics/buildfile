@@ -40,3 +40,7 @@ for t : tests/c{*.c}
   exe{test-$n}: $t $libs
   ./: exe{test-$n}: include = $e
 }
+
+## Build options.
+#
+import [once] libconfig%buildfile{common-configs}
