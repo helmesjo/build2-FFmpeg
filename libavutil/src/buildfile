@@ -128,6 +128,14 @@ switch $c.target.system
 {
   case 'win32-msvc'
   {
+    # if(($find($c.coptions, '-Od') || $find($c.coptions, '/Od')) \
+    if(($string.find($c.coptions, "-Od") || $string.find($c.coptions, '/Od')) \
+       && (!$find($c.coptions, '-Og') && !$find($c.coptions, '/Og')))
+    {
+      warn "/Od is not supported with MSVC, complementing with /Og"
+      c.coptions += -Og
+    }
+
     # <stdatomic.h> compatibility
     use_compat_atomics = [bool] $tgt_win32 # ($c.find_system_header("stdatomic.h") == [null]) # NEED TO CHECK $c.std <= 17 (but handle case when not defined)
     if ($use_compat_atomics)
