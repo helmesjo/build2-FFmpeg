@@ -2727,8 +2727,6 @@ h{autoconf}: in{config}
 
 # Build options.
 #
-import [once] libconfig%buildfile{common-configs}
-
 out_pfx = [dir_path] $out_root/
 src_pfx = [dir_path] $src_root/libconfig/
 
