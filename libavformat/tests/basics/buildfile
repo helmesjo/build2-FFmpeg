@@ -13,7 +13,9 @@ requirements = [string_set] \
   '{"imf": "imf_demuxer"}'
 
 # need upstream/tests/checkasm/ lib that conditionally builds the asm files.
-for t : tests/c{*.c}
+# TODO: Figure out what seek needs as input (the fate testing
+#       is one giant mess).
+for t : tests/c{*.c -seek}
 {
   n = [string] $name($t)
   e = [bool] true
