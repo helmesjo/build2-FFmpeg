@@ -7,7 +7,9 @@ requirements = [string_set] \
   '{"integral": "nlmeans_filter"}'
 
 # need upstream/tests/checkasm/ lib that conditionally builds the asm files.
-for t : tests/c{*.c}
+# TODO: Figure out what filtfmts & formats needs as input (the fate testing
+#       is one giant mess).
+for t : tests/c{*.c -filtfmts -formats}
 {
   n = [string] $name($t)
   e = [bool] true
