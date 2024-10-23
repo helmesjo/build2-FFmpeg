@@ -7,33 +7,23 @@ import config = libconfig%lib{config}
 
 impl_libs += $config
 
-conditional_src  = $json.load($src_base/files.json)
-
-cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
-tgt_macos = [bool] ($c.target.system == 'darwin')
 
-./: lib{avutil}: \
-            libul{avutil}: \
-              libavutil/h{* -avconfig -ffversion} \
-              libavutil/h{avconfig ffversion} \
-              $impl_libs $intf_libs
+./: lib{avutil}: libul{avutil}: libavutil/h{avconfig ffversion} $impl_libs $intf_libs
+
+# conditional source & assembly
+conditional_src  = $json.load($src_base/files.json)
+import [once] libconfig%buildfile{conditional-src}
+import [once] libconfig%buildfile{symbol-importation}
+libul{avutil}: impl_target{symbol-importation}: libavutil/h{**}
+libua{avutil}: libavutil/impl_target{conditional-asm-obja}: libavutil/asm{**}
+libus{avutil}: libavutil/impl_target{conditional-asm-objs}: libavutil/asm{**}
+libul{avutil}: libavutil/impl_target{conditional-src}: libavutil/c{**}
 
 libul{avutil}: compat/windows/{h c}{*} \
                compat/msvrt/{h c}{*} \
                compat/{h}{*} \
                : include = $tgt_win32
-
-# conditional source & assembly
-import [once] libconfig%buildfile{conditional-src}
-libua{avutil}: libavutil/impl_target{conditional-asm-obja}
-libus{avutil}: libavutil/impl_target{conditional-asm-objs}
-libul{avutil}: libavutil/impl_target{conditional-src}
-libul{avutil}: libavutil/file{patch_exports.d}:
-{
-  include = $tgt_win32
-  update = match
-}
 
 # these files are included, not built.
 libul{avutil}: libavutil/aarch64/S{asm}: include = adhoc
@@ -57,45 +47,6 @@ for t: libavutil/c{**_template}
   }}
 }
 
-libavutil/file{patch_exports.d}: libavutil/h{**}
-{{
-  o = [dir_path] $directory($>)
-  all_headers = [paths] $path($<)
-
-  HDRS = [paths] $o/emms.h
-
-  for hdr: [paths] $all_headers
-    sed -n -e 's|^(extern [ \S]*;)$|\1|gp' $hdr | set has_export
-    if (!$empty($has_export))
-      HDRS += [paths] $hdr
-    end
-  end
-
-  diag patch $>
-
-  # fix symbol importation on MSVC of global variables
-  # manually deal with avpriv_emms_asm because it doesn't have 'extern'
-  echo >$path($>)
-  for hdr: [paths] ($HDRS)
-    echo "      $path.relative($hdr, $src_base)"
-    echo $hdr >>$path($>)
-    sed -n -e 's|^(#define AVUTIL_'"$ucase($name($hdr))"'_H)$|\1\n#include <libavutil/internal.h>|g' $hdr | set has_include
-    if ($path.leaf($hdr) == 'emms.h')
-      if ($empty($has_include))
-        sed -i -e 's|^(#define AVUTIL_'"$ucase($name($hdr))"'_H)$|\1\n#include <libavutil/internal.h>|g' $hdr
-      end
-      sed -i -e 's|^(void avpriv_emms_asm\(.*\);)$|av_export_avutil \1|gp' $hdr
-    else
-      # make sure 'internal.h' is included to access 'av_export_avutil'.
-      if ($empty($has_include))
-        sed -i -e 's|^(#define AVUTIL_'"$ucase($name($hdr))"'_H)$|\1\n#include <libavutil/internal.h>|g' $hdr
-      end
-      # insert 'av_export_avutil' before any global and explicitly 'extern' variables
-      sed -i -e 's|^(extern [ \S]*;)$|av_export_avutil \1|gp' $hdr
-    end
-  end
-}}
-
 libavutil/h{avconfig}: in{avconfig}
 {
   autoconf.prefix = AV_
@@ -111,7 +62,7 @@ import [once] libconfig%buildfile{common-configs}
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
-c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_avutil
+c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_avutil -Dav_api=
 
 # System libraries
 sys_libs =
@@ -152,6 +103,14 @@ lib{avutil}:
 {
   c.export.poptions += "-I$out_pfx" "-I$src_pfx"
   c.export.libs = $intf_libs $sys_libs
+}
+
+if ($c.target.system == 'win32-msvc')
+{
+  libs{avutil}:
+  {
+    c.export.poptions += -Dav_api=__declspec\(dllimport\)
+  }
 }
 
 # For pre-releases use the complete version to make sure they cannot
