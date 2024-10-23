@@ -132,10 +132,11 @@ $project/impl_target{conditional-asm-obja}: file{enabled_groups enabled_source} 
 $project/impl_target{conditional-asm-obja}: $config_asm
 {{
   n = [name] $project
-  d = [dir_path] $src_base
   o = [dir_path] $directory($>)
   s = [dir_path] $src_base/$n
   enabled_srcs = [json] $json.load($path($<[1]))
+  lib_poptions = $c.lib_poptions(libus{conditional-src-meta}, obja)
+  depdb hash $lib_poptions
 
   # append enabled sources
   srcs = [paths]
@@ -154,9 +155,12 @@ $project/impl_target{conditional-asm-obja}: $config_asm
     --target-what 'extracted assembly' \
     --target-extension-type 'obja=obja' \
     --format lines \
-    -- echo $regex.merge($srcs, '(.*)', '\1', "$\n")
+    -- echo $regex.merge(asm-obja.d $srcs, '(.*)', '\1', "$\n")
 
   diag nasm $>
+
+  # phony for platforms without asm
+  touch $o/asm-obja.d
 
   key = [string] "$c.target.system-$c.target.cpu"
   format = ($as_format[$key])
@@ -164,7 +168,7 @@ $project/impl_target{conditional-asm-obja}: $config_asm
     src = $s/$path.base($file).asm
     dst = $o/$file
     mkdir --parents $directory($dst)
-    nasm -f $format "-P$path($config_asm)" \
+    nasm -f $format "-P$leaf($path($config_asm))" \
          $c.poptions $lib_poptions -o $dst $src
   end
 }}
@@ -173,10 +177,11 @@ $project/impl_target{conditional-asm-objs}: file{enabled_groups enabled_source} 
 $project/impl_target{conditional-asm-objs}: $config_asm
 {{
   n = [name] $project
-  d = [dir_path] $src_base
   o = [dir_path] $directory($>)
   s = [dir_path] $src_base/$n
   enabled_srcs = [json] $json.load($path($<[1]))
+  lib_poptions = $c.lib_poptions(libus{conditional-src-meta}, objs)
+  depdb hash $lib_poptions
 
   # append enabled sources
   srcs = [paths]
@@ -195,9 +200,12 @@ $project/impl_target{conditional-asm-objs}: $config_asm
     --target-what 'extracted assembly' \
     --target-extension-type 'objs=objs' \
     --format lines \
-    -- echo $regex.merge($srcs, '(.*)', '\1', "$\n")
+    -- echo $regex.merge(asm-objs.d $srcs, '(.*)', '\1', "$\n")
 
   diag nasm $>
+
+  # phony for platforms without asm
+  touch $o/asm-objs.d
 
   key = [string] "$c.target.system-$c.target.cpu"
   format = ($as_format[$key])
@@ -205,7 +213,7 @@ $project/impl_target{conditional-asm-objs}: $config_asm
     src = $s/$path.base($file).asm
     dst = $o/$file
     mkdir --parents $directory($dst)
-    nasm -f $format "-P$path($config_asm)" \
+    nasm -f $format "-P$leaf($path($config_asm))" \
          $c.poptions $lib_poptions -o $dst $src
   end
 }}
