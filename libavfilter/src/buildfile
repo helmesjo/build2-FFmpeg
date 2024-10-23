@@ -24,48 +24,15 @@ conditional_src  = $json.load($src_base/files.json)
 
 # conditional source & assembly
 import [once] libconfig%buildfile{conditional-src}
-libua{avfilter}: libavfilter/impl_target{conditional-asm-obja}
-libus{avfilter}: libavfilter/impl_target{conditional-asm-objs}
-libul{avfilter}: libavfilter/impl_target{conditional-src}
-libul{avfilter}: libavfilter/file{patch_exports.d}:
-{
-  include = $tgt_win32
-  update = match
-}
+import [once] libconfig%buildfile{symbol-importation}
+libul{avfilter}: impl_target{symbol-importation}: libavfilter/h{**}
+libua{avfilter}: libavfilter/impl_target{conditional-asm-obja}: libavfilter/asm{**}
+libus{avfilter}: libavfilter/impl_target{conditional-asm-objs}: libavfilter/asm{**}
+libul{avfilter}: libavfilter/impl_target{conditional-src}: libavfilter/c{**}
 
 libul{avfilter}: libavfilter/c{ \
                   filter_list \
                 }: include = adhoc
-
-libavfilter/file{patch_exports.d}: libavfilter/h{**}
-{{
-  o = [dir_path] $directory($>)
-  all_headers = [paths] $path($<)
-
-  HDRS = [paths] $o/vf_nlmeans.h
-  for hdr: [paths] $all_headers
-    sed -n -e 's|^(extern .* [\S]*;)$|\1|gp' $hdr | set has_export
-    if (!$empty($has_export))
-      HDRS += [paths] $hdr
-    end
-  end
-
-  diag patch $>
-
-  # fix symbol importation on MSVC of global variables
-  echo >$path($>)
-  for hdr: [paths] ($HDRS)
-    echo "      $path.relative($hdr, $src_base)"
-    echo $hdr >>$path($>)
-    # insert 'av_export_avfilter' before any global and explicitly 'extern' variables
-    if ($path.leaf($hdr) == 'vf_nlmeans.h')
-      sed -i -e 's|^(void ff_nlmeans_init_aarch64\(.*\);)$|av_export_avfilter \1|gp' $hdr
-      sed -i -e 's|^(void ff_nlmeans_init_x86\(.*\);)$|av_export_avfilter \1|gp' $hdr
-    else
-      sed -i -e 's|^(extern .* [\S]*;)$|av_export_avfilter \1|gp' $hdr
-    end
-  end
-}}
 
 libavfilter/c{filter_list}: libavfilter/c{allfilters} file{enabled_groups}
 {{
@@ -97,7 +64,7 @@ import [once] libconfig%buildfile{common-configs}
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
-c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_avfilter -Dav_export_avfilter=
+c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_avfilter -Dav_export=
 
 # System libraries
 sys_libs =
@@ -135,14 +102,14 @@ lib{avfilter}:
 
 liba{avfilter}:
 {
-  c.export.poptions += -Dav_export_avfilter=
+  c.export.poptions += -Dav_export=
 }
 
 if ($c.target.system == 'win32-msvc')
 {
   libs{avfilter}:
   {
-    c.export.poptions += -Dav_export_avfilter=__declspec\(dllimport\)
+    c.export.poptions += -Dav_export=__declspec\(dllimport\)
   }
 }
 

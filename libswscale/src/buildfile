@@ -19,9 +19,11 @@ conditional_src  = $json.load($src_base/files.json)
 
 # conditional source & assembly
 import [once] libconfig%buildfile{conditional-src}
-libua{swscale}: libswscale/impl_target{conditional-asm-obja}
-libus{swscale}: libswscale/impl_target{conditional-asm-objs}
-libul{swscale}: libswscale/impl_target{conditional-src}
+import [once] libconfig%buildfile{symbol-importation}
+libul{swscale}: impl_target{symbol-importation}: libswscale/h{**}
+libua{swscale}: libswscale/impl_target{conditional-asm-obja}: libswscale/asm{**}
+libus{swscale}: libswscale/impl_target{conditional-asm-objs}: libswscale/asm{**}
+libul{swscale}: libswscale/impl_target{conditional-src}: libswscale/c{**}
 libul{swscale}: libswscale/c{**_template}: include = adhoc
 # these c files are included, not built.
 for t: libswscale/c{**_template}
@@ -35,38 +37,6 @@ for t: libswscale/c{**_template}
   }}
 }
 
-libul{swscale}: libswscale/file{patch_exports.d}:
-{
-  include = $tgt_win32
-  update = match
-}
-
-libswscale/file{patch_exports.d}: libswscale/h{**}
-{{
-  o = [dir_path] $directory($>)
-  all_headers = [paths] $path($<)
-
-  HDRS = [paths]
-
-  for hdr: [paths] $all_headers
-    sed -n -e 's|^(extern .* [\S]*;)$|\1|gp' $hdr | set has_export
-    if (!$empty($has_export) && $empty($has_include))
-      HDRS += [paths] $hdr
-    end
-  end
-
-  diag patch $>
-
-  # fix symbol importation on MSVC of global variables
-  echo >$path($>)
-  for hdr: [paths] ($HDRS)
-    echo "      $path.relative($hdr, $src_base)"
-    echo $hdr >>$path($>)
-    # insert 'av_export_swscale' before any global and explicitly 'extern' variables
-    sed -i -e 's|^(extern .* [\S]*;)$|av_export_swscale \1|gp' $hdr
-  end
-}}
-
 # Build options.
 #
 import [once] libconfig%buildfile{common-configs}
@@ -74,7 +44,7 @@ import [once] libconfig%buildfile{common-configs}
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
-c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_swscale -Dav_export_swscale=
+c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_swscale -Dav_export=
 
 # System libraries
 sys_libs =
@@ -112,14 +82,14 @@ lib{swscale}:
 
 liba{swscale}:
 {
-  c.export.poptions += -Dav_export_swscale=
+  c.export.poptions += -Dav_export=
 }
 
 if ($c.target.system == 'win32-msvc')
 {
   libs{swscale}:
   {
-    c.export.poptions += -Dav_export_swscale=__declspec\(dllimport\)
+    c.export.poptions += -Dav_export=__declspec\(dllimport\)
   }
 }
 

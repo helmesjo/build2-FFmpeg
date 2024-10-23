@@ -21,9 +21,11 @@ conditional_src  = $json.load($src_base/files.json)
 
 # conditional source & assembly
 import [once] libconfig%buildfile{conditional-src}
-libua{postproc}: libpostproc/impl_target{conditional-asm-obja}
-libus{postproc}: libpostproc/impl_target{conditional-asm-objs}
-libul{postproc}: libpostproc/impl_target{conditional-src}
+import [once] libconfig%buildfile{symbol-importation}
+libul{postproc}: impl_target{symbol-importation}: libpostproc/h{**}
+libua{postproc}: libpostproc/impl_target{conditional-asm-obja}: libpostproc/asm{**}
+libus{postproc}: libpostproc/impl_target{conditional-asm-objs}: libpostproc/asm{**}
+libul{postproc}: libpostproc/impl_target{conditional-src}: libpostproc/c{**}
 
 # Build options.
 #
@@ -32,7 +34,7 @@ import [once] libconfig%buildfile{common-configs}
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
-c.poptions += "-I$out_pfx" "-I$src_pfx" "-I$src_pfx/libpostproc/" -DBUILDING_postproc
+c.poptions += "-I$out_pfx" "-I$src_pfx" "-I$src_pfx/libpostproc/" -DBUILDING_postproc -Dav_export=
 
 # System libraries
 sys_libs =
@@ -79,6 +81,19 @@ lib{postproc}:
 {
   c.export.poptions = "-I$out_pfx" "-I$src_pfx"
   c.export.libs = $intf_libs $sys_libs
+}
+
+liba{postproc}:
+{
+  c.export.poptions += -Dav_export=
+}
+
+if ($c.target.system == 'win32-msvc')
+{
+  libs{postproc}:
+  {
+    c.export.poptions += -Dav_export=__declspec\(dllimport\)
+  }
 }
 
 # For pre-releases use the complete version to make sure they cannot

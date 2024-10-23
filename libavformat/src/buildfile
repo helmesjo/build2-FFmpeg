@@ -23,7 +23,11 @@ conditional_src  = $json.load($src_base/files.json)
 
 # conditional source & assembly
 import [once] libconfig%buildfile{conditional-src}
-libul{avformat}: libavformat/impl_target{conditional-src}
+import [once] libconfig%buildfile{symbol-importation}
+libul{avformat}: impl_target{symbol-importation}: libavformat/h{**}
+libua{avformat}: libavformat/impl_target{conditional-asm-obja}: libavformat/asm{**}
+libus{avformat}: libavformat/impl_target{conditional-asm-objs}: libavformat/asm{**}
+libul{avformat}: libavformat/impl_target{conditional-src}: libavformat/c{**}
 libul{avformat}: libavformat/c{ \
                   protocol_list \
                   demuxer_list \
@@ -109,7 +113,7 @@ import [once] libconfig%buildfile{common-configs}
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
-c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_avformat
+c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_avformat -Dav_export=
 
 # System libraries
 sys_libs =
@@ -143,6 +147,19 @@ lib{avformat}:
 {
   c.export.poptions = "-I$out_pfx" "-I$src_pfx"
   c.export.libs = $intf_libs $sys_libs
+}
+
+liba{avformat}:
+{
+  c.export.poptions += -Dav_export=
+}
+
+if ($c.target.system == 'win32-msvc')
+{
+  libs{avformat}:
+  {
+    c.export.poptions += -Dav_export=__declspec\(dllimport\)
+  }
 }
 
 # For pre-releases use the complete version to make sure they cannot

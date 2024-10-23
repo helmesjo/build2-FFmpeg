@@ -21,9 +21,11 @@ conditional_src  = $json.load($src_base/files.json)
 
 # conditional source & assembly
 import [once] libconfig%buildfile{conditional-src}
-libua{swresample}: libswresample/impl_target{conditional-asm-obja}
-libus{swresample}: libswresample/impl_target{conditional-asm-objs}
-libul{swresample}: libswresample/impl_target{conditional-src}
+import [once] libconfig%buildfile{symbol-importation}
+libul{swresample}: impl_target{symbol-importation}: libswresample/h{**}
+libua{swresample}: libswresample/impl_target{conditional-asm-obja}: libswresample/asm{**}
+libus{swresample}: libswresample/impl_target{conditional-asm-objs}: libswresample/asm{**}
+libul{swresample}: libswresample/impl_target{conditional-src}: libswresample/c{**}
 
 # these c files are included, not built.
 libul{swresample}: libswresample/c{**_template noise_shaping_data}: include = adhoc
@@ -45,7 +47,7 @@ import [once] libconfig%buildfile{common-configs}
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
-c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_swresample
+c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_swresample -Dav_export=
 
 # System libraries
 sys_libs =
@@ -79,6 +81,19 @@ lib{swresample}:
 {
   c.export.poptions = "-I$out_pfx" "-I$src_pfx"
   c.export.libs = $intf_libs $sys_libs
+}
+
+liba{swresample}:
+{
+  c.export.poptions += -Dav_export=
+}
+
+if ($c.target.system == 'win32-msvc')
+{
+  libs{swresample}:
+  {
+    c.export.poptions += -Dav_export=__declspec\(dllimport\)
+  }
 }
 
 # For pre-releases use the complete version to make sure they cannot

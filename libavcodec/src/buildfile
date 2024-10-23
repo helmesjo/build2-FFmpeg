@@ -22,45 +22,17 @@ conditional_src  = $json.load($src_base/files.json)
 
 # conditional source & assembly
 import [once] libconfig%buildfile{conditional-src}
-libua{avcodec}: libavcodec/impl_target{conditional-asm-obja}
-libus{avcodec}: libavcodec/impl_target{conditional-asm-objs}
-libul{avcodec}: libavcodec/impl_target{conditional-src}
-libul{avcodec}: libavcodec/file{patch_exports.d}:
-{
-  include = $tgt_win32
-  update = match
-}
+import [once] libconfig%buildfile{symbol-importation}
+libul{avcodec}: impl_target{symbol-importation}: libavcodec/h{**}
+libua{avcodec}: libavcodec/impl_target{conditional-asm-obja}: libavcodec/asm{**}
+libus{avcodec}: libavcodec/impl_target{conditional-asm-objs}: libavcodec/asm{**}
+libul{avcodec}: libavcodec/impl_target{conditional-src}: libavcodec/c{**}
 
 libul{avcodec}: libavcodec/c{ \
                   bsf_list \
                   codec_list \
                   parser_list \
                 }: include = adhoc
-
-libavcodec/file{patch_exports.d}: libavcodec/h{**}
-{{
-  o = [dir_path] $directory($>)
-  all_headers = [paths] $path($<)
-
-  HDRS = [paths]
-  for hdr: [paths] $all_headers
-    sed -n -e 's|^(extern .* [\S]*;)$|\1|gp' $hdr | set has_export
-    if (!$empty($has_export))
-      HDRS += [paths] $hdr
-    end
-  end
-
-  diag patch $>
-
-  # fix symbol importation on MSVC of global variables
-  echo >$path($>)
-  for hdr: [paths] ($HDRS)
-    echo "      $path.relative($hdr, $src_base)"
-    echo $hdr >>$path($>)
-    # insert 'av_export_avcodec' before any global and explicitly 'extern' variables
-    sed -i -e 's|^(extern .* [\S]*;)$|av_export_avcodec \1|gp' $hdr
-  end
-}}
 
 libavcodec/c{codec_list}: libavcodec/c{allcodecs} file{enabled_groups}
 {{
@@ -140,7 +112,7 @@ import [once] libconfig%buildfile{common-configs}
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
-c.poptions += "-I$out_pfx" "-I$src_pfx" "-I$src_pfx/libavcodec/" -DBUILDING_avcodec -Dav_export_avcodec=
+c.poptions += "-I$out_pfx" "-I$src_pfx" "-I$src_pfx/libavcodec/" -DBUILDING_avcodec -Dav_export=
 
 # System libraries
 sys_libs =
@@ -189,11 +161,16 @@ lib{avcodec}:
   c.export.libs = $intf_libs $sys_libs
 }
 
+liba{avcodec}:
+{
+  c.export.poptions += -Dav_export=
+}
+
 if ($c.target.system == 'win32-msvc')
 {
   libs{avcodec}:
   {
-    c.export.poptions += -Dav_export_avcodec=__declspec\(dllimport\)
+    c.export.poptions += -Dav_export=__declspec\(dllimport\)
   }
 }
 

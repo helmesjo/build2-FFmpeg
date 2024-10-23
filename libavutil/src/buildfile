@@ -62,7 +62,7 @@ import [once] libconfig%buildfile{common-configs}
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
-c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_avutil -Dav_api=
+c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_avutil -Dav_export=
 
 # System libraries
 sys_libs =
@@ -105,11 +105,16 @@ lib{avutil}:
   c.export.libs = $intf_libs $sys_libs
 }
 
+liba{avutil}:
+{
+  c.export.poptions += -Dav_export=
+}
+
 if ($c.target.system == 'win32-msvc')
 {
   libs{avutil}:
   {
-    c.export.poptions += -Dav_api=__declspec\(dllimport\)
+    c.export.poptions += -Dav_export=__declspec\(dllimport\)
   }
 }
 
