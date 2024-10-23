@@ -28,6 +28,8 @@ if (!$defined(config))
   import config = libconfig%lib{config}
 if (!$defined(config_h))
   import config_h = libconfig%h{config}
+if (!$defined(config_asm))
+  import config_asm = libconfig%file{config.asm}
 if (!$defined(libaconfig))
   import libaconfig = libconfig%liba{config}
 if (!$defined(libsconfig))
@@ -89,7 +91,7 @@ libul{conditional-src-meta}: $impl_libs $intf_libs $config
 }}
 
 $project/impl_target{conditional-src}: file{enabled_groups enabled_source all_groups}: update = match
-$project/impl_target{conditional-src}: $src_base/$name($project)/{c h hxx cxx}{**}
+$project/impl_target{conditional-src}:
 {{
   o = [dir_path] $directory($>)
   n = [name] $project
@@ -111,7 +113,6 @@ $project/impl_target{conditional-src}: $src_base/$name($project)/{c h hxx cxx}{*
     end
   end
 
-  HDRS = [paths] $filesystem.path_search('**.h', $s)
   SRCS_ALL = [paths] $filesystem.path_search('**.c', $s)
 
   depdb dyndep \
@@ -122,12 +123,12 @@ $project/impl_target{conditional-src}: $src_base/$name($project)/{c h hxx cxx}{*
     --format lines \
     --file "$d" \
     -- \
-      echo ($SRCS $HDRS) | tr ' ' '\n' >$d && \
+      echo ($SRCS) | tr ' ' '\n' >$d && \
       echo '' >>$d && echo $path.representation([dir_path] $o) >>$d
 
   diag src ($>)
 
-  for file: [paths] ($HDRS $SRCS $SRCS_ALL)
+  for file: [paths] ($SRCS $SRCS_ALL)
     src = $path.posix_string($s/$file)
     dst = $path.posix_string($o/$file)
     mkdir --no-cleanup --parents $directory($dst)
@@ -136,7 +137,7 @@ $project/impl_target{conditional-src}: $src_base/$name($project)/{c h hxx cxx}{*
 }}
 
 $project/impl_target{conditional-asm-obja}: file{enabled_groups enabled_source} libua{conditional-src-meta}: update = match
-$project/impl_target{conditional-asm-obja}: $src_base/$name($project)/asm{**}
+$project/impl_target{conditional-asm-obja}: $config_asm
 {{
   o = [dir_path] $directory($>)
   n = [name] $project
@@ -188,7 +189,7 @@ $project/impl_target{conditional-asm-obja}: $src_base/$name($project)/asm{**}
 }}
 
 $project/impl_target{conditional-asm-objs}: file{enabled_groups enabled_source} libus{conditional-src-meta}: update = match
-$project/impl_target{conditional-asm-objs}: $src_base/$name($project)/asm{**}
+$project/impl_target{conditional-asm-objs}: $config_asm
 {{
   o = [dir_path] $directory($>)
   n = [name] $project
