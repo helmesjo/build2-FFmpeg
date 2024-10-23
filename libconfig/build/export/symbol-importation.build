@@ -1,6 +1,5 @@
 impl_target{symbol-importation}:
 {{
-  n = [name] $project
   d = [dir_path] $src_base
   o = [dir_path] $directory($>)
   hdrs = [paths] $path($<)
