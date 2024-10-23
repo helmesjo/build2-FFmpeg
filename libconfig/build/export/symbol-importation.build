@@ -1,0 +1,39 @@
+impl_target{symbol-exportation}:
+{{
+  d = [dir_path] $directory($<[0])
+  o = [dir_path] $directory($>)
+  hdrs = [paths] $path.relative($path($<), $src_base)
+
+  patch_hdrs = [paths]
+  rest = [paths]
+  for h: [paths] $hdrs
+    cat $h | sed -n -e 's|^(extern .* [\S]*;)$|\1|gp' | set has_export
+    if (!$empty($has_export))
+      patch_hdrs += [paths] $h
+    else
+      rest += [paths] $h
+    end
+  end
+
+  depdb dyndep \
+    --dyn-target \
+    --target-cwd="$o" \
+    --target-what='extracted source' \
+    --format=lines \
+    -- echo $regex.merge($patch_hdrs $rest, '(.*)', '\1', "$\n")
+
+  diag patch-symbols $>
+
+  # fix symbol importation of global variables (MSVC)
+  for h: $patch_hdrs
+    t = [path] $o/$h
+    mkdir --no-cleanup --parents $directory($t)
+    # insert 'av_api' before any global and explicitly 'extern' variables
+    sed -e 's|^(extern .* [\S]*;)$|av_api \1|gp' $h >$t
+  end
+  for h: $rest
+    t = [path] $o/$h
+    mkdir --no-cleanup --parents $directory($t)
+    cp $h $t
+  end
+}}
