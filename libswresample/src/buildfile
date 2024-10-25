@@ -79,13 +79,8 @@ if ($c.target.system == 'mingw32')
 #
 lib{swresample}:
 {
-  c.export.poptions = "-I$out_pfx" "-I$src_pfx"
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -Dav_export=
   c.export.libs = $intf_libs $sys_libs
-}
-
-liba{swresample}:
-{
-  c.export.poptions += -Dav_export=
 }
 
 if ($c.target.system == 'win32-msvc')
