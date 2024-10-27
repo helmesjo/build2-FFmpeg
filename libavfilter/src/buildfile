@@ -64,7 +64,7 @@ import [once] libconfig%buildfile{common-configs}
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
-c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_avfilter -Dav_export=
+c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_avfilter -Dav_export_libavfilter=
 
 # System libraries
 sys_libs =
@@ -96,7 +96,7 @@ if ($c.target.system == 'mingw32')
 #
 lib{avfilter}:
 {
-  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -Dav_export=
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -Dav_export_libavfilter=
   c.export.libs = $intf_libs $sys_libs
 }
 
@@ -104,7 +104,7 @@ if ($c.target.system == 'win32-msvc')
 {
   libs{avfilter}:
   {
-    c.export.poptions += -Dav_export=__declspec\(dllimport\)
+    c.export.poptions += -Dav_export_libavfilter=__declspec\(dllimport\)
   }
 }
 

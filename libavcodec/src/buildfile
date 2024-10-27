@@ -112,7 +112,7 @@ import [once] libconfig%buildfile{common-configs}
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
-c.poptions += "-I$out_pfx" "-I$src_pfx" "-I$src_pfx/libavcodec/" -DBUILDING_avcodec -Dav_export=
+c.poptions += "-I$out_pfx" "-I$src_pfx" "-I$src_pfx/libavcodec/" -DBUILDING_avcodec -Dav_export_libavcodec=
 
 # System libraries
 sys_libs =
@@ -157,7 +157,7 @@ if ($c.target.system == 'mingw32')
 #
 lib{avcodec}:
 {
-  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -Dav_export=
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -Dav_export_libavcodec=
   c.export.libs = $intf_libs $sys_libs
 }
 
@@ -165,7 +165,7 @@ if ($c.target.system == 'win32-msvc')
 {
   libs{avcodec}:
   {
-    c.export.poptions += -Dav_export=__declspec\(dllimport\)
+    c.export.poptions += -Dav_export_libavcodec=__declspec\(dllimport\)
   }
 }
 

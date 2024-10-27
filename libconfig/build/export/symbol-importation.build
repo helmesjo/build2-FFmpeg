@@ -30,7 +30,7 @@ impl_target{symbol-importation}:
     t = [path] $o/$h
     mkdir --no-cleanup --parents $directory($t)
     # insert 'av_export' before any global and explicitly 'extern' variables
-    sed -e 's|^(extern .* [\S]*;)$|av_export \1|gp' $s >$t
+    sed -e "s/^\(extern .* [\S]*;\)\$/av_export_$project \1/gp" $s >$t
   end
   for h: $rest
     s = [path] $d/$h

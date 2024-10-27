@@ -62,8 +62,7 @@ import [once] libconfig%buildfile{common-configs}
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
-c.poptions += "-I$out_pfx" "-I$src_pfx"
-c.poptions += -DBUILDING_avutil -Dav_export=
+c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_avutil -Dav_export_libavutil=
 
 # System libraries
 sys_libs =
@@ -102,7 +101,7 @@ if ($c.target.system == 'mingw32')
 #
 lib{avutil}:
 {
-  c.export.poptions += "-I$out_pfx" "-I$src_pfx" -Dav_export=
+  c.export.poptions += "-I$out_pfx" "-I$src_pfx" -Dav_export_libavutil=
   c.export.libs = $intf_libs $sys_libs
 }
 
@@ -110,7 +109,7 @@ if ($c.target.system == 'win32-msvc')
 {
   libs{avutil}:
   {
-    c.export.poptions += -Dav_export=__declspec\(dllimport\)
+    c.export.poptions += -Dav_export_libavutil=__declspec\(dllimport\)
   }
 }
 
