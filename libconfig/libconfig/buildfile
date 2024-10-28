@@ -2741,7 +2741,7 @@ liba{config}:
 }
 libs{config}:
 {
-  c.export.poptions += -DCONFIG_SHARED $spflags
+  c.export.poptions += -DCONFIG_SHARED
 }
 
 # For pre-releases use the complete version to make sure they cannot
