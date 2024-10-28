@@ -6,6 +6,10 @@ impl_libs = # Implementation dependencies.
 cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
 tgt_macos = [bool] ($c.target.system == 'darwin')
+have_opengl = [bool] ($c.find_system_header("GL/glx.h") != [null] || \
+                      $c.find_system_header("OpenGL/gl3.h") != [null] \
+                     )
+have_opengles = [bool] ($c.find_system_header("ES2/gl.h") != [null])
 
 ./: lib{config}: h{autoconf config config_components} file{config.asm} $intf_libs
 
@@ -456,7 +460,8 @@ h{autoconf}: in{config}
   HAVE_DEV_VIDEO_BKTR_IOCTL_BT848_H    = ($c.find_system_header("bktr/ioctl_bt848.h") != [null])
   HAVE_DEV_VIDEO_METEOR_IOCTL_METEOR_H = ($c.find_system_header("meteor/ioctl_bt848.h") != [null])
   HAVE_ES2_GL_H                        = ($c.find_system_header("GLES2/gl2.h") != [null])
-  HAVE_GLXGETPROCADDRESS               = ($c.find_system_header("GL/glx.h") != [null])
+  HAVE_WGLGETPROCADDRESS               = ($have_opengl)
+  HAVE_GLXGETPROCADDRESS               = ($have_opengles)
   HAVE_GSM_H                           = ($c.find_system_header("gsm.h") != [null])
   HAVE_OPENCV2_CORE_CORE_C_H           = ($c.find_system_header("opencv2/core/core_c.h") != [null])
   HAVE_OPENGL_GL3_H                    = ($c.find_system_header("OpenGL/gl3.h") != [null])
@@ -487,7 +492,6 @@ h{autoconf}: in{config}
   HAVE_KBHIT                   = $tgt_win32
   HAVE_VIRTUALALLOC            = $tgt_win32
   HAVE_W32THREADS              = $tgt_win32
-  HAVE_WGLGETPROCADDRESS       = $tgt_win32
 
   # config_components.h
   CONFIG_AAC_ADTSTOASC_BSF           = ($config.libconfig.aac_adtstoasc_bsf ? 1 : 0)
@@ -2726,6 +2730,40 @@ h{autoconf}: in{config}
 #
 out_pfx = [dir_path] $out_root/
 src_pfx = [dir_path] $src_root/libconfig/
+
+# System libraries
+sys_libs =
+switch $c.target.class, $c.target.system
+{
+  case 'windows', 'win32-msvc'
+    sys_libs += opengl32.lib
+  case 'windows', 'mingw32'
+    sys_libs += -lopengl32 -lgdi32
+  case 'macos'
+  {
+    if($have_opengl)
+    {
+      sys_libs += -Wl,-framework,OpenGL
+    }
+    if($have_opengles)
+    {
+      sys_libs += -Wl,-framework,OpenGLES
+    }
+  }
+  default
+  {
+    if($have_opengl)
+    {
+      sys_libs += -lGL
+    }
+    if($have_opengles)
+    {
+      sys_libs += -lGLESv2
+    }
+  }
+}
+
+c.libs += $sys_libs
 
 # Export options.
 #
