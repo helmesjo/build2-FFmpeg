@@ -73,6 +73,8 @@ switch $c.target.system
       case 'macos'
       {
         c.loptions += -Wl,-dynamic,-search_paths_first
+        if($c.version.major >= 15)
+          c.loptions += -Wl,-no_warn_duplicate_libraries
       }
       case '*'
       {
