@@ -79,15 +79,26 @@ if ($c.target.system == 'mingw32')
 #
 lib{postproc}:
 {
-  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -Dav_export_postproc=
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx"
   c.export.libs = $intf_libs $sys_libs
 }
 
 if ($c.target.system == 'win32-msvc')
 {
+  liba{postproc}:
+  {
+    c.export.poptions += -Dav_export_libpostproc=
+  }
   libs{postproc}:
   {
-    c.export.poptions += -Dav_export_postproc=__declspec\(dllimport\)
+    c.export.poptions += -Dav_export_libpostproc=__declspec\(dllimport\)
+  }
+}
+else
+{
+  lib{postproc}:
+  {
+    c.export.poptions += -Dav_export_libpostproc=
   }
 }
 

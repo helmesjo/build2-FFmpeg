@@ -157,15 +157,26 @@ if ($c.target.system == 'mingw32')
 #
 lib{avcodec}:
 {
-  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -Dav_export_libavcodec=
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx"
   c.export.libs = $intf_libs $sys_libs
 }
 
 if ($c.target.system == 'win32-msvc')
 {
+  liba{avcodec}:
+  {
+    c.export.poptions += -Dav_export_libavcodec=
+  }
   libs{avcodec}:
   {
     c.export.poptions += -Dav_export_libavcodec=__declspec\(dllimport\)
+  }
+}
+else
+{
+  lib{avcodec}:
+  {
+    c.export.poptions += -Dav_export_libavcodec=
   }
 }
 

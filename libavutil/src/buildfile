@@ -101,15 +101,26 @@ if ($c.target.system == 'mingw32')
 #
 lib{avutil}:
 {
-  c.export.poptions += "-I$out_pfx" "-I$src_pfx" -Dav_export_libavutil=
+  c.export.poptions += "-I$out_pfx" "-I$src_pfx"
   c.export.libs = $intf_libs $sys_libs
 }
 
 if ($c.target.system == 'win32-msvc')
 {
+  liba{avutil}:
+  {
+    c.export.poptions += -Dav_export_libavutil=
+  }
   libs{avutil}:
   {
     c.export.poptions += -Dav_export_libavutil=__declspec\(dllimport\)
+  }
+}
+else
+{
+  lib{avutil}:
+  {
+    c.export.poptions += -Dav_export_libavutil=
   }
 }
 

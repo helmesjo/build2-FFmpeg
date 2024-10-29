@@ -96,15 +96,26 @@ if ($c.target.system == 'mingw32')
 #
 lib{avfilter}:
 {
-  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -Dav_export_libavfilter=
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx"
   c.export.libs = $intf_libs $sys_libs
 }
 
 if ($c.target.system == 'win32-msvc')
 {
+  liba{avfilter}:
+  {
+    c.export.poptions += -Dav_export_libavfilter=
+  }
   libs{avfilter}:
   {
     c.export.poptions += -Dav_export_libavfilter=__declspec\(dllimport\)
+  }
+}
+else
+{
+  lib{avfilter}:
+  {
+    c.export.poptions += -Dav_export_libavfilter=
   }
 }
 

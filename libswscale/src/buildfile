@@ -76,15 +76,26 @@ if ($c.target.system == 'mingw32')
 #
 lib{swscale}:
 {
-  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -Dav_export_libswscale=
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx"
   c.export.libs = $intf_libs $sys_libs
 }
 
 if ($c.target.system == 'win32-msvc')
 {
+  liba{swscale}:
+  {
+    c.export.poptions += -Dav_export_libswscale=
+  }
   libs{swscale}:
   {
     c.export.poptions += -Dav_export_libswscale=__declspec\(dllimport\)
+  }
+}
+else
+{
+  lib{swscale}:
+  {
+    c.export.poptions += -Dav_export_libswscale=
   }
 }
 

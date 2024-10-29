@@ -145,15 +145,26 @@ if ($c.target.system == 'mingw32')
 #
 lib{avformat}:
 {
-  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -Dav_export_libavformat=
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx"
   c.export.libs = $intf_libs $sys_libs
 }
 
 if ($c.target.system == 'win32-msvc')
 {
+  liba{avformat}:
+  {
+    c.export.poptions += -Dav_export_libavformat=
+  }
   libs{avformat}:
   {
     c.export.poptions += -Dav_export_libavformat=__declspec\(dllimport\)
+  }
+}
+else
+{
+  lib{avformat}:
+  {
+    c.export.poptions += -Dav_export_libavformat=
   }
 }
 

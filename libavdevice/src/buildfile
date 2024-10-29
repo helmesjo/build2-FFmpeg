@@ -130,15 +130,26 @@ if ($c.target.system == 'mingw32')
 #
 lib{avdevice}:
 {
-  c.export.poptions = "-I$out_pfx" "-I$src_pfx" -Dav_export_libavdevice=
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx"
   c.export.libs = $intf_libs $sys_libs
 }
 
 if ($c.target.system == 'win32-msvc')
 {
+  liba{avdevice}:
+  {
+    c.export.poptions += -Dav_export_libavdevice=
+  }
   libs{avdevice}:
   {
     c.export.poptions += -Dav_export_libavdevice=__declspec\(dllimport\)
+  }
+}
+else
+{
+  lib{avdevice}:
+  {
+    c.export.poptions += -Dav_export_libavdevice=
   }
 }
 
