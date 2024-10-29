@@ -140,7 +140,7 @@ $project/impl_target{conditional-asm-obja}: $config_asm
   o = [dir_path] $directory($>)
   s = [dir_path] $src_base/$n
   enabled_srcs = [json] $json.load($path($<[1]))
-  lib_poptions = $c.lib_poptions(libus{conditional-src-meta}, obja)
+  lib_poptions = $c.lib_poptions(libua{conditional-src-meta}, obja)
   depdb hash $lib_poptions
 
   # append enabled sources
