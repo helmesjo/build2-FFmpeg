@@ -1,26 +1,26 @@
 : 1
-location: libavutil/
-
-:
 location: libavcodec/
-
-:
-location: libavfilter/
-
-:
-location: libswscale/
-
-:
-location: libavformat/
-
-:
-location: libswresample/
 
 :
 location: libavdevice/
 
 :
-location: libpostproc/
+location: libavfilter/
+
+:
+location: libavformat/
+
+:
+location: libavutil/
 
 :
 location: libconfig/
+
+:
+location: libpostproc/
+
+:
+location: libswresample/
+
+:
+location: libswscale/

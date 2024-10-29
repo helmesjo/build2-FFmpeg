@@ -1,3 +1,5 @@
+# Build options.
+#
 switch $c.target.system
 {
   case 'win32-msvc'
