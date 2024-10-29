@@ -1,8 +1,5 @@
 using autoconf
 
-intf_libs = # Interface dependencies.
-impl_libs = # Implementation dependencies.
-
 cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
 tgt_macos = [bool] ($c.target.system == 'darwin')
@@ -11,7 +8,8 @@ have_opengl = [bool] ($c.find_system_header("GL/glx.h") != [null] || \
                      )
 have_opengles = [bool] ($c.find_system_header("ES2/gl.h") != [null])
 
-./: lib{config}: h{autoconf config config_components} file{config.asm} $intf_libs
+[rule_hint=c] \
+lib{config}: h{autoconf config config_components} file{config.asm}
 
 c{print_defines}: h{autoconf}
 {{
@@ -2770,7 +2768,7 @@ c.libs += $sys_libs
 lib{config}:
 {
   c.export.poptions += "-I$out_pfx" "-I$out_pfx/libconfig/" "-I$src_pfx" -DHAVE_AV_CONFIG_H
-  c.export.libs     += $intf_libs $sys_libs
+  c.export.libs     += $sys_libs
 }
 
 liba{config}:

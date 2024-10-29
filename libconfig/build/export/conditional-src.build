@@ -1,9 +1,10 @@
+asm_libs = $impl_libs $intf_libs
 define [see_through] impl_target: group
 
 define asm: file
 asm{*}: extension = asm
 
-as_format = [string_map]     \
+asm_format = [string_map]    \
   'linux-gnu-x86_64'@elf64   \
   'linux-gnu-i686'@elf32     \
   'linux-musl-x86_64'@elf64  \
@@ -24,19 +25,10 @@ as_format = [string_map]     \
   'solaris-x86_64'@elf64     \
   'solaris-i686'@elf32
 
-if (!$defined(config))
-  import config = libconfig%lib{config}
 if (!$defined(config_h))
   import config_h = libconfig%h{config}
 if (!$defined(config_asm))
   import config_asm = libconfig%file{config.asm}
-if (!$defined(libaconfig))
-  import libaconfig = libconfig%liba{config}
-if (!$defined(libsconfig))
-  import libsconfig = libconfig%libs{config}
-
-[rule_hint=c] \
-libul{conditional-src-meta}: $impl_libs $intf_libs $config
 
 <file{all_groups enabled_groups enabled_source}>: $config_h
 {{
@@ -95,14 +87,14 @@ libul{conditional-src-meta}: $impl_libs $intf_libs $config
   echo $enabled_source >$path($>[2])
 }}
 
-$project/impl_target{conditional-src}: file{enabled_groups enabled_source all_groups}: update = match
+$project/impl_target{conditional-src}: file{enabled_source}: update = match
 $project/impl_target{conditional-src}:
 {{
   n = [name] $project
   d = [dir_path] $src_base
   o = [dir_path] $directory($>)
   s = [dir_path] $src_base/$n
-  enabled_srcs = [json] $json.load($path($<[1]))
+  enabled_srcs = [json] $json.load($path($<[0]))
 
   # append enabled sources
   srcs = [paths]
@@ -133,13 +125,16 @@ $project/impl_target{conditional-src}:
   end
 }}
 
-$project/impl_target{conditional-asm-obja}: file{enabled_groups enabled_source} libua{conditional-src-meta}: update = match
-$project/impl_target{conditional-asm-obja}: $config_asm
+[rule_hint=c] \
+libul{conditional-src-meta}: $asm_libs
+
+$project/impl_target{conditional-asm-obja}: file{enabled_source} libua{conditional-src-meta} $config_asm: update = match
+$project/impl_target{conditional-asm-obja}:
 {{
   n = [name] $project
   o = [dir_path] $directory($>)
   s = [dir_path] $src_base/$n
-  enabled_srcs = [json] $json.load($path($<[1]))
+  enabled_srcs = [json] $json.load($path($<[0]))
   lib_poptions = $c.lib_poptions(libua{conditional-src-meta}, obja)
   depdb hash $lib_poptions
 
@@ -156,6 +151,7 @@ $project/impl_target{conditional-asm-obja}: $config_asm
 
   depdb dyndep \
     --dyn-target \
+    --adhoc \
     --target-cwd $o \
     --target-what 'extracted assembly' \
     --target-extension-type 'obja=obja' \
@@ -168,7 +164,7 @@ $project/impl_target{conditional-asm-obja}: $config_asm
   touch $o/asm-obja.d
 
   key = [string] "$c.target.system-$c.target.cpu"
-  format = ($as_format[$key])
+  format = ($asm_format[$key])
   for file: [paths] $srcs
     src = $s/$path.base($file).asm
     dst = $o/$file
@@ -178,13 +174,13 @@ $project/impl_target{conditional-asm-obja}: $config_asm
   end
 }}
 
-$project/impl_target{conditional-asm-objs}: file{enabled_groups enabled_source} libus{conditional-src-meta}: update = match
-$project/impl_target{conditional-asm-objs}: $config_asm
+$project/impl_target{conditional-asm-objs}: file{enabled_source} libus{conditional-src-meta} $config_asm: update = match
+$project/impl_target{conditional-asm-objs}:
 {{
   n = [name] $project
   o = [dir_path] $directory($>)
   s = [dir_path] $src_base/$n
-  enabled_srcs = [json] $json.load($path($<[1]))
+  enabled_srcs = [json] $json.load($path($<[0]))
   lib_poptions = $c.lib_poptions(libus{conditional-src-meta}, objs)
   depdb hash $lib_poptions
 
@@ -201,6 +197,7 @@ $project/impl_target{conditional-asm-objs}: $config_asm
 
   depdb dyndep \
     --dyn-target \
+    --adhoc \
     --target-cwd $o \
     --target-what 'extracted assembly' \
     --target-extension-type 'objs=objs' \
@@ -213,7 +210,7 @@ $project/impl_target{conditional-asm-objs}: $config_asm
   touch $o/asm-objs.d
 
   key = [string] "$c.target.system-$c.target.cpu"
-  format = ($as_format[$key])
+  format = ($asm_format[$key])
   for file: [paths] $srcs
     src = $s/$path.base($file).asm
     dst = $o/$file
