@@ -57,17 +57,19 @@ h{config}: c{print_defines}
 
   diag configure ($>)
 
-  if ($c.target.system == 'win32-msvc')
+  if ($c.class == 'msvc')
     echo -nologo $c.poptions $cc.poptions $c.coptions $c.mode -c $s -Fo$o >$r &$r &$o
-    $effect($c.path) "@$r" | set tmp [string_set]
+    $effect($c.path) "@$r" 2>&1 | set tmp [string_set]
+    # msvc is very verbose, but luckily all files that start with a space can be removed.
+    tmp = $regex.replace($tmp, '^[ ].*$', '')
   else
     $effect($c.path) $c.poptions $cc.poptions $c.coptions $c.mode -E $s 2>! \
                      | set tmp [string_set]
-    # quotes are printed as unicode with clang
-    tmp = $regex.replace($tmp, '\\042', '"')
   end
+  # quotes are printed as unicode with clang
+  tmp = $regex.replace($tmp, '\\042', '"')
 
-  tmp = $regex.apply($tmp, '\{(#[a-zA-Z]+) [\\"]{1,2}([A-Za-z0-9_]+)[\\"]{1,2}=(.*)\}', "\1 \2 \3\n", format_no_copy)
+  tmp = $regex.apply($tmp, '\{(#[a-zA-Z]+) [\\"]{1,2}([A-Za-z0-9_]+)[\\"]{1,2}=([^\}]*)', "\1 \2 \3\n", format_no_copy)
   tmp = $regex.replace($tmp, '^\s+((?!#).*$)', '//\1')
   tmp = $regex.replace($tmp, '\\\"', '"')
 
