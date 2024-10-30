@@ -36,6 +36,10 @@ switch $c.id
   {
     objs{**}: c.poptions += -DCONFIG_PIC=1 -DPIC=1
 
+    c.poptions += -D_ISOC11_SOURCE \
+                  -D__STDC_CONSTANT_MACROS \
+                  -D_POSIX_C_SOURCE=200112
+
     switch $c.id: path.match
     {
       case '*clang*'
@@ -53,9 +57,20 @@ switch $c.id
                       -Wno-unused-function \
                       -Wno-unused-variable \
                       -Wno-tautological-compare
+        if ($c.id == 'clang-apple')
+        {
+          c.loptions += -Wl,-dynamic,-search_paths_first
+          if($c.version.major >= 15)
+            c.loptions += -Wl,-no_warn_duplicate_libraries
+        }
+        else
+        {
+          c.loptions += -Wl,-Bsymbolic
+        }
       }
       case 'gcc'
       {
+        c.loptions += -Wl,-Bsymbolic
         c.coptions += -Wno-deprecated-declarations \
                       -Wno-format \
                       -Wno-implicit-function-declaration \
@@ -67,12 +82,10 @@ switch $c.id
                       -Wno-unused-function \
                       -Wno-unused-variable
       }
+      case '*sus*'
+      {
+        c.poptions += -D_XOPEN_SOURCE=600
+      }
     }
-
-    c.poptions += -D_POSIX_SOURCE \
-                  -D_ISOC11_SOURCE \
-                  -D__STDC_CONSTANT_MACROS \
-                  -D_POSIX_C_SOURCE=200112 \
-                  -D_XOPEN_SOURCE=600
   }
 }
