@@ -1,5 +1,11 @@
 using autoconf
 
+if (!$config.libconfig.frame_thread_encoder)
+{
+  warn "frame_thread_encoder is always enabled, see upstream/configure:7647"
+  config.libconfig.frame_thread_encoder = true
+}
+
 cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
 tgt_macos = [bool] ($c.target.system == 'darwin')
