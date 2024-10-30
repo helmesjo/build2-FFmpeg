@@ -36,9 +36,13 @@ switch $c.id
   {
     objs{**}: c.poptions += -DCONFIG_PIC=1 -DPIC=1
 
-    c.poptions += -D_ISOC11_SOURCE \
-                  -D__STDC_CONSTANT_MACROS \
-                  -D_POSIX_C_SOURCE=200112
+    c.poptions += -D__STDC_CONSTANT_MACROS
+
+    if ($c.target.class != 'macos')
+    {
+      c.poptions += -D_ISOC11_SOURCE \
+                    -D_POSIX_C_SOURCE=200112
+    }
 
     switch $c.id: path.match
     {
@@ -57,7 +61,7 @@ switch $c.id
                       -Wno-unused-function \
                       -Wno-unused-variable \
                       -Wno-tautological-compare
-        if ($c.id == 'clang-apple')
+        if ($c.target.class == 'macos')
         {
           c.loptions += -Wl,-dynamic,-search_paths_first
           if($c.version.major >= 15)
