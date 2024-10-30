@@ -6,8 +6,7 @@ impl_libs = # Implementation dependencies.
 import config = libconfig%lib{config}
 impl_libs += $config
 import intf_libs += \
-  libavutil%lib{avutil} \
-  libavformat%lib{avformat}
+  libavutil%lib{avutil}
 
 cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
