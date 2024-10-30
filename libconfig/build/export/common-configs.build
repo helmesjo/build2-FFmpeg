@@ -44,6 +44,17 @@ switch $c.id
                     -D_POSIX_C_SOURCE=200112
     }
 
+    if ($c.target.class == 'macos')
+    {
+      c.loptions += -Wl,-dynamic,-search_paths_first
+      if($c.version.major >= 15)
+        c.loptions += -Wl,-no_warn_duplicate_libraries
+    }
+    elif ($c.target.class != 'windows')
+    {
+      c.loptions += -Wl,-Bsymbolic
+    }
+
     switch $c.id: path.match
     {
       case '*clang*'
@@ -61,20 +72,9 @@ switch $c.id
                       -Wno-unused-function \
                       -Wno-unused-variable \
                       -Wno-tautological-compare
-        if ($c.target.class == 'macos')
-        {
-          c.loptions += -Wl,-dynamic,-search_paths_first
-          if($c.version.major >= 15)
-            c.loptions += -Wl,-no_warn_duplicate_libraries
-        }
-        elif ($c.target.class != 'windows')
-        {
-          c.loptions += -Wl,-Bsymbolic
-        }
       }
       case 'gcc'
       {
-        c.loptions += -Wl,-Bsymbolic
         c.coptions += -Wno-deprecated-declarations \
                       -Wno-format \
                       -Wno-implicit-function-declaration \
