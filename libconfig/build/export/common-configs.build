@@ -63,7 +63,7 @@ switch $c.id
           if($c.version.major >= 15)
             c.loptions += -Wl,-no_warn_duplicate_libraries
         }
-        else
+        elif ($c.target.class != 'windows')
         {
           c.loptions += -Wl,-Bsymbolic
         }
