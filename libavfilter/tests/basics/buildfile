@@ -23,8 +23,8 @@ for t : tests/c{*.c -filtfmts -formats}
       v = [strings] $regex.split($s, ' ', ' ')
       for r: [strings] ($v)
       {
-        c = $($config: libavutil.$r)
-        if($c != 1)
+        c = $($config: libconfig.$r)
+        if($c == [null] || !$c)
         {
           e = false
         }

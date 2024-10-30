@@ -18,8 +18,7 @@ requirements = [string_set] \
   '{"snowenc":          "snow_encoder"}'
 
 # need upstream/tests/checkasm/ lib that conditionally builds the asm files.
-# TODO: Figure out what celp_math.c whines about (missing exported symbol?)
-for t : tests/c{*.c -celp_math}
+for t : tests/c{*.c}
 {
   n = [string] $name($t)
   e = [bool] true
@@ -33,8 +32,8 @@ for t : tests/c{*.c -celp_math}
       v = [strings] $regex.split($s, ' ', ' ')
       for r: [strings] ($v)
       {
-        c = $($config: libavutil.$r)
-        if($c != 1)
+        c = $($config: libconfig.$r)
+        if($c == [null] || !$c)
         {
           e = false
         }
