@@ -33,8 +33,9 @@ libul{avcodec}:  libavcodec/c{               \
                   bsf_list                   \
                   codec_list                 \
                   parser_list                \
-                } \
-                libavcodec/h{                \
+                }: include = adhoc
+
+libul{avcodec}: libavcodec/h{                \
                   cbrt_tables                \
                   cbrt_fixed_tables          \
                   aacps_tables               \
@@ -47,7 +48,7 @@ libul{avcodec}:  libavcodec/c{               \
                   motionpixels_tables        \
                   pcm_tables                 \
                   qdm2_tables                \
-                }: include = adhoc
+                }
 
 libavcodec/c{codec_list}: libavcodec/c{allcodecs} file{enabled_groups}
 {{
@@ -173,16 +174,19 @@ libul{avcodec-meta}: $config $avutil
   lib_poptions += ($($config: libconfig.small) ? '-DCONFIG_SMALL=1' : '-DCONFIG_SMALL=0')
   depdb hash $lib_poptions
 
-  # dvdata.c is required only for dv_tablegen.c
-  required_src = [path] $src_base/libavcodec/dvdata.c
 
   srcs = [paths]
   hdrs = [paths]
+  required_src = [paths]
   for i: $integer_sequence(2, $size($<))
     s = $path($<[$i])
-    if($extension($s) == 'c')
+    if ($extension($s) == 'c')
       srcs += [paths] $s
-    elif($extension($s) == 'h')
+      if ($path.leaf($s) == 'dv_tablegen.c')
+        # dvdata.c is required for dv_tablegen.c
+        required_src += [paths] $src_base/libavcodec/dvdata.c
+      end
+    elif ($extension($s) == 'h')
       hdrs += [paths] $s
     end
   end
@@ -209,17 +213,15 @@ libul{avcodec-meta}: $config $avutil
     exe = [path] $path.posix_string($out_base/tablegen/$leaf($c).exe)
 
     if ($c.id == 'msvc')
-      args = [strings] -nologo $c.poptions $lib_poptions $c.mode "-Fe$exe" $required_src $c
+      args = [strings] -nologo $c.mode "-Fe$exe" $required_src $c
     else
-      args = [strings] -Wno-pointer-sign $c.poptions $lib_poptions $c.mode "-o$exe" $required_src $c
+      args = [strings] -Wno-pointer-sign -lm $c.mode "-o$exe" $required_src $c
     end
 
     # build for host
-    $effect($c.path) -D_USE_MATH_DEFINES ($args) >! &$exe
+    $effect($c.path) -D_USE_MATH_DEFINES $c.poptions $lib_poptions ($args) >! &$exe
 
-    test -f $exe
-
-    # execute out redirect to output header
+    # execute & redirect to target header
     $exe >$o
   end
 }}
