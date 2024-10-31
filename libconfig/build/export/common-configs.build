@@ -41,7 +41,8 @@ switch $c.id
     if ($c.target.class != 'macos')
     {
       c.poptions += -D_ISOC11_SOURCE \
-                    -D_POSIX_C_SOURCE=200112
+                    -D_POSIX_C_SOURCE=200112 \
+                    -D_XOPEN_SOURCE=600
     }
 
     if ($c.target.class == 'macos')
@@ -85,10 +86,6 @@ switch $c.id
                       -Wno-switch \
                       -Wno-unused-function \
                       -Wno-unused-variable
-      }
-      case '*sus*'
-      {
-        c.poptions += -D_XOPEN_SOURCE=600
       }
     }
   }
