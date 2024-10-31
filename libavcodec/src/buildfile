@@ -223,7 +223,7 @@ libul{avcodec-meta}: $config $avutil
     end
 
     # build for host
-    env -c "$t" -- $effect($c.path) -D_USE_MATH_DEFINES $c.poptions $lib_poptions ($args) >! &$t/**
+    env -c "$t" -- $effect($c.path) -D_USE_MATH_DEFINES $c.poptions $lib_poptions ($args) 2>! &$t/**
 
     # generate header
     $exe >$o

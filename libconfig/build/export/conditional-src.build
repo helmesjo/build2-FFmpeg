@@ -170,7 +170,7 @@ $project/impl_target{conditional-asm-obja}:
     dst = $o/$file
     mkdir --parents $directory($dst)
     nasm -f $format "-P$leaf($path($config_asm))" \
-         $c.poptions $lib_poptions -o $dst $src
+         $c.poptions $lib_poptions -o $dst $src 2>!
   end
 }}
 
@@ -216,6 +216,6 @@ $project/impl_target{conditional-asm-objs}:
     dst = $o/$file
     mkdir --parents $directory($dst)
     nasm -f $format "-P$leaf($path($config_asm))" \
-         $c.poptions $lib_poptions -o $dst $src
+         $c.poptions $lib_poptions -o $dst $src 2>!
   end
 }}
