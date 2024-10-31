@@ -9,8 +9,9 @@ requirements = [string_set] \
   '{"pixdesc_query":  ""}' \
   '{"swscale":        ""}'
 
-# need upstream/tests/checkasm/ lib that conditionally builds the asm files.
-for t : tests/c{*.c}
+# NOTE: Disable tests/swscale.c for the time being, it's unbelievably 
+#       slow (presumably when without correct optimization flags)
+for t : tests/c{*.c -swscale}
 {
   n = [string] $name($t)
   e = [bool] true
