@@ -204,13 +204,13 @@ libul{avcodec-meta}: $config $avutil
 
   t = [dir_path] $out_base/tablegen
 
-  mkdir -p $t &$t
+  mkdir -p $t &$t/***
 
   for i: $integer_sequence(0, $size($srcs))
     c = [path] ($srcs[$i])
     h = [path] ($hdrs[$i])
     o = [path] $path($>[$i])
-    exe = [path] $path.posix_string($out_base/tablegen/$leaf($c).exe)
+    exe = [path] $path.posix_string("$t/$leaf($c).exe")
 
     if ($c.id == 'msvc')
       args = [strings] -nologo $c.mode "-Fe$exe" $required_src $c
@@ -219,7 +219,7 @@ libul{avcodec-meta}: $config $avutil
     end
 
     # build for host
-    $effect($c.path) -D_USE_MATH_DEFINES $c.poptions $lib_poptions ($args) >! &$exe
+    env -c "$t" -- $effect($c.path) -D_USE_MATH_DEFINES $c.poptions $lib_poptions ($args) >! &$exe
 
     # execute & redirect to target header
     $exe >$o
