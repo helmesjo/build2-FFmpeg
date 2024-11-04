@@ -12,8 +12,8 @@ asm_format = [string_map]    \
   'linux-gnu-elbrus'@elf64   \
   'win32-msvc-x86_64'@win64  \
   'win32-msvc-i686'@win32    \
-  'win32-mingw-x86_64'@win64 \
-  'win32-mingw-i686'@win32   \
+  'mingw32-x86_64'@win64     \
+  'mingw32-i686'@win32       \
   'darwin-x86_64'@macho64    \
   'darwin-i686'@macho32      \
   'freebsd-x86_64'@elf64     \
@@ -28,6 +28,8 @@ asm_format = [string_map]    \
 rc_target = [string_map]                \
   'win32-msvc-x86_64'@pe-x86-64         \
   'win32-msvc-i386'@pe-i386             \
+  'mingw32-x86_64'@pe-x86-64            \
+  'mingw32-i686'@pe-i386                \
   'linux-gnu-x86_64-elf64'@elf64-x86-64 \
   'linux-gnu-i386-elf32'@elf32-i386     \
   'linux-musl-x86_64'@elf64-x86-64      \
@@ -186,13 +188,15 @@ $project/impl_target{conditional-asm-obja}:
   touch $o/asm-obja.d
 
   key = [string] "$c.target.system-$c.target.cpu"
-  format = ($asm_format[$key])
+  format = [string] ($asm_format[$key])
   for file: [paths] $srcs
     src = $s/$path.base($file).asm
     dst = $o/$file
     mkdir --parents $directory($dst)
-    nasm -f $format "-P$leaf($path($config_asm))" \
-         $c.poptions $lib_poptions -o $dst $src 2>!
+    nasm -f $format "-P$path.posix_string($leaf($path($config_asm)))" \
+         $path.posix_string($c.poptions) \
+         $path.posix_string($lib_poptions) \
+         -o $path.posix_string($dst) $path.posix_string($src) 2>!
   end
 }}
 
@@ -232,13 +236,15 @@ $project/impl_target{conditional-asm-objs}:
   touch $o/asm-objs.d
 
   key = [string] "$c.target.system-$c.target.cpu"
-  format = ($asm_format[$key])
+  format = [string] ($asm_format[$key])
   for file: [paths] $srcs
     src = $s/$path.base($file).asm
     dst = $o/$file
     mkdir --parents $directory($dst)
-    nasm -f $format "-P$leaf($path($config_asm))" \
-         $c.poptions $lib_poptions -o $dst $src 2>!
+    nasm -f $format "-P$path.posix_string($leaf($path($config_asm)))" \
+         $path.posix_string($c.poptions) \
+         $path.posix_string($lib_poptions) \
+         -o $path.posix_string($dst) $path.posix_string($src) 2>!
   end
 }}
 
@@ -258,7 +264,7 @@ $project/impl_target{conditional-rc-obja}:
     pair = [json] $json.parse($line)
     echo $member_value($pair) | for -w src
       if ($extension($src) == 'rc')
-        srcs += [paths] $path.posix_representation($path.base($src).obja)
+        srcs += [paths] $path.base($src).obja
       end
     end
   end
@@ -278,15 +284,14 @@ $project/impl_target{conditional-rc-obja}:
   touch $o/rc-obja.d
 
   key = [string] "$c.target.system-$c.target.cpu"
-  target = ($rc_target[$key])
+  target = [string] ($rc_target[$key])
   for file: [paths] $srcs
-    src = $path.posix_string($s/$path.base($file).rc)
-    dst = $path.posix_string($o/$file)
+    src = [path] $s/$path.base($file).rc
+    dst = [path] $o/$file
     mkdir --parents $directory($dst)
-    windres -v "-I$path.posix_string($directory($config_h))" \
-         $regex.apply($c.poptions, '\\', '/') \
-         $regex.apply($lib_poptions, '\\', '/') \
-         --target=$target -o $dst $src 2>!
+    windres $path.posix_string($c.poptions) \
+            $path.posix_string($lib_poptions) \
+            --target=$target -o $path.posix_string($dst) -i $path.posix_string($src) 2>!
   end
 }}
 
@@ -306,7 +311,7 @@ $project/impl_target{conditional-rc-objs}:
     pair = [json] $json.parse($line)
     echo $member_value($pair) | for -w src
       if ($extension($src) == 'rc')
-        srcs += [paths] $path.posix_representation($path.base($src).objs)
+        srcs += [paths] $path.base($src).objs
       end
     end
   end
@@ -326,14 +331,13 @@ $project/impl_target{conditional-rc-objs}:
   touch $o/rc-objs.d
 
   key = [string] "$c.target.system-$c.target.cpu"
-  target = ($rc_target[$key])
+  target = [string] ($rc_target[$key])
   for file: [paths] $srcs
-    src = $path.posix_string($s/$path.base($file).rc)
-    dst = $path.posix_string($o/$file)
+    src = [path] $s/$path.base($file).rc
+    dst = [path] $o/$file
     mkdir --parents $directory($dst)
-    windres -v "-I$path.posix_string($directory($config_h))" \
-         $regex.apply($c.poptions, '\\', '/') \
-         $regex.apply($lib_poptions, '\\', '/') \
-         --target=$target -o $dst $src 2>!
+    windres $path.posix_string($c.poptions) \
+            $path.posix_string($lib_poptions) \
+            --target=$target -o $path.posix_string($dst) -i $path.posix_string($src) 2>!
   end
 }}

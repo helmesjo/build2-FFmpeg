@@ -740,6 +740,10 @@
 #undef CONFIG_WMA_FREQS
 #undef CONFIG_WMV2DSP
 
+#if !defined(HAVE_PTHREADS) && (defined(__MINGW32__) || defined(__CYGWIN__))
+  #define HAVE_PTHREADS 1
+#endif
+
 #if HAVE_PTHREADS || HAVE_W32THREADS || HAVE_OS2THREADS
   #define HAVE_THREADS 1
 #endif
