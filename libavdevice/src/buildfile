@@ -25,6 +25,8 @@ import [once] libconfig%buildfile{symbol-importation}
 libul{avdevice}: impl_target{symbol-importation}: libavdevice/h{**}
 libua{avdevice}: libavdevice/impl_target{conditional-asm-obja}: libavdevice/asm{**}
 libus{avdevice}: libavdevice/impl_target{conditional-asm-objs}: libavdevice/asm{**}
+libua{avdevice}: libavdevice/impl_target{conditional-rc-obja}: libavdevice/file{**.rc}
+libus{avdevice}: libavdevice/impl_target{conditional-rc-objs}: libavdevice/file{**.rc}
 libul{avdevice}: libavdevice/impl_target{conditional-src}: libavdevice/c{**}
 # these c files are included, not built.
 libul{avdevice}: libavdevice/c{ \

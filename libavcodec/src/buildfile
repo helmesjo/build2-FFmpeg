@@ -27,6 +27,8 @@ import [once] libconfig%buildfile{symbol-importation}
 libul{avcodec}: impl_target{symbol-importation}: libavcodec/h{**}
 libua{avcodec}: libavcodec/impl_target{conditional-asm-obja}: libavcodec/asm{**}
 libus{avcodec}: libavcodec/impl_target{conditional-asm-objs}: libavcodec/asm{**}
+libua{avcodec}: libavcodec/impl_target{conditional-rc-obja}: libavcodec/file{**.rc}
+libus{avcodec}: libavcodec/impl_target{conditional-rc-objs}: libavcodec/file{**.rc}
 libul{avcodec}: libavcodec/impl_target{conditional-src}: libavcodec/c{**}
 
 libul{avcodec}:  libavcodec/c{               \

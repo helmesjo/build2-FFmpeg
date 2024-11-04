@@ -27,6 +27,8 @@ import [once] libconfig%buildfile{symbol-importation}
 libul{avformat}: impl_target{symbol-importation}: libavformat/h{**}
 libua{avformat}: libavformat/impl_target{conditional-asm-obja}: libavformat/asm{**}
 libus{avformat}: libavformat/impl_target{conditional-asm-objs}: libavformat/asm{**}
+libua{avformat}: libavformat/impl_target{conditional-rc-obja}: libavformat/file{**.rc}
+libus{avformat}: libavformat/impl_target{conditional-rc-objs}: libavformat/file{**.rc}
 libul{avformat}: libavformat/impl_target{conditional-src}: libavformat/c{**}
 libul{avformat}: libavformat/c{ \
                   protocol_list \

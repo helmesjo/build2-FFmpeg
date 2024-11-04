@@ -24,6 +24,8 @@ import [once] libconfig%buildfile{symbol-importation}
 libul{postproc}: impl_target{symbol-importation}: libpostproc/h{**}
 libua{postproc}: libpostproc/impl_target{conditional-asm-obja}: libpostproc/asm{**}
 libus{postproc}: libpostproc/impl_target{conditional-asm-objs}: libpostproc/asm{**}
+libua{postproc}: libpostproc/impl_target{conditional-rc-obja}: libpostproc/file{**.rc}
+libus{postproc}: libpostproc/impl_target{conditional-rc-objs}: libpostproc/file{**.rc}
 libul{postproc}: libpostproc/impl_target{conditional-src}: libpostproc/c{**}
 
 # Build options.

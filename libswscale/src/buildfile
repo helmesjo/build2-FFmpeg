@@ -23,6 +23,8 @@ import [once] libconfig%buildfile{symbol-importation}
 libul{swscale}: impl_target{symbol-importation}: libswscale/h{**}
 libua{swscale}: libswscale/impl_target{conditional-asm-obja}: libswscale/asm{**}
 libus{swscale}: libswscale/impl_target{conditional-asm-objs}: libswscale/asm{**}
+libua{swscale}: libswscale/impl_target{conditional-rc-obja}: libswscale/file{**.rc}
+libus{swscale}: libswscale/impl_target{conditional-rc-objs}: libswscale/file{**.rc}
 libul{swscale}: libswscale/impl_target{conditional-src}: libswscale/c{**}
 libul{swscale}: libswscale/c{**_template}: include = adhoc
 # these c files are included, not built.

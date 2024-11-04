@@ -25,6 +25,8 @@ import [once] libconfig%buildfile{symbol-importation}
 libul{swresample}: impl_target{symbol-importation}: libswresample/h{**}
 libua{swresample}: libswresample/impl_target{conditional-asm-obja}: libswresample/asm{**}
 libus{swresample}: libswresample/impl_target{conditional-asm-objs}: libswresample/asm{**}
+libua{swresample}: libswresample/impl_target{conditional-rc-obja}: libswresample/file{**.rc}
+libus{swresample}: libswresample/impl_target{conditional-rc-objs}: libswresample/file{**.rc}
 libul{swresample}: libswresample/impl_target{conditional-src}: libswresample/c{**}
 
 # these c files are included, not built.

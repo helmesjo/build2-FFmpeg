@@ -28,6 +28,8 @@ import [once] libconfig%buildfile{symbol-importation}
 libul{avfilter}: impl_target{symbol-importation}: libavfilter/h{**}
 libua{avfilter}: libavfilter/impl_target{conditional-asm-obja}: libavfilter/asm{**}
 libus{avfilter}: libavfilter/impl_target{conditional-asm-objs}: libavfilter/asm{**}
+libua{avfilter}: libavfilter/impl_target{conditional-rc-obja}: libavfilter/file{**.rc}
+libus{avfilter}: libavfilter/impl_target{conditional-rc-objs}: libavfilter/file{**.rc}
 libul{avfilter}: libavfilter/impl_target{conditional-src}: libavfilter/c{**}
 
 libul{avfilter}: libavfilter/c{ \

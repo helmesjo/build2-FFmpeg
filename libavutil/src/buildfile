@@ -18,6 +18,8 @@ import [once] libconfig%buildfile{symbol-importation}
 libul{avutil}: impl_target{symbol-importation}: libavutil/h{**}
 libua{avutil}: libavutil/impl_target{conditional-asm-obja}: libavutil/asm{**}
 libus{avutil}: libavutil/impl_target{conditional-asm-objs}: libavutil/asm{**}
+libua{avutil}: libavutil/impl_target{conditional-rc-obja}: libavutil/file{**.rc}
+libus{avutil}: libavutil/impl_target{conditional-rc-objs}: libavutil/file{**.rc}
 libul{avutil}: libavutil/impl_target{conditional-src}: libavutil/c{**}
 
 libul{avutil}: compat/windows/{h c}{*} \
