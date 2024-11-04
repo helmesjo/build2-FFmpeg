@@ -17,9 +17,10 @@ have_opengles = [bool] ($c.find_system_header("ES2/gl.h") != [null])
 [rule_hint=c] \
 lib{config}: h{autoconf config config_components} file{config.asm}
 
-c{print_defines}: h{autoconf}
+# extract all '#define' from input files and generate print_defines.c
+# with '#pragma message' to print values for each during pre-process.
+c{print_defines}: h{autoconf} file{config_cpu.h config.h.in}
 {{
-  s = [path] "$src_base/config.h.in"
   print = [string] "#pragma message"
 
   diag gen $>
@@ -33,17 +34,20 @@ c{print_defines}: h{autoconf}
   file += '#define VALUE(v) v'
 
   file += ""
-  cat $s | for -n line
-    if ($regex.find_match($line, '[ ]*#[ ]*?(define|undef)[ ]+.*$'))
-      c = $regex.apply($line, '[ ]*#[ ]*?(define|undef)[ ]+([A-Z0-9_]+).*$', '\2', format_no_copy)
-      if (!$empty($c) && $c != 'FFMPEG_CONFIG_H' && !$defs[$c])
-        defs += $c
-        tmp = [string] 'TOSTRING({#define "DEF"=VALUE(DEF)})'
-        tmp = $string.replace($tmp, 'DEF', "$c")
-        file += "#ifndef $c"
-        file += "  #define $c 0"
-        file += "#endif"
-        file += "$print\($tmp\)"
+  for i : $integer_sequence(1, $size($<))
+    s = [path] $path($<[$i])
+    cat $s | for -n line
+      if ($regex.find_match($line, '[ ]*#[ ]*?(define|undef)[ ]+.*$'))
+        c = $regex.apply($line, '[ ]*#[ ]*?(define|undef)[ ]+([A-Z0-9_]+).*$', '\2', format_no_copy)
+        if (!$empty($c) && $c != 'FFMPEG_CONFIG_H' && !$defs[$c])
+          defs += $c
+          tmp = [string] 'TOSTRING({#define "DEF"=VALUE(DEF)})'
+          tmp = $string.replace($tmp, 'DEF', "$c")
+          file += "#ifndef $c"
+          file += "  #define $c 0"
+          file += "#endif"
+          file += "$print\($tmp\)"
+        end
       end
     end
   end
@@ -53,7 +57,8 @@ c{print_defines}: h{autoconf}
   echo '// generated' >$path($>)
   echo $file >>$path($>)
 }}
-
+# generate the final 'config.h' containing one line per '#define' and
+# it's determined value (1 or 0) by pre-processing c{print_defines}
 h{config}: c{print_defines}
 {{
   s = $path($<)
@@ -87,6 +92,8 @@ h{config}: c{print_defines}
   echo '#endif' >>$path($>)
 }}
 
+# generate config.asm from config.h, replacing
+# '#' with '&' and '//' with ';'
 file{config.asm}: h{config}
 {{
   s = $path($<)
@@ -95,7 +102,7 @@ file{config.asm}: h{config}
 
   cat $s | set tmp [string_set]
   tmp = $regex.replace($tmp, '#', '%')
-  tmp = $regex.replace($tmp, '^//', '; ')
+  tmp = $regex.replace($tmp, '^[ ]*//', '; ')
 
   echo "$tmp" >$path($>)
 }}
@@ -2743,6 +2750,8 @@ h{autoconf}: in{config}
 #
 out_pfx = [dir_path] $out_root/
 src_pfx = [dir_path] $src_root/libconfig/
+
+c.poptions += "-I$out_pfx" "-I$out_pfx/libconfig/" "-I$src_pfx"
 
 # System libraries
 sys_libs =
