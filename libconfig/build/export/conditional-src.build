@@ -25,6 +25,27 @@ asm_format = [string_map]    \
   'solaris-x86_64'@elf64     \
   'solaris-i686'@elf32
 
+rc_target = [string_map]                \
+  'win32-msvc-x86_64'@pe-x86-64         \
+  'win32-msvc-i386'@pe-i386             \
+  'linux-gnu-x86_64-elf64'@elf64-x86-64 \
+  'linux-gnu-i386-elf32'@elf32-i386     \
+  'linux-musl-x86_64'@elf64-x86-64      \
+  'linux-musl-i686'@elf32-i386          \
+  'linux-iamcu-elf32'@elf32-iamcu
+  # 'generic-pdb'@pdb                   \
+  # 'generic-elf64-little'@elf64-little \
+  # 'generic-elf64-big'@elf64-big       \
+  # 'generic-elf32-little'@elf32-little \
+  # 'generic-elf32-big'@elf32-big       \
+  # 'generic-srec'@srec                 \
+  # 'generic-symbolsrec'@symbolsrec     \
+  # 'generic-verilog'@verilog           \
+  # 'generic-tekhex'@tekhex             \
+  # 'generic-binary'@binary             \
+  # 'generic-ihex'@ihex                 \
+  # 'generic-plugin'@plugin
+
 if (!$defined(config_h))
   import config_h = libconfig%h{config}
 if (!$defined(config_asm))
@@ -101,7 +122,8 @@ $project/impl_target{conditional-src}:
   for line: $enabled_srcs
     pair = [json] $json.parse($line)
     echo $member_value($pair) | for -w src
-      if ($extension($src) != 'asm')
+      ext = $extension($src)
+      if ($ext != 'asm' && $ext != 'rc')
         srcs += [paths] $src
       end
     end
@@ -217,5 +239,101 @@ $project/impl_target{conditional-asm-objs}:
     mkdir --parents $directory($dst)
     nasm -f $format "-P$leaf($path($config_asm))" \
          $c.poptions $lib_poptions -o $dst $src 2>!
+  end
+}}
+
+$project/impl_target{conditional-rc-obja}: file{enabled_source} libua{conditional-src-meta} $config_asm: update = match
+$project/impl_target{conditional-rc-obja}:
+{{
+  n = [name] $project
+  o = [dir_path] $directory($>)
+  s = [dir_path] $src_base/$n
+  enabled_srcs = [json] $json.load($path($<[0]))
+  lib_poptions = $c.lib_poptions(libua{conditional-src-meta}, obja)
+  depdb hash $lib_poptions
+
+  # append enabled sources
+  srcs = [paths]
+  for line: $enabled_srcs
+    pair = [json] $json.parse($line)
+    echo $member_value($pair) | for -w src
+      if ($extension($src) == 'rc')
+        srcs += [paths] $path.posix_representation($path.base($src).obja)
+      end
+    end
+  end
+
+  depdb dyndep \
+    --dyn-target \
+    --adhoc \
+    --target-cwd $o \
+    --target-what 'extracted assembly' \
+    --target-extension-type 'obja=obja' \
+    --format lines \
+    -- echo $regex.merge(rc-obja.d $srcs, '(.*)', '\1', "$\n")
+
+  diag rc $>
+
+  # phony for platforms without rc
+  touch $o/rc-obja.d
+
+  key = [string] "$c.target.system-$c.target.cpu"
+  target = ($rc_target[$key])
+  for file: [paths] $srcs
+    src = $path.posix_string($s/$path.base($file).rc)
+    dst = $path.posix_string($o/$file)
+    mkdir --parents $directory($dst)
+    windres -v "-I$path.posix_string($directory($config_h))" \
+         $regex.apply($c.poptions, '\\', '/') \
+         $regex.apply($lib_poptions, '\\', '/') \
+         --target=$target -o $dst $src 2>!
+  end
+}}
+
+$project/impl_target{conditional-rc-objs}: file{enabled_source} libus{conditional-src-meta} $config_asm: update = match
+$project/impl_target{conditional-rc-objs}:
+{{
+  n = [name] $project
+  o = [dir_path] $directory($>)
+  s = [dir_path] $src_base/$n
+  enabled_srcs = [json] $json.load($path($<[0]))
+  lib_poptions = $c.lib_poptions(libus{conditional-src-meta}, objs)
+  depdb hash $lib_poptions
+
+  # append enabled sources
+  srcs = [paths]
+  for line: $enabled_srcs
+    pair = [json] $json.parse($line)
+    echo $member_value($pair) | for -w src
+      if ($extension($src) == 'rc')
+        srcs += [paths] $path.posix_representation($path.base($src).objs)
+      end
+    end
+  end
+
+  depdb dyndep \
+    --dyn-target \
+    --adhoc \
+    --target-cwd $o \
+    --target-what 'extracted assembly' \
+    --target-extension-type 'objs=objs' \
+    --format lines \
+    -- echo $regex.merge(rc-objs.d $srcs, '(.*)', '\1', "$\n")
+
+  diag rc $>
+
+  # phony for platforms without rc
+  touch $o/rc-objs.d
+
+  key = [string] "$c.target.system-$c.target.cpu"
+  target = ($rc_target[$key])
+  for file: [paths] $srcs
+    src = $path.posix_string($s/$path.base($file).rc)
+    dst = $path.posix_string($o/$file)
+    mkdir --parents $directory($dst)
+    windres -v "-I$path.posix_string($directory($config_h))" \
+         $regex.apply($c.poptions, '\\', '/') \
+         $regex.apply($lib_poptions, '\\', '/') \
+         --target=$target -o $dst $src 2>!
   end
 }}

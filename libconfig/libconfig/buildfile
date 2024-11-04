@@ -112,6 +112,8 @@ h{autoconf}: in{config}
   FFMPEG_CONFIGURATION                 = "\"$c.target.system\""
   FFMPEG_LICENSE                       = '"LGPL version 2.1 or later"'
   SWS_MAX_FILTER_SIZE                  = 256
+  BUILDSUF                             = "\"\""
+  SLIBSUF                              = ($tgt_win32 ? '".dll"' : '".so"')
   EXTERN_PREFIX                        = ($tgt_macos ? "\"_\"" : )
   EXTERN_ASM                           = ($tgt_macos ? _ : )
   OS_NAME                              = ($c.target.class)

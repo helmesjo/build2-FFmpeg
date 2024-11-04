@@ -12,6 +12,8 @@
 
 #undef SWS_MAX_FILTER_SIZE
 
+#undef BUILDSUF
+#undef SLIBSUF
 #undef EXTERN_PREFIX
 #undef EXTERN_ASM
 
@@ -337,7 +339,7 @@
 //unused: #undef HAVE_BLOCKS_EXTENSION
 #undef HAVE_EBP_AVAILABLE
 #undef HAVE_EBX_AVAILABLE
-#undef HAVE_GNU_AS
+//unused: #undef HAVE_GNU_AS
 #undef HAVE_GNU_WINDRES
 #undef HAVE_IBM_ASM
 #undef HAVE_INLINE_ASM_DIRECT_SYMBOL_REFS
