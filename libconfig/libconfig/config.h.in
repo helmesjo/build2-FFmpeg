@@ -742,10 +742,11 @@
   #define HAVE_THREADS 1
 #endif
 
-#define AS_ARCH_LEVEL_CONCAT1(pref, maj, min) pref ## maj. ## min
-#define AS_ARCH_LEVEL_CONCAT(pref, maj, min) AS_ARCH_LEVEL_CONCAT1(pref, maj, min)
 // armv8.2-a
 #if !defined(AS_ARCH_LEVEL) && defined(__ARM_ARCH)
+  #define AS_ARCH_LEVEL_CONCAT1(pref, maj, min) pref ## maj. ## min
+  #define AS_ARCH_LEVEL_CONCAT(pref, maj, min) AS_ARCH_LEVEL_CONCAT1(pref, maj, min)
+
   #if defined(__ARM_FEATURE_DOTPROD)
     #define ARCH_VERSION_EXT 4-a
   #elif defined(__ARM_FEATURE_FP16_SCALAR_ARITHMETIC)
