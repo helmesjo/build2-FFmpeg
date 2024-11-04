@@ -1,3 +1,5 @@
+// All checks required for FFmpeg source.
+// NOTE: Those commented out have been determined to not be in use.
 #ifndef FFMPEG_CONFIG_H
 #define FFMPEG_CONFIG_H
 
@@ -13,6 +15,15 @@
 #  define ARCH_ARM 1
 #else
 #  define ARCH_ARM 0
+#endif
+
+// Check for ARM versions
+#if defined(__ARM_ARCH)
+#  if __ARM_ARCH == 8
+#    define HAVE_ARMV8 1
+#  else
+#    define HAVE_ARMV8 0
+#  endif
 #endif
 
 // Check for PowerPC (PPC)
