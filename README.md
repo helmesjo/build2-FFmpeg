@@ -39,16 +39,16 @@ by one of the `FFmpeg` sub-packages. It does the following (in order):
       sub-module to substitute all pre-processor checks.
 2. Generate `c{print_defines}` from `h{autoconf}`.
     - This (intermediate) step will extract all _defines_ \
-      and output them wrapped in a `#pragma warning` \
-      so that the final pre-processed value can be read.
-3. Generate `h{config}` (final) from `c{print_defines}`.
+      and write to them `c{print_defines}` wrapped in \
+      a `#pragma warning` so that the final (pre-processed) \
+      values can be read.
+3. Generate `h{config}` from `c{print_defines}`.
     - This (final) step will pre-process (only) \
       the `c{print_defines}` file, parse the output \
       and write each `#define` to `h{config}`.
-4. Generate `asm{config}` (final) from `h{config}`.
-    - This (final) just copy `h{config}` line-by-line \
-      and replaces `#` with `%` (defines) and \
-      `//` with `;` (comments).
+4. Generate `asm{config}` from `h{config}`.
+    - This (final) step just reads `h{config}` line-by-line and \
+      replaces `#` with `%` (defines) and `//` with `;` (comments).
 
 With this done the final `config.h` can then be parsed at build-time, \
 figure what is enabled or not, and used to conditionally select what \
@@ -65,6 +65,7 @@ and architecture. Notice any discrepancies and fix locally or (preferably) in \
 
 1. Check out new upstream release branch.
 2. Update each packages' `files.json` file:  
+    - Do NOT run on Windows, it's orders of magnitude slower
     - To perform a dry-run just skip the redirect `>`
     - Notice logging to terminal from `./list-files.sh` to spot any
     obvious issues. Modify the generated `files.json` files accordingly
