@@ -5,6 +5,9 @@ exec 3>/dev/tty
 
 set -o errexit # error out when a command/script/function fails
 
+RED='\033[0;31m'
+DEF='\033[0m'
+
 cd "$1"
 
 # 1. remove all trailing comments
@@ -42,10 +45,11 @@ elif echo "$all_files" | grep -q '\\'; then
 fi
 
 while IFS= read -r line; do
+  group=$(sed -nre 's/^\{\"(.+)\": \".*\"\},/\1/p' <<< $line)
   files=$(sed -nre 's/^.*: \"(.*)\"\},/\1/p' <<< $line)
   for file in ${files[@]}; do
     filename="${file//.*/.}"
-    printf '%s' "check: $file" >&3
+    printf 'check %24s: %36s' "$group" "$file" >&3
     actual=
     if test -f ./$file; then
       printf ' -> %s' "$file" >&3
@@ -81,8 +85,10 @@ while IFS= read -r line; do
       printf ' -> %s' "${filename}h" >&3
       actual=(${filename}h)
     else
-      printf ' -> missing: %s' "$file" >&3
-      missing+=("$file | Alternatives: $(find ./ -name "${filename}*" -type f)")
+      printf ' -> %bmissing%b' $RED $DEF >&3
+      # remove file
+      all_files="${all_files[@]/"$file"/}"
+      missing+=("$file (alternatives: $(find ./ -name "${filename}*" -type f))")
     fi
     echo >&3
 
@@ -92,8 +98,9 @@ while IFS= read -r line; do
   done
 done <<< ${all_files[@]}
 
+all_files="${all_files[@]::-1}"
 echo '['
-echo "${all_files[@]::-1}"
+echo "${all_files%,}"
 echo ']'
 
 for file in "${missing[@]}"; do
