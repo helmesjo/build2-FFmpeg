@@ -45,6 +45,7 @@ elif echo "$all_files" | grep -q '\\'; then
 fi
 
 found_files=()
+missing_files=()
 while IFS= read -r line; do
   groups=($(sed -nr 's/^\{\"([A-Z0-9_ ]+)\": \"[^"]*\".*$/\1/p' <<< $line))
   groups=(${groups[@]##[[:space:]]}) # trim leading
@@ -91,8 +92,8 @@ while IFS= read -r line; do
       printf ' -> %s' "${filename}h" >&3
       actual=(${filename}h)
     else
-      printf ' -> %bmissing%b' $RED $DEF >&3
-      missing+=("${groups[@]}: $file (alternatives: $(find ./ -name "${filename}*" -type f))")
+      printf ' -> %bmissing_files%b' $RED $DEF >&3
+      missing_files+=("${groups[@]}: $file (alternatives: $(find ./ -name "${filename}*" -type f))")
     fi
     echo >&3
 
@@ -110,6 +111,6 @@ echo '['
 echo "${found_files%,}"
 echo ']'
 
-for file in "${missing[@]}"; do
+for file in "${missing_files[@]}"; do
   printf '%bMissing%b: %s\n' $RED $DEF "$file" >&2
 done
