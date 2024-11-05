@@ -22,11 +22,11 @@ makefiles=$(find ./ -type f -name "Makefile" -exec echo \; -exec cat {} \; -exec
 )
 
 # extract all 'SOME_VAR += files'
-mandatory=$(echo "$makefiles" | sed -rne 's/^([A-Z0-9_]+)[ \+=]+(.*\.[ho])/{"\1": "\2"},/p')
+mandatory=$(echo "$makefiles" | sed -rne 's/^([A-Z0-9_]+)[ \+=]+(.*\.[ho])/{"\1": "\2"}/p')
 # extract all 'SOME_VAR_$(CONDITION) += files'
-conditional=$(echo "$makefiles" | sed -rne 's/^[-A-Z0-9_]+\$\(([A-Z0-9_]+)\)[ \+=]+(.*\.[a-z]+)/{"\1": "\2"},/p')
+conditional=$(echo "$makefiles" | sed -rne 's/^[-A-Z0-9_]+\$\(([A-Z0-9_]+)\)[ \+=]+(.*\.[a-z]+)/{"\1": "\2"}/p')
 # extract all 'PLATFORM_VAR += files'
-platform=$(echo "$makefiles" | sed -rne 's/^([-A-Z0-9_]+)[ \+=]+(.*\.[a-z]+)/{"\1": "\2"},/p')
+platform=$(echo "$makefiles" | sed -rne 's/^([-A-Z0-9_]+)[ \+=]+(.*\.[a-z]+)/{"\1": "\2"}/p')
 
 # change all X-OBJ -> HAVE_X
 all_files=$(echo "$mandatory" | sed -E 's/([A-Z0-9_]+)-OBJS/HAVE_\1/gp')
@@ -46,16 +46,16 @@ fi
 
 found_files=()
 while IFS= read -r line; do
-  group=$(sed -nre 's/^\{\"([A-Z0-9_ ]+)\": \"[^"]+\"\},/\1/p' <<< $line)
-  group=${group##[[:space:]]} # trim leading
-  group=${group%%[[:space:]]} # trim trailing
-  files=($(sed -nre 's/^\{\"[^"]+\": \"([^"]+)\"\},/\1/p' <<< $line))
+  groups=($(sed -nr 's/^\{\"([A-Z0-9_ ]+)\": \"[^"]*\".*$/\1/p' <<< $line))
+  groups=(${groups[@]##[[:space:]]}) # trim leading
+  groups=(${groups[@]%%[[:space:]]}) # trim trailing
+  files=($(sed -nre 's/^\{\"[^"]+\": \"([^"]+)\"\}/\1/p' <<< $line))
   new_files=()
   for file in ${files[@]}; do
     file=${file##[[:space:]]} # trim leading
     file=${file%%[[:space:]]} # trim trailing
     filename="${file//.*/.}"
-    printf 'check %36s: %48s' "$group" "$file" >&3
+    printf 'check %36s: %48s' "${groups[@]}" "$file" >&3
     actual=
     if test -f ./$file; then
       printf ' -> %s' "$file" >&3
@@ -92,7 +92,7 @@ while IFS= read -r line; do
       actual=(${filename}h)
     else
       printf ' -> %bmissing%b' $RED $DEF >&3
-      missing+=("$group: $file (alternatives: $(find ./ -name "${filename}*" -type f))")
+      missing+=("${groups[@]}: $file (alternatives: $(find ./ -name "${filename}*" -type f))")
     fi
     echo >&3
 
@@ -100,7 +100,7 @@ while IFS= read -r line; do
       new_files+=("$actual")
     fi
   done
-  new_line="{\"$group\": \"${new_files[@]}\"},"
+  new_line="{\"${groups[@]}\": \"${new_files[@]}\"},"
   found_files+=("$new_line")
 done <<< ${all_files[@]}
 
