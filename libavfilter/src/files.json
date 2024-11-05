@@ -675,10 +675,10 @@
 {"HAVE_LIBC_MSVCRT": "file_open.c"},
 {"HAVE_RVV": "riscv/af_afir_rvv.S"},
 {"HAVE_THREADS": "pthread.c"},
-{"HEADERS": "avfilter.h buffersink.h buffersrc.h version.h version_major.h"}, 
-{"OBJS": "allfilters.c audio.c avfilter.c avfiltergraph.c buffersink.c buffersrc.c colorspace.c ccfifo.c drawutils.c formats.c framepool.c framequeue.c graphdump.c graphparser.c version.c video.c"}, 
+{"HEADERS": "avfilter.h buffersink.h buffersrc.h version.h version_major.h"},
+{"OBJS": "allfilters.c audio.c avfilter.c avfiltergraph.c buffersink.c buffersrc.c colorspace.c ccfifo.c drawutils.c formats.c framepool.c framequeue.c graphdump.c graphparser.c version.c video.c"},
 {"OBJS": "riscv/af_afir_init.c"},
-{"OPENCL": "libavfilter/opencl/*.cl"},
+{"OPENCL": ""},
 {"SHLIBOBJS": "log2_tab.c"},
-{"VULKAN": "libavfilter/vulkan/*.comp"}
+{"VULKAN": ""}
 ]

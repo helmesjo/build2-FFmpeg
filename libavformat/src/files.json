@@ -544,7 +544,7 @@
 {"CONFIG_THP_DEMUXER": "thp.c"},
 {"CONFIG_THREEDOSTR_DEMUXER": "3dostr.c"},
 {"CONFIG_TIERTEXSEQ_DEMUXER": "tiertexseq.c"},
-{"CONFIG_TLS_PROTOCOL HAVE_TLS": "tls.c"},
+{"CONFIG_TLS_PROTOCOL": "tls.c"},
 {"CONFIG_TMV_DEMUXER": "tmv.c"},
 {"CONFIG_TRUEHD_DEMUXER": "rawdec.c mlpdec.c"},
 {"CONFIG_TRUEHD_MUXER": "rawenc.c"},
@@ -570,7 +570,7 @@
 {"CONFIG_VIVIDAS_DEMUXER": "vividas.c"},
 {"CONFIG_VIVO_DEMUXER": "vivo.c"},
 {"CONFIG_VMD_DEMUXER": "sierravmd.c"},
-{"CONFIG_VOBSUB_DEMUXER": "subtitles.c"}, 
+{"CONFIG_VOBSUB_DEMUXER": "subtitles.c"},
 {"CONFIG_VOC_DEMUXER": "vocdec.c voc_packet.c voc.c"},
 {"CONFIG_VOC_MUXER": "vocenc.c voc.c"},
 {"CONFIG_VPK_DEMUXER": "vpk.c"},
@@ -611,7 +611,7 @@
 {"CONFIG_YUV4MPEGPIPE_MUXER": "yuv4mpegenc.c"},
 {"HAVE_GNU_WINDRES": "avformatres.rc"},
 {"HAVE_LIBC_MSVCRT": "file_open.c"},
-{"HEADERS": "avformat.h avio.h version.h version_major.h"}, 
-{"OBJS": "allformats.c avformat.c avio.c aviobuf.c demux.c demux_utils.c dump.c dv.c format.c id3v1.c id3v2.c isom_tags.c metadata.c mux.c mux_utils.c options.c os_support.c protocols.c riff.c sdp.c seek.c url.c utils.c version.c"}, 
+{"HEADERS": "avformat.h avio.h version.h version_major.h"},
+{"OBJS": "allformats.c avformat.c avio.c aviobuf.c demux.c demux_utils.c dump.c dv.c format.c id3v1.c id3v2.c isom_tags.c metadata.c mux.c mux_utils.c options.c os_support.c protocols.c riff.c sdp.c seek.c url.c utils.c version.c"},
 {"SHLIBOBJS": "log2_tab.c to_upper4.c bitstream.c"}
 ]

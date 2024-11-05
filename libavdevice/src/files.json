@@ -45,7 +45,7 @@
 {"CONFIG_XV_OUTDEV": "xv.c"},
 {"HAVE_GNU_WINDRES": "avdeviceres.rc"},
 {"HAVE_LIBC_MSVCRT": "file_open.c"},
-{"HEADERS": "avdevice.h version.h version_major.h"}, 
-{"OBJS": "alldevices.c avdevice.c utils.c version.c"}, 
+{"HEADERS": "avdevice.h version.h version_major.h"},
+{"OBJS": "alldevices.c avdevice.c utils.c version.c"},
 {"SKIPHEADERS": "decklink_common.h"}
 ]
