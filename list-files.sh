@@ -44,10 +44,16 @@ elif echo "$all_files" | grep -q '\\'; then
   exit 1
 fi
 
+found_files=()
 while IFS= read -r line; do
-  group=($(sed -nre 's/^\{\"([^"]+)\": \"[^"]+\"\},/\1/p' <<< $line))
+  group=$(sed -nre 's/^\{\"([A-Z0-9_ ]+)\": \"[^"]+\"\},/\1/p' <<< $line)
+  group=${group##[[:space:]]} # trim leading
+  group=${group%%[[:space:]]} # trim trailing
   files=($(sed -nre 's/^\{\"[^"]+\": \"([^"]+)\"\},/\1/p' <<< $line))
+  new_files=()
   for file in ${files[@]}; do
+    file=${file##[[:space:]]} # trim leading
+    file=${file%%[[:space:]]} # trim trailing
     filename="${file//.*/.}"
     printf 'check %36s: %48s' "$group" "$file" >&3
     actual=
@@ -86,23 +92,24 @@ while IFS= read -r line; do
       actual=(${filename}h)
     else
       printf ' -> %bmissing%b' $RED $DEF >&3
-      # remove file
-      all_files="${all_files[@]/"$file}"/}"
-      missing+=("$file (alternatives: $(find ./ -name "${filename}*" -type f))")
+      missing+=("$group: $file (alternatives: $(find ./ -name "${filename}*" -type f))")
     fi
     echo >&3
 
     if [[ -n ${actual:-} ]]; then
-      all_files="${all_files[@]/"$file"/"$actual"}"
+      new_files+=("$actual")
     fi
   done
+  new_line="{\"$group\": \"${new_files[@]}\"},"
+  found_files+=("$new_line")
 done <<< ${all_files[@]}
 
-all_files="${all_files[@]::-1}"
+# convert to a multi-line string
+found_files="$(printf '%s\n' "${found_files[@]}")"
 echo '['
-echo "${all_files%,}"
+echo "${found_files%,}"
 echo ']'
 
 for file in "${missing[@]}"; do
-  printf '%bMissing%b:%s\n' $RED $DEF "$file" >&2
+  printf '%bMissing%b: %s\n' $RED $DEF "$file" >&2
 done
