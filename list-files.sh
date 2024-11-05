@@ -45,11 +45,11 @@ elif echo "$all_files" | grep -q '\\'; then
 fi
 
 while IFS= read -r line; do
-  group=$(sed -nre 's/^\{\"(.+)\": \".*\"\},/\1/p' <<< $line)
-  files=$(sed -nre 's/^.*: \"(.*)\"\},/\1/p' <<< $line)
+  group=($(sed -nre 's/^\{\"([^"]+)\": \"[^"]+\"\},/\1/p' <<< $line))
+  files=($(sed -nre 's/^\{\"[^"]+\": \"([^"]+)\"\},/\1/p' <<< $line))
   for file in ${files[@]}; do
     filename="${file//.*/.}"
-    printf 'check %24s: %36s' "$group" "$file" >&3
+    printf 'check %36s: %48s' "$group" "$file" >&3
     actual=
     if test -f ./$file; then
       printf ' -> %s' "$file" >&3
@@ -87,7 +87,7 @@ while IFS= read -r line; do
     else
       printf ' -> %bmissing%b' $RED $DEF >&3
       # remove file
-      all_files="${all_files[@]/"$file"/}"
+      all_files="${all_files[@]/"$file}"/}"
       missing+=("$file (alternatives: $(find ./ -name "${filename}*" -type f))")
     fi
     echo >&3
@@ -104,5 +104,5 @@ echo "${all_files%,}"
 echo ']'
 
 for file in "${missing[@]}"; do
-  echo "Missing: $file" >&2
+  printf '%bMissing%b:%s\n' $RED $DEF "$file" >&2
 done
