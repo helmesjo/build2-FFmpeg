@@ -6,6 +6,36 @@ if (!$config.libconfig.frame_thread_encoder)
   config.libconfig.frame_thread_encoder = true
 }
 
+switch $c.target.cpu $c.id.type
+{
+  case 'x86_64' 'msvc'
+  {
+    if (!$config.libconfig.disable_avx2)
+      c.coptions += -arch:AVX2
+    elif (!$config.libconfig.disable_sse3)
+      c.coptions += -arch:SSE3
+    elif (!$config.libconfig.disable_sse2)
+      c.coptions += -arch:SSE2
+    elif (!$config.libconfig.disable_sse)
+      c.coptions += -arch:SSE
+  }
+  case 'x86_64' 'gcc'
+  {
+    if (!$config.libconfig.disable_fma4)
+      c.coptions += -mfma4
+    elif (!$config.libconfig.disable_fma3)
+      c.coptions += -mfma3
+    elif (!$config.libconfig.disable_avx2)
+      c.coptions += -mavx2
+    elif (!$config.libconfig.disable_sse2)
+      c.coptions += -msse2
+    elif (!$config.libconfig.disable_sse)
+      c.coptions += -msse
+    elif (!$config.libconfig.disable_mmx)
+      c.coptions += -mmmx
+  }
+}
+
 cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
 tgt_macos = [bool] ($c.target.system == 'darwin')
@@ -15,11 +45,12 @@ have_opengl = [bool] ($c.find_system_header("GL/glx.h") != [null] || \
 have_opengles = [bool] ($c.find_system_header("ES2/gl.h") != [null])
 
 [rule_hint=c] \
-lib{config}: h{autoconf config config_components} file{config.asm}
+lib{config}: h{config autoconf config_components} file{config.asm}
 
 # extract all '#define' from input files and generate print_defines.c
 # with '#pragma message' to print values for each during pre-process.
-c{print_defines}: h{autoconf} file{config_cpu.h config.h.in}
+# NOTE: Order matters, as some config defines may depend on CPU defines
+c{print_defines}: h{config_cpu.h config}
 {{
   print = [string] "#pragma message"
 
@@ -28,25 +59,34 @@ c{print_defines}: h{autoconf} file{config_cpu.h config.h.in}
   defs = [string_set]
   file = [strings]
 
-  file += '#include "autoconf.h"'
+  file += '#define LIBCONFIG_PRINT_DEFINES_C'
+  file += '#include "config.h"'
   file += '#define STRINGIFY(x) #x'
   file += '#define TOSTRING(x) STRINGIFY(x)'
   file += '#define VALUE(v) v'
 
   file += ""
-  for i : $integer_sequence(1, $size($<))
+  for i : $integer_sequence(0, $size($<))
     s = [path] $path($<[$i])
     cat $s | for -n line
-      if ($regex.find_match($line, '[ ]*#[ ]*?(define|undef)[ ]+.*$'))
-        c = $regex.apply($line, '[ ]*#[ ]*?(define|undef)[ ]+([A-Z0-9_]+).*$', '\2', format_no_copy)
-        if (!$empty($c) && $c != 'FFMPEG_CONFIG_H' && !$defs[$c])
+      if ($regex.find_match($line, '[ ]*#[ ]*define[ ]+.*$'))
+        c = $regex.apply($line, '[ ]*#[ ]*define[ ]+([a-zA-Z0-9_]+).*$', '\1', format_no_copy)
+        if (!$empty($c) && !$defs[$c])
           defs += $c
-          tmp = [string] 'TOSTRING({#define "DEF"=VALUE(DEF)})'
+          tmp = [string] 'TOSTRING({#  define "DEF" VALUE(DEF)})'
           tmp = $string.replace($tmp, 'DEF', "$c")
-          file += "#ifndef $c"
-          file += "  #define $c 0"
+
+          if ($string.starts_with($c, 'HAVE_'))
+            file += "#ifndef $c"
+            file += "  #  define $c 0"
+            file += "#endif"
+          end
+
+          file += "#ifdef $c"
+          file += "  $print\(TOSTRING\({#ifndef \"$c\"}\)\)"
+          file += "  $print\($tmp\)"
+          file += "  $print\(TOSTRING\({#endif}\)\)"
           file += "#endif"
-          file += "$print\($tmp\)"
         end
       end
     end
@@ -57,9 +97,10 @@ c{print_defines}: h{autoconf} file{config_cpu.h config.h.in}
   echo '// generated' >$path($>)
   echo $file >>$path($>)
 }}
-# generate the final 'config.h' containing one line per '#define' and
+
+# generate the final 'autoconf.h' containing one line per '#define' and
 # it's determined value (1 or 0) by pre-processing c{print_defines}
-h{config}: c{print_defines}
+h{autoconf}: c{print_defines}
 {{
   s = $path($<)
   n = $path.leaf($s)
@@ -70,44 +111,49 @@ h{config}: c{print_defines}
 
   if ($c.class == 'msvc')
     echo -nologo $c.poptions $cc.poptions $c.coptions $c.mode -c $s -Fo$o >$r &$r &$o
-    $effect($c.path) "@$r" 2>&1 | set tmp [string_set]
-    # msvc is very verbose, but luckily all files that start with a space can be removed.
+    # re-run in case of error to print the error output
+    $effect($c.path) "@$r" 2>&1 | set tmp [string_set] || $effect($c.path) "@$r"
+    # msvc is very verbose, but luckily all lines that start with a space can be removed.
     tmp = $regex.replace($tmp, '^[ ].*$', '')
   else
-    $effect($c.path) $c.poptions $cc.poptions $c.coptions $c.mode -E $s 2>! \
-                     | set tmp [string_set]
+    # re-run in case of error to print the error output
+    $effect($c.path) $c.poptions $cc.poptions $c.coptions $c.mode -E $s 2>- \
+                       | set tmp [string_set] \
+                     || effect($c.path) $c.poptions $cc.poptions $c.coptions $c.mode -E $s
   end
+
   # quotes are printed as unicode with clang
   tmp = $regex.replace($tmp, '\\042', '"')
 
-  tmp = $regex.apply($tmp, '\{(#[a-zA-Z]+) [\\"]{1,2}([A-Za-z0-9_]+)[\\"]{1,2}=([^\}]*)', "\1 \2 \3\n", format_no_copy)
+  tmp = $regex.apply($tmp, '\{(#[ ]*[a-zA-Z]+[ ]*)[\\"]{0,2}([A-Za-z0-9_]*[ ]*)[\\"]{0,2}([^\}]*)', "\1\2\3\n", format_no_copy)
   tmp = $regex.replace($tmp, '^\s+((?!#).*$)', '//\1')
   tmp = $regex.replace($tmp, '\\\"', '"')
 
   echo '// generated' >$path($>)
-  echo '#ifndef FFMPEG_CONFIG_H' >>$path($>)
-  echo '#define FFMPEG_CONFIG_H' >>$path($>)
+  echo '#ifndef AUTOCONF_H' >>$path($>)
+  echo '#define AUTOCONF_H' >>$path($>)
   echo '' >>$path($>)
   echo "$tmp" >>$path($>)
   echo '#endif' >>$path($>)
 }}
 
-# generate config.asm from config.h, replacing
-# '#' with '&' and '//' with ';'
-file{config.asm}: h{config}
+# generate config.asm from autoconf.h, replacing
+# '#<spaces>' with '%' and '//' with ';', and remove
+# any spaces between
+file{config.asm}: h{autoconf}
 {{
   s = $path($<)
 
   diag configure ($>)
 
   cat $s | set tmp [string_set]
-  tmp = $regex.replace($tmp, '#', '%')
+  tmp = $regex.replace($tmp, '#[ ]*', '%')
   tmp = $regex.replace($tmp, '^[ ]*//', '; ')
 
   echo "$tmp" >$path($>)
 }}
 
-h{autoconf}: in{config}
+h{config}: in{config}
 {
   FFMPEG_CONFIGURATION                 = "\"$c.target.system\""
   FFMPEG_LICENSE                       = '"LGPL version 2.1 or later"'
@@ -463,21 +509,19 @@ h{autoconf}: in{config}
                      HAVE_AS_FUNC@HAVE_AS_FUNC_DIRECTIVE \
                      HAVE_EBP_AVAILABLE@HAVE_ASM_EBP \
                      HAVE_EBX_AVAILABLE@HAVE_ASM_EBX \
-                     HAVE_FAST_FLOAT16@HAVE_F16C \
                      HAVE_GMTIME@HAVE__GMTIME \
                      HAVE_INTRINSICS_NEON@HAVE_NEON \
                      HAVE_AS_OBJECT_ARCH@HAVE_AS_OBJECT_ARCH_DIRECTIVE \
-                     HAVE_PTHREADS@HAVE_PTHREAD \
-                     HAVE_SOCKLEN_T@socklen_t
+                     HAVE_PTHREADS@HAVE_PTHREAD
 
-  HAVE_CDIO_PARANOIA_H                 = ($c.find_system_header("cdio/paranoia.h") != [null])
-  HAVE_CDIO_PARANOIA_PARANOIA_H        = ($c.find_system_header("cdio/paranoia/paranoia.h") != [null])
-  HAVE_DEV_VIDEO_BKTR_IOCTL_BT848_H    = ($c.find_system_header("bktr/ioctl_bt848.h") != [null])
-  HAVE_DEV_VIDEO_METEOR_IOCTL_METEOR_H = ($c.find_system_header("meteor/ioctl_bt848.h") != [null])
-  HAVE_ES2_GL_H                        = ($c.find_system_header("GLES2/gl2.h") != [null])
-  HAVE_WGLGETPROCADDRESS               = ($have_opengl)
-  HAVE_GLXGETPROCADDRESS               = ($have_opengles)
-  HAVE_GSM_H                           = ($c.find_system_header("gsm.h") != [null])
+  HAVE_CDIO_PARANOIA_H                 = ($c.find_system_header("cdio/paranoia.h") != [null] ? 1 :0)
+  HAVE_CDIO_PARANOIA_PARANOIA_H        = ($c.find_system_header("cdio/paranoia/paranoia.h") != [null] ? 1 :0)
+  HAVE_DEV_VIDEO_BKTR_IOCTL_BT848_H    = ($c.find_system_header("bktr/ioctl_bt848.h") != [null] ? 1 :0)
+  HAVE_DEV_VIDEO_METEOR_IOCTL_METEOR_H = ($c.find_system_header("meteor/ioctl_bt848.h") != [null] ? 1 :0)
+  HAVE_ES2_GL_H                        = ($c.find_system_header("GLES2/gl2.h") != [null] ? 1 :0)
+  HAVE_WGLGETPROCADDRESS               = ($have_opengl ? 1 :0)
+  HAVE_GLXGETPROCADDRESS               = ($have_opengles ? 1 :0)
+  HAVE_GSM_H                           = ($c.find_system_header("gsm.h") != [null] ? 1 :0)
   HAVE_OPENCL_D3D11                    = 0 # no package available (TODO: Check for sys-lib)
   HAVE_OPENCL_DRM_ARM                  = 0 # no package available (TODO: Check for sys-lib)
   HAVE_OPENCL_DRM_BEIGNET              = 0 # no package available (TODO: Check for sys-lib)
@@ -485,23 +529,23 @@ h{autoconf}: in{config}
   HAVE_OPENCL_VAAPI_BEIGNET            = 0 # no package available (TODO: Check for sys-lib)
   HAVE_OPENCL_VAAPI_INTEL_MEDIA        = 0 # no package available (TODO: Check for sys-lib)
   HAVE_OPENCL_VIDEOTOOLBOX             = 0 # no package available (TODO: Check for sys-lib)
-  HAVE_OPENCV2_CORE_CORE_C_H           = ($c.find_system_header("opencv2/core/core_c.h") != [null])
-  HAVE_OPENGL_GL3_H                    = ($c.find_system_header("OpenGL/gl3.h") != [null])
-  HAVE_OPENVINO2                       = ($c.find_system_header("openvino/c/openvino.h") != [null])
-  HAVE_STRUCT_MFXCONFIGINTERFACE       = ($c.find_system_header("mfx/mfxvideo.h") != [null])
-  HAVE_VAAPI_DRM                       = ($c.find_system_header("va/va_drm.h") != [null])
-  HAVE_VAAPI_WIN32                     = ($c.find_system_header("va/va_win32.h") != [null])
-  HAVE_VAAPI_X11                       = ($c.find_system_header("va/va_x11.h") != [null])
-  HAVE_VALGRIND_VALGRIND_H             = ($c.find_system_header("valgrind/valgrind.h") != [null])
-  HAVE_VDPAU_X11                       = ($c.find_system_header("vdpau/vdpau_x11.h") != [null])
-  HAVE_XMLLINT                         = ($c.find_system_header("libxml/parser.h") != [null])
+  HAVE_OPENCV2_CORE_CORE_C_H           = ($c.find_system_header("opencv2/core/core_c.h") != [null] ? 1 : 0)
+  HAVE_OPENGL_GL3_H                    = ($c.find_system_header("OpenGL/gl3.h") != [null] ? 1 : 0)
+  HAVE_OPENVINO2                       = ($c.find_system_header("openvino/c/openvino.h") != [null] ? 1 : 0)
+  HAVE_STRUCT_MFXCONFIGINTERFACE       = ($c.find_system_header("mfx/mfxvideo.h") != [null] ? 1 : 0)
+  HAVE_VAAPI_DRM                       = ($c.find_system_header("va/va_drm.h") != [null] ? 1 : 0)
+  HAVE_VAAPI_WIN32                     = ($c.find_system_header("va/va_win32.h") != [null] ? 1 : 0)
+  HAVE_VAAPI_X11                       = ($c.find_system_header("va/va_x11.h") != [null] ? 1 : 0)
+  HAVE_VALGRIND_VALGRIND_H             = ($c.find_system_header("valgrind/valgrind.h") != [null] ? 1 : 0)
+  HAVE_VDPAU_X11                       = ($c.find_system_header("vdpau/vdpau_x11.h") != [null] ? 1 : 0)
+  HAVE_XMLLINT                         = ($c.find_system_header("libxml/parser.h") != [null] ? 1 : 0)
 
   #  *nix
-  HAVE_LIBDRM_GETFB2 = ($c.find_system_header("drm/drm.h") != [null])
+  HAVE_LIBDRM_GETFB2 = ($c.find_system_header("drm/drm.h") != [null] ? 1 : 0)
 
   #  Win32
   ## FFmpeg (incorrectly) assumes that HAVE_BCRYPT implies it's _WIN32
-  HAVE_BCRYPT = ($c.find_system_header("bcrypt.h") != [null] && $tgt_win32)
+  HAVE_BCRYPT = ($c.find_system_header("bcrypt.h") != [null] && $tgt_win32 ? 1 : 0)
   HAVE_DPI_AWARENESS_CONTEXT   = $tgt_win32
   HAVE_GETMODULEHANDLE         = $tgt_win32
   HAVE_GETPROCESSAFFINITYMASK  = $tgt_win32
@@ -2827,6 +2871,25 @@ h{*}:
 #
 lib{config}:
 {
+  export.metadata = 1 libconfig
+
+  libconfig.disable_mmx                   = $config.libconfig.disable_mmx
+  libconfig.disable_mmxext                = $config.libconfig.disable_mmxext
+  libconfig.disable_sse                   = $config.libconfig.disable_sse
+  libconfig.disable_sse2                  = $config.libconfig.disable_sse2
+  libconfig.disable_sse3                  = $config.libconfig.disable_sse3
+  libconfig.disable_ssse3                 = $config.libconfig.disable_ssse3
+  libconfig.disable_sse4                  = $config.libconfig.disable_sse4
+  libconfig.disable_sse42                 = $config.libconfig.disable_sse42
+  libconfig.disable_fma3                  = $config.libconfig.disable_fma3
+  libconfig.disable_fma4                  = $config.libconfig.disable_fma4
+  libconfig.disable_avx                   = $config.libconfig.disable_avx
+  libconfig.disable_avx2                  = $config.libconfig.disable_avx2
+  libconfig.disable_avx512                = $config.libconfig.disable_avx512
+  libconfig.disable_avx512icl             = $config.libconfig.disable_avx512icl
+  libconfig.disable_aesni                 = $config.libconfig.disable_aesni
+  libconfig.disable_neon                  = $config.libconfig.disable_neon
+
   libconfig.doc                           = $config.libconfig.doc
   libconfig.htmlpages                     = $config.libconfig.htmlpages
   libconfig.manpages                      = $config.libconfig.manpages

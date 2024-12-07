@@ -48,27 +48,28 @@ rc_target = [string_map]                \
   # 'generic-ihex'@ihex                 \
   # 'generic-plugin'@plugin
 
-if (!$defined(config_h))
-  import config_h = libconfig%h{config}
+if (!$defined(autoconf_h))
+  import autoconf_h = libconfig%h{autoconf}
 if (!$defined(config_asm))
   import config_asm = libconfig%file{config.asm}
 
-<file{all_groups enabled_groups enabled_source}>: $config_h
+<file{all_groups enabled_groups enabled_source}>: $autoconf_h
 {{
   o = [dir_path] $directory($>[0])
 
-  configs = [path] $path($config_h)
+  configs = [path] $path($autoconf_h)
   depdb hash $configs
 
   # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
-  sed -n -e 's/#define[ ]+([A-Z0-9_]+)[ ]+1$/\1/p' $configs \
+  sed -n -e 's/#[ ]*define[ ]+([A-Z0-9_]+)[ ]+1$/\1/p' $configs \
     | set -w enabled_groups [string_set]
-  sed -n -e 's/#define[ ]+([A-Z0-9_]+)[ ]+[0-1]$/\1/p' $configs \
+  sed -n -e 's/#[ ]*define[ ]+([A-Z0-9_]+)[ ]+[0-1]$/\1/p' $configs \
     | set -w all_groups [string_set]
 
   enabled_groups += [string_set] OBJS ARCH_
 
   enabled_source = [json_array]
+  skipped = [strings]
   for pair: [json] $conditional_src
     echo $member_name($pair)  | set -w groups [strings]
     echo $member_value($pair) | set -w srcs [paths]
@@ -90,6 +91,7 @@ if (!$defined(config_asm))
         # check if group is enabled, either (eg.) 'HAVE_X86ASM', or for CPU specific 'ARCH_ARM'
         if ((!$enabled_groups[$group] || (!$enabled_groups[$arch_dir] && !$enabled_groups[$have_dir])) || $negate)
           enabled = false
+          skipped += "$name($src)-\($group|$arch_dir|$have_dir)"
         end
       end
       if ($enabled)
@@ -104,6 +106,10 @@ if (!$defined(config_asm))
   end
 
   diag configure $>
+
+  echo $skipped | for -w derp
+    echo $derp
+  end
 
   echo $all_groups >$path($>[0])
   echo $enabled_groups >$path($>[1])
@@ -193,7 +199,7 @@ $project/impl_target{conditional-asm-obja}:
     src = $s/$path.base($file).asm
     dst = $o/$file
     mkdir --parents $directory($dst)
-    nasm -f $format "-P$path.posix_string($leaf($path($config_asm)))" \
+    nasm -f $format "-P$path.posix_string($path($config_asm))" \
          $path.posix_string($c.poptions) \
          $path.posix_string($lib_poptions) \
          -o $path.posix_string($dst) $path.posix_string($src) 2>!
@@ -241,7 +247,7 @@ $project/impl_target{conditional-asm-objs}:
     src = $s/$path.base($file).asm
     dst = $o/$file
     mkdir --parents $directory($dst)
-    nasm -f $format "-P$path.posix_string($leaf($path($config_asm)))" \
+    nasm -f $format "-P$path.posix_string($path($config_asm))" \
          $path.posix_string($c.poptions) \
          $path.posix_string($lib_poptions) \
          -o $path.posix_string($dst) $path.posix_string($src) 2>!

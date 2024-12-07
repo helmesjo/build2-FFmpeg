@@ -1,3 +1,5 @@
+if (!$defined(libconfig))
+  import! libconfig [metadata] = libconfig%lib{config}
 switch $c.target.system
 {
   case 'win32-msvc'
@@ -13,6 +15,27 @@ switch $c.target.system
     }
   }
 }
+
+switch $c.target.cpu $c.id.type
+{
+  case 'x86_64' 'msvc'
+  {
+    if (!$($libconfig: libconfig.disable_avx2))
+      c.coptions += -arch:AVX2
+  }
+  case 'x86_64' 'gcc'
+  {
+    if (!$($libconfig: libconfig.disable_avx2))
+      c.coptions += -mavx2
+  }
+}
+# print $c.target.cpu = x86_64
+# print $c.target.vendor = microsoft
+# print $c.target.system = win32-msvc
+# print $c.target.version = 14.3
+# print $c.id.type
+
+# simd_flags  = $json.load($src_base/simd-flags.json)
 
 # see upstream ./configure line 5671
 switch $c.id
