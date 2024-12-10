@@ -119,7 +119,7 @@ h{autoconf}: c{print_defines}
     # re-run in case of error to print the error output
     $effect($c.path) $c.poptions $cc.poptions $c.coptions $c.mode -E $s 2>- \
                        | set tmp [string_set] \
-                     || effect($c.path) $c.poptions $cc.poptions $c.coptions $c.mode -E $s
+                     || $effect($c.path) $c.poptions $cc.poptions $c.coptions $c.mode -E $s
   end
 
   # quotes are printed as unicode with clang
