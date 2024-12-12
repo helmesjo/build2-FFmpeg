@@ -1,6 +1,6 @@
 import config = libconfig%lib{config}
 import libs = \
-  libswresample%lib{swresample} \
+  libswresample%liba{swresample} \
   $config
 
 requirements = [string_set] \

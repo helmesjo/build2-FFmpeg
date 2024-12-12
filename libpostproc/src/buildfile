@@ -6,7 +6,7 @@ impl_libs = # Implementation dependencies.
 import config = libconfig%lib{config}
 impl_libs += $config
 import intf_libs += \
-  libavutil%lib{avutil}
+  libavutil%liba{avutil}
 
 cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
@@ -16,17 +16,16 @@ lib{postproc}: libul{postproc}: \
                 libpostproc/h{**} \
                 $impl_libs $intf_libs
 
-conditional_src  = $json.load($src_base/files.json)
-
 # conditional source & assembly
 import [once] libconfig%buildfile{conditional-src}
-import [once] libconfig%buildfile{symbol-importation}
-libul{postproc}: impl_target{symbol-importation}: libpostproc/h{**}
-libua{postproc}: libpostproc/impl_target{conditional-asm-obja}: libpostproc/asm{**}
-libus{postproc}: libpostproc/impl_target{conditional-asm-objs}: libpostproc/asm{**}
-libua{postproc}: libpostproc/impl_target{conditional-rc-obja}: libpostproc/file{**.rc}
-libus{postproc}: libpostproc/impl_target{conditional-rc-objs}: libpostproc/file{**.rc}
-libul{postproc}: libpostproc/impl_target{conditional-src}: libpostproc/c{**}
+import config_h = libconfig%h{autoconf}
+import config_asm = libconfig%file{config.asm}
+
+[rule_hint=c] \
+libul{postproc-meta}: $impl_libs $intf_libs
+libua{postproc}: enabled_source{postproc}: \
+                  libua{postproc-meta} json{files.json} $config_h $config_asm \
+                  libpostproc/{c h}{**} libpostproc/asm{**}
 
 # Build options.
 #

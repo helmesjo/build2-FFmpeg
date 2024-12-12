@@ -1,6 +1,6 @@
 import config = libconfig%lib{config}
 import libs = \
-  libavfilter%lib{avfilter} \
+  libavfilter%liba{avfilter} \
   $config
 
 requirements = [string_set] \

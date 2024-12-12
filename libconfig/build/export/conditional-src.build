@@ -53,7 +53,7 @@ rc_target = [string_map]                \
 
 
 define [see_through] enabled_source: group
-enabled_source{~'/(.+)/'}: json{~'/.+/'} libua{~'/\1-meta/'} h{~'/.+/'} asm{~'/.+/'}
+enabled_source{~'/(.+)/'}: json{~'/.+/'} libua{~'/\1-meta/'} h{~'/.+/'}
 {{
   o          = [dir_path] $directory($>)
   meta       = ($<[0])
@@ -120,7 +120,8 @@ enabled_source{~'/(.+)/'}: json{~'/.+/'} libua{~'/\1-meta/'} h{~'/.+/'} asm{~'/.
     enabled_srcs += [paths] $src
   end
 
-  enabled_srcs = [paths] $regex.merge($enabled_srcs, '(.*)', '\1', "$\n")
+  enabled_asm  = $regex.filter_search($enabled_srcs, ".+\.asm")
+  enabled_srcs = $regex.filter_out_search($enabled_srcs, ".+\.asm")
 
   depdb dyndep \
     --dyn-target \
@@ -128,38 +129,33 @@ enabled_source{~'/(.+)/'}: json{~'/.+/'} libua{~'/\1-meta/'} h{~'/.+/'} asm{~'/.
     --target-what 'extracted source' \
     --target-extension-type 'asm=obja' \
     --format lines \
-    -- echo $enabled_srcs
+    -- echo $regex.merge($enabled_srcs $enabled_asm, '(.*)', '\1', "$\n")
 
-  diag filter $>
+  diag enabled_src $>
 
   for s : $skipped_srcs
     echo "skipped: $s" >!
   end
 
-  echo $enabled_srcs | for -n f
-    if($extension($f) != 'asm')
-      s = [path] $src_base/$f
-      d = [path] $out_base/$f
-      rm -f $d
-      mkdir --no-cleanup --parents $directory($d)
-      ln --symbolic $s $d
-    end
+  for f : [paths] $path($filter($>, h c))
+    s = [path] $src_base/$relative($f, $out_base)
+    d = [path] $f
+    rm -f $d
+    mkdir --no-cleanup --parents $directory($d)
+    ln --symbolic $s $d
   end
 
+  # TODO: Fix issue with timestamps (it constantly requires
+  #       a full rebuild with this target)
   # compile assembly files
   key = [string] "$c.target.system-$c.target.cpu"
   format = [string] ($asm_format[$key])
-  for i: $integer_sequence(1, $size($>))
-    f = [path] $path($>[$i])
-    if($extension($f) == 'asm')
-      src = $src_base/$relative($f, $out_base)
-      dst = $f
-      mkdir --parents $directory($dst)
-      echo "nasm $src"
-      nasm -f $format "-P$path($config_asm)" \
-           $c.poptions \
-           $lib_poptions \
-           -o $dst $src 2>!
-    end
+  for f : [paths] $path($filter($>, obja))
+    s = [path] $src_base/$base($relative($f, $out_base)).asm
+    d = [path] $f
+    nasm -f $format "-P$path($config_asm)" \
+         $c.poptions \
+         $lib_poptions \
+         -o $d $s
   end
 }}

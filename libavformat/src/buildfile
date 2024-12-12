@@ -6,30 +6,29 @@ impl_libs = # Implementation dependencies.
 import config = libconfig%lib{config}
 impl_libs += $config
 import intf_libs += \
-  libavutil%lib{avutil} \
-  libavcodec%lib{avcodec} \
-  libswscale%lib{swscale} \
-  libswresample%lib{swresample}
+  libavutil%liba{avutil} \
+  libavcodec%liba{avcodec} \
+  libswscale%liba{swscale} \
+  libswresample%liba{swresample}
 
 cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
 tgt_macos = [bool] ($c.target.system == 'darwin')
 
-lib{avformat}: libul{avformat}: \
-              libavformat/h{**} \
-              $impl_libs $intf_libs
-
-conditional_src  = $json.load($src_base/files.json)
+lib{avformat}: libul{avformat}: libavformat/h{**} $impl_libs $intf_libs
 
 # conditional source & assembly
 import [once] libconfig%buildfile{conditional-src}
-import [once] libconfig%buildfile{symbol-importation}
-libul{avformat}: impl_target{symbol-importation}: libavformat/h{**}
-libua{avformat}: libavformat/impl_target{conditional-asm-obja}: libavformat/asm{**}
-libus{avformat}: libavformat/impl_target{conditional-asm-objs}: libavformat/asm{**}
-libua{avformat}: libavformat/impl_target{conditional-rc-obja}: libavformat/file{**.rc}
-libus{avformat}: libavformat/impl_target{conditional-rc-objs}: libavformat/file{**.rc}
-libul{avformat}: libavformat/impl_target{conditional-src}: libavformat/c{**}
+import [once] libconfig%buildfile{conditional-src}
+import config_h = libconfig%h{autoconf}
+import config_asm = libconfig%file{config.asm}
+
+[rule_hint=c] \
+libul{avformat-meta}: $impl_libs $intf_libs
+libua{avformat}: enabled_source{avformat}: \
+                  libua{avformat-meta} json{files.json} $config_h $config_asm \
+                  libavformat/{c h}{**} libavformat/asm{**}
+
 libul{avformat}: libavformat/c{ \
                   protocol_list \
                   demuxer_list \

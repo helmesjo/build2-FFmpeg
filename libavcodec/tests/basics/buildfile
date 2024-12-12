@@ -1,6 +1,6 @@
 import config = libconfig%lib{config}
 import libs = \
-  libavcodec%lib{avcodec} \
+  libavcodec%liba{avcodec} \
   $config
 
 requirements = [string_set] \

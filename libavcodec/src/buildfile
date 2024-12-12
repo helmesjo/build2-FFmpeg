@@ -4,12 +4,11 @@ intf_libs = # Interface dependencies.
 impl_libs = # Implementation dependencies.
 
 import config = libconfig%lib{config}
-import avutil = libavutil%lib{avutil}
 impl_libs += $config
 import intf_libs += \
-  $avutil \
-  libswscale%lib{swscale} \
-  libswresample%lib{swresample}
+  libavutil%liba{avutil} \
+  libswscale%liba{swscale} \
+  libswresample%liba{swresample}
 
 cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
@@ -19,17 +18,17 @@ lib{avcodec}: libul{avcodec}: \
               libavcodec/h{**} \
               $impl_libs $intf_libs
 
-conditional_src  = $json.load($src_base/files.json)
-
 # conditional source & assembly
 import [once] libconfig%buildfile{conditional-src}
-import [once] libconfig%buildfile{symbol-importation}
-libul{avcodec}: impl_target{symbol-importation}: libavcodec/h{**}
-libua{avcodec}: libavcodec/impl_target{conditional-asm-obja}: libavcodec/asm{**}
-libus{avcodec}: libavcodec/impl_target{conditional-asm-objs}: libavcodec/asm{**}
-libua{avcodec}: libavcodec/impl_target{conditional-rc-obja}: libavcodec/file{**.rc}
-libus{avcodec}: libavcodec/impl_target{conditional-rc-objs}: libavcodec/file{**.rc}
-libul{avcodec}: libavcodec/impl_target{conditional-src}: libavcodec/c{**}
+import [once] libconfig%buildfile{conditional-src}
+import config_h = libconfig%h{autoconf}
+import config_asm = libconfig%file{config.asm}
+
+[rule_hint=c] \
+libul{avcodec-meta}: $impl_libs $intf_libs
+libua{avcodec}: enabled_source{avcodec}: \
+                  libua{avcodec-meta} json{files.json} $config_h $config_asm \
+                  libavcodec/{c h}{**} libavcodec/asm{**}
 
 libul{avcodec}:  libavcodec/c{               \
                   bsf_list                   \
@@ -125,9 +124,6 @@ libavcodec/c{bsf_list}: libavcodec/c{allcodecs} file{enabled_groups}
 
 # generate xxx_tables headers
 #
-
-[rule_hint=c] \
-libul{avcodec-meta}: $config $avutil
 
 <libavcodec/h{ \
   cbrt_tables                \

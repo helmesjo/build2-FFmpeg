@@ -6,11 +6,11 @@ impl_libs = # Implementation dependencies.
 import config = libconfig%lib{config}
 impl_libs += $config
 import intf_libs += \
-  libavutil%lib{avutil} \
-  libavcodec%lib{avcodec} \
-  libavformat%lib{avformat} \
-  libswscale%lib{swscale} \
-  libswresample%lib{swresample}
+  libavutil%liba{avutil} \
+  libavcodec%liba{avcodec} \
+  libavformat%liba{avformat} \
+  libswscale%liba{swscale} \
+  libswresample%liba{swresample}
 
 cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
@@ -20,17 +20,17 @@ lib{avfilter}: libul{avfilter}: \
               libavfilter/h{**} \
               $impl_libs $intf_libs
 
-conditional_src  = $json.load($src_base/files.json)
-
 # conditional source & assembly
 import [once] libconfig%buildfile{conditional-src}
-import [once] libconfig%buildfile{symbol-importation}
-libul{avfilter}: impl_target{symbol-importation}: libavfilter/h{**}
-libua{avfilter}: libavfilter/impl_target{conditional-asm-obja}: libavfilter/asm{**}
-libus{avfilter}: libavfilter/impl_target{conditional-asm-objs}: libavfilter/asm{**}
-libua{avfilter}: libavfilter/impl_target{conditional-rc-obja}: libavfilter/file{**.rc}
-libus{avfilter}: libavfilter/impl_target{conditional-rc-objs}: libavfilter/file{**.rc}
-libul{avfilter}: libavfilter/impl_target{conditional-src}: libavfilter/c{**}
+import [once] libconfig%buildfile{conditional-src}
+import config_h = libconfig%h{autoconf}
+import config_asm = libconfig%file{config.asm}
+
+[rule_hint=c] \
+libul{avfilter-meta}: $impl_libs $intf_libs
+libua{avfilter}: enabled_source{avfilter}: \
+                  libua{avfilter-meta} json{files.json} $config_h $config_asm \
+                  libavfilter/{c h}{**} libavfilter/asm{**}
 
 libul{avfilter}: libavfilter/c{ \
                   filter_list \

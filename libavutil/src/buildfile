@@ -12,13 +12,12 @@ tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
 ./: lib{avutil}: libul{avutil}: libavutil/h{avconfig ffversion} $impl_libs $intf_libs
 
 # conditional source & assembly
-conditional_src  = $json.load($src_base/files.json)
 import [once] libconfig%buildfile{conditional-src}
 import config_h = libconfig%h{autoconf}
 import config_asm = libconfig%file{config.asm}
 
 [rule_hint=c] \
-libul{avutil-meta}: $impl_libs
+libul{avutil-meta}: $impl_libs $intf_libs
 libua{avutil}: enabled_source{avutil}: \
                   libua{avutil-meta} json{files.json} $config_h $config_asm \
                   libavutil/{c h}{**} libavutil/asm{**}

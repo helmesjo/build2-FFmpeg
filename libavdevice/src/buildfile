@@ -17,17 +17,18 @@ lib{avdevice}: libul{avdevice}: \
                 libavdevice/h{**} \
                 $impl_libs $intf_libs
 
-conditional_src  = $json.load($src_base/files.json)
-
 # conditional source & assembly
 import [once] libconfig%buildfile{conditional-src}
-import [once] libconfig%buildfile{symbol-importation}
-libul{avdevice}: impl_target{symbol-importation}: libavdevice/h{**}
-libua{avdevice}: libavdevice/impl_target{conditional-asm-obja}: libavdevice/asm{**}
-libus{avdevice}: libavdevice/impl_target{conditional-asm-objs}: libavdevice/asm{**}
-libua{avdevice}: libavdevice/impl_target{conditional-rc-obja}: libavdevice/file{**.rc}
-libus{avdevice}: libavdevice/impl_target{conditional-rc-objs}: libavdevice/file{**.rc}
-libul{avdevice}: libavdevice/impl_target{conditional-src}: libavdevice/c{**}
+import [once] libconfig%buildfile{conditional-src}
+import config_h = libconfig%h{autoconf}
+import config_asm = libconfig%file{config.asm}
+
+[rule_hint=c] \
+libul{avdevice-meta}: $impl_libs $intf_libs
+libua{avdevice}: enabled_source{avdevice}: \
+                  libua{avdevice-meta} json{files.json} $config_h $config_asm \
+                  libavdevice/{c h}{**} libavdevice/asm{**}
+
 # these c files are included, not built.
 libul{avdevice}: libavdevice/c{ \
                   outdev_list \

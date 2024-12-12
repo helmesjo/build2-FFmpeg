@@ -6,28 +6,24 @@ impl_libs = # Implementation dependencies.
 import config = libconfig%lib{config}
 impl_libs += $config
 import intf_libs += \
-  libavutil%lib{avutil} \
-  libswscale%lib{swscale}
+  libavutil%liba{avutil} \
+  libswscale%liba{swscale}
 
 cpu = [string] $c.target.cpu
 tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
 tgt_macos = [bool] ($c.target.system == 'darwin')
 
-lib{swresample}: libul{swresample}: \
-              libswresample/h{**} \
-              $impl_libs $intf_libs
+lib{swresample}: libul{swresample}: libswresample/h{**} $impl_libs $intf_libs
 
-conditional_src  = $json.load($src_base/files.json)
-
-# conditional source & assembly
 import [once] libconfig%buildfile{conditional-src}
-import [once] libconfig%buildfile{symbol-importation}
-libul{swresample}: impl_target{symbol-importation}: libswresample/h{**}
-libua{swresample}: libswresample/impl_target{conditional-asm-obja}: libswresample/asm{**}
-libus{swresample}: libswresample/impl_target{conditional-asm-objs}: libswresample/asm{**}
-libua{swresample}: libswresample/impl_target{conditional-rc-obja}: libswresample/file{**.rc}
-libus{swresample}: libswresample/impl_target{conditional-rc-objs}: libswresample/file{**.rc}
-libul{swresample}: libswresample/impl_target{conditional-src}: libswresample/c{**}
+import config_h = libconfig%h{autoconf}
+import config_asm = libconfig%file{config.asm}
+
+[rule_hint=c] \
+libul{swresample-meta}: $impl_libs $intf_libs
+libua{swresample}: enabled_source{swresample}: \
+                  libua{swresample-meta} json{files.json} $config_h $config_asm \
+                  libswresample/{c h}{**} libswresample/asm{**}
 
 # these c files are included, not built.
 libul{swresample}: libswresample/c{**_template noise_shaping_data}: include = adhoc
