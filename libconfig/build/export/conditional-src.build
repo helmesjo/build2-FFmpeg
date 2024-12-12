@@ -1,8 +1,11 @@
-asm_libs = $impl_libs $intf_libs
-define [see_through] impl_target: group
+define json: file
+json{*}: extension = json
 
 define asm: file
 asm{*}: extension = asm
+
+define rc: file
+rc{*}: extension = rc
 
 asm_format = [string_map]    \
   'linux-gnu-x86_64'@elf64   \
@@ -48,33 +51,38 @@ rc_target = [string_map]                \
   # 'generic-ihex'@ihex                 \
   # 'generic-plugin'@plugin
 
-if (!$defined(autoconf_h))
-  import autoconf_h = libconfig%h{autoconf}
-if (!$defined(config_asm))
-  import config_asm = libconfig%file{config.asm}
 
-<file{all_groups enabled_groups enabled_source}>: $autoconf_h
+define [see_through] enabled_source: group
+enabled_source{~'/(.+)/'}: json{~'/.+/'} libua{~'/\1-meta/'} h{~'/.+/'} asm{~'/.+/'}
 {{
-  o = [dir_path] $directory($>[0])
+  o          = [dir_path] $directory($>)
+  meta       = ($<[0])
+  json       = ($<[1])
+  config     = ($<[2])
+  config_asm = ($<[3])
 
-  configs = [path] $path($autoconf_h)
-  depdb hash $configs
+  lib_poptions = $c.lib_poptions($meta, obja)
+  depdb hash $lib_poptions
 
   # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
-  sed -n -e 's/#[ ]*define[ ]+([A-Z0-9_]+)[ ]+1$/\1/p' $configs \
+  sed -n -e 's/#[ ]*define[ ]+([A-Z0-9_]+)[ ]+1$/\1/p' $path($config) \
     | set -w enabled_groups [string_set]
-  sed -n -e 's/#[ ]*define[ ]+([A-Z0-9_]+)[ ]+[0-1]$/\1/p' $configs \
+  sed -n -e 's/#[ ]*define[ ]+([A-Z0-9_]+)[ ]+[0-1]$/\1/p' $path($config) \
     | set -w all_groups [string_set]
 
+  # prepend default groups
   enabled_groups += [string_set] OBJS ARCH_
 
-  enabled_source = [json_array]
-  skipped = [strings]
-  for pair: [json] $conditional_src
+  # iterate all files and filter out if the corresponding
+  # group(s) isn't enabled
+  enabled_srcs = [paths]
+  skipped_srcs = [strings]
+  json = [path] $path($json)
+  for pair: [json] $json.load($json)
     echo $member_name($pair)  | set -w groups [strings]
     echo $member_value($pair) | set -w srcs [paths]
 
-    filtered_srcs = [strings]
+    filtered_srcs = [paths]
     for src: [paths] $srcs
       # if in an immediate subdir, treat as group 'ARCH_<DIR>', eg. 'ARCH_ARM'
       dir = $directory($src)
@@ -91,259 +99,67 @@ if (!$defined(config_asm))
         # check if group is enabled, either (eg.) 'HAVE_X86ASM', or for CPU specific 'ARCH_ARM'
         if ((!$enabled_groups[$group] || (!$enabled_groups[$arch_dir] && !$enabled_groups[$have_dir])) || $negate)
           enabled = false
-          skipped += "$name($src)-\($group|$arch_dir|$have_dir)"
+          skipped_srcs += "$name($src)-\($group|$arch_dir|$have_dir)"
         end
       end
       if ($enabled)
-        filtered_srcs += $src
+        filtered_srcs += $project/$src
       end
     end
 
     if (!$empty($filtered_srcs))
-      enabled_source += [json_array] \
-        "{\"$regex.merge($groups, '(.*)', '\1', ' ')\": \"$regex.merge($filtered_srcs, '(.*)', '\1', ' ')\"}"
+      enabled_srcs += [paths] $filtered_srcs
     end
   end
 
-  diag configure $>
-
-  echo $skipped | for -w derp
-    echo $derp
+  # add any header prerequisites so they also get
+  # symlinked (to allow relative inclusion)
+  hdrs = [paths] $path($filter($<, h))
+  for i : $integer_sequence(2, $size($hdrs))
+    src = [path] $relative($hdrs[$i], $src_base)
+    enabled_srcs += [paths] $src
   end
 
-  echo $all_groups >$path($>[0])
-  echo $enabled_groups >$path($>[1])
-  echo $enabled_source >$path($>[2])
-}}
-
-$project/impl_target{conditional-src}: file{enabled_source}: update = match
-$project/impl_target{conditional-src}:
-{{
-  n = [name] $project
-  d = [dir_path] $src_base
-  o = [dir_path] $directory($>)
-  s = [dir_path] $src_base/$n
-  enabled_srcs = [json] $json.load($path($<[0]))
-
-  # append enabled sources
-  srcs = [paths]
-  for line: $enabled_srcs
-    pair = [json] $json.parse($line)
-    echo $member_value($pair) | for -w src
-      ext = $extension($src)
-      if ($ext != 'asm' && $ext != 'rc')
-        srcs += [paths] $src
-      end
-    end
-  end
+  enabled_srcs = [paths] $regex.merge($enabled_srcs, '(.*)', '\1', "$\n")
 
   depdb dyndep \
     --dyn-target \
     --target-cwd $o \
     --target-what 'extracted source' \
-    --target-extension-type 'cpp=cxx' \
+    --target-extension-type 'asm=obja' \
     --format lines \
-    -- echo $regex.merge($srcs, '(.*)', '\1', "$\n")
+    -- echo $enabled_srcs
 
-  diag src $>
+  diag filter $>
 
-  for file: [paths] $srcs
-    src = [path] $s/$file
-    dst = [path] $o/$file
-    mkdir --no-cleanup --parents $directory($dst)
-    cp $src $dst
+  for s : $skipped_srcs
+    echo "skipped: $s" >!
   end
-}}
 
-[rule_hint=c] \
-libul{conditional-src-meta}: $asm_libs
-
-$project/impl_target{conditional-asm-obja}: file{enabled_source} libua{conditional-src-meta} $config_asm: update = match
-$project/impl_target{conditional-asm-obja}:
-{{
-  n = [name] $project
-  o = [dir_path] $directory($>)
-  s = [dir_path] $src_base/$n
-  enabled_srcs = [json] $json.load($path($<[0]))
-  lib_poptions = $c.lib_poptions(libua{conditional-src-meta}, obja)
-  depdb hash $lib_poptions
-
-  # append enabled sources
-  srcs = [paths]
-  for line: $enabled_srcs
-    pair = [json] $json.parse($line)
-    echo $member_value($pair) | for -w src
-      if ($extension($src) == 'asm')
-        srcs += [paths] $path.base($src).obja
-      end
+  echo $enabled_srcs | for -n f
+    if($extension($f) != 'asm')
+      s = [path] $src_base/$f
+      d = [path] $out_base/$f
+      rm -f $d
+      mkdir --no-cleanup --parents $directory($d)
+      ln --symbolic $s $d
     end
   end
 
-  depdb dyndep \
-    --dyn-target \
-    --adhoc \
-    --target-cwd $o \
-    --target-what 'extracted assembly' \
-    --target-extension-type 'obja=obja' \
-    --format lines \
-    -- echo $regex.merge(asm-obja.d $srcs, '(.*)', '\1', "$\n")
-
-  diag nasm $>
-
-  # phony for platforms without asm
-  touch $o/asm-obja.d
-
+  # compile assembly files
   key = [string] "$c.target.system-$c.target.cpu"
   format = [string] ($asm_format[$key])
-  for file: [paths] $srcs
-    src = $s/$path.base($file).asm
-    dst = $o/$file
-    mkdir --parents $directory($dst)
-    nasm -f $format "-P$path.posix_string($path($config_asm))" \
-         $path.posix_string($c.poptions) \
-         $path.posix_string($lib_poptions) \
-         -o $path.posix_string($dst) $path.posix_string($src) 2>!
-  end
-}}
-
-$project/impl_target{conditional-asm-objs}: file{enabled_source} libus{conditional-src-meta} $config_asm: update = match
-$project/impl_target{conditional-asm-objs}:
-{{
-  n = [name] $project
-  o = [dir_path] $directory($>)
-  s = [dir_path] $src_base/$n
-  enabled_srcs = [json] $json.load($path($<[0]))
-  lib_poptions = $c.lib_poptions(libus{conditional-src-meta}, objs)
-  depdb hash $lib_poptions
-
-  # append enabled sources
-  srcs = [paths]
-  for line: $enabled_srcs
-    pair = [json] $json.parse($line)
-    echo $member_value($pair) | for -w src
-      if ($extension($src) == 'asm')
-        srcs += [paths] $path.base($src).objs
-      end
+  for i: $integer_sequence(1, $size($>))
+    f = [path] $path($>[$i])
+    if($extension($f) == 'asm')
+      src = $src_base/$relative($f, $out_base)
+      dst = $f
+      mkdir --parents $directory($dst)
+      echo "nasm $src"
+      nasm -f $format "-P$path($config_asm)" \
+           $c.poptions \
+           $lib_poptions \
+           -o $dst $src 2>!
     end
-  end
-
-  depdb dyndep \
-    --dyn-target \
-    --adhoc \
-    --target-cwd $o \
-    --target-what 'extracted assembly' \
-    --target-extension-type 'objs=objs' \
-    --format lines \
-    -- echo $regex.merge(asm-objs.d $srcs, '(.*)', '\1', "$\n")
-
-  diag nasm $>
-
-  # phony for platforms without asm
-  touch $o/asm-objs.d
-
-  key = [string] "$c.target.system-$c.target.cpu"
-  format = [string] ($asm_format[$key])
-  for file: [paths] $srcs
-    src = $s/$path.base($file).asm
-    dst = $o/$file
-    mkdir --parents $directory($dst)
-    nasm -f $format "-P$path.posix_string($path($config_asm))" \
-         $path.posix_string($c.poptions) \
-         $path.posix_string($lib_poptions) \
-         -o $path.posix_string($dst) $path.posix_string($src) 2>!
-  end
-}}
-
-$project/impl_target{conditional-rc-obja}: file{enabled_source} libua{conditional-src-meta} $config_asm: update = match
-$project/impl_target{conditional-rc-obja}:
-{{
-  n = [name] $project
-  o = [dir_path] $directory($>)
-  s = [dir_path] $src_base/$n
-  enabled_srcs = [json] $json.load($path($<[0]))
-  lib_poptions = $c.lib_poptions(libua{conditional-src-meta}, obja)
-  depdb hash $lib_poptions
-
-  # append enabled sources
-  srcs = [paths]
-  for line: $enabled_srcs
-    pair = [json] $json.parse($line)
-    echo $member_value($pair) | for -w src
-      if ($extension($src) == 'rc')
-        srcs += [paths] $path.base($src).obja
-      end
-    end
-  end
-
-  depdb dyndep \
-    --dyn-target \
-    --adhoc \
-    --target-cwd $o \
-    --target-what 'extracted assembly' \
-    --target-extension-type 'obja=obja' \
-    --format lines \
-    -- echo $regex.merge(rc-obja.d $srcs, '(.*)', '\1', "$\n")
-
-  diag rc $>
-
-  # phony for platforms without rc
-  touch $o/rc-obja.d
-
-  key = [string] "$c.target.system-$c.target.cpu"
-  target = [string] ($rc_target[$key])
-  for file: [paths] $srcs
-    src = [path] $s/$path.base($file).rc
-    dst = [path] $o/$file
-    mkdir --parents $directory($dst)
-    windres $path.posix_string($c.poptions) \
-            $path.posix_string($lib_poptions) \
-            --target=$target -o $path.posix_string($dst) -i $path.posix_string($src) 2>!
-  end
-}}
-
-$project/impl_target{conditional-rc-objs}: file{enabled_source} libus{conditional-src-meta} $config_asm: update = match
-$project/impl_target{conditional-rc-objs}:
-{{
-  n = [name] $project
-  o = [dir_path] $directory($>)
-  s = [dir_path] $src_base/$n
-  enabled_srcs = [json] $json.load($path($<[0]))
-  lib_poptions = $c.lib_poptions(libus{conditional-src-meta}, objs)
-  depdb hash $lib_poptions
-
-  # append enabled sources
-  srcs = [paths]
-  for line: $enabled_srcs
-    pair = [json] $json.parse($line)
-    echo $member_value($pair) | for -w src
-      if ($extension($src) == 'rc')
-        srcs += [paths] $path.base($src).objs
-      end
-    end
-  end
-
-  depdb dyndep \
-    --dyn-target \
-    --adhoc \
-    --target-cwd $o \
-    --target-what 'extracted assembly' \
-    --target-extension-type 'objs=objs' \
-    --format lines \
-    -- echo $regex.merge(rc-objs.d $srcs, '(.*)', '\1', "$\n")
-
-  diag rc $>
-
-  # phony for platforms without rc
-  touch $o/rc-objs.d
-
-  key = [string] "$c.target.system-$c.target.cpu"
-  target = [string] ($rc_target[$key])
-  for file: [paths] $srcs
-    src = [path] $s/$path.base($file).rc
-    dst = [path] $o/$file
-    mkdir --parents $directory($dst)
-    windres $path.posix_string($c.poptions) \
-            $path.posix_string($lib_poptions) \
-            --target=$target -o $path.posix_string($dst) -i $path.posix_string($src) 2>!
   end
 }}
