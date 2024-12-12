@@ -14,13 +14,14 @@ tgt_win32 = [bool] ($c.target.system == 'win32-msvc')
 # conditional source & assembly
 conditional_src  = $json.load($src_base/files.json)
 import [once] libconfig%buildfile{conditional-src}
-import [once] libconfig%buildfile{symbol-importation}
-libul{avutil}: impl_target{symbol-importation}: libavutil/h{**}
-libua{avutil}: libavutil/impl_target{conditional-asm-obja}: libavutil/asm{**}
-libus{avutil}: libavutil/impl_target{conditional-asm-objs}: libavutil/asm{**}
-libua{avutil}: libavutil/impl_target{conditional-rc-obja}: libavutil/file{**.rc}
-libus{avutil}: libavutil/impl_target{conditional-rc-objs}: libavutil/file{**.rc}
-libul{avutil}: libavutil/impl_target{conditional-src}: libavutil/c{**}
+import config_h = libconfig%h{autoconf}
+import config_asm = libconfig%file{config.asm}
+
+[rule_hint=c] \
+libul{avutil-meta}: $impl_libs
+libua{avutil}: enabled_source{avutil}: \
+                  libua{avutil-meta} json{files.json} $config_h $config_asm \
+                  libavutil/{c h}{**} libavutil/asm{**}
 
 libul{avutil}: compat/windows/{h c}{*} \
                compat/msvrt/{h c}{*} \
@@ -34,7 +35,7 @@ libavutil/aarch64/S{asm}:
   diag copy $>
   o = $path($>)
   s = "$src_base/$path.relative($o, $out_base)"
-  cp $s $o
+  ln --symbolic $s $o
 }}
 
 libul{avutil}: libavutil/c{**_template}: include = adhoc
@@ -45,7 +46,7 @@ for t: libavutil/c{**_template}
     diag copy $>
     o = $path($>)
     s = "$src_base/$path.relative($o, $out_base)"
-    cp $s $o
+    ln --symbolic $s $o
   }}
 }
 
@@ -64,7 +65,7 @@ import [once] libconfig%buildfile{common-configs}
 out_pfx = [dir_path] $out_root/src/
 src_pfx = [dir_path] $src_root/src/
 
-c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_avutil -Dav_export_libavutil=
+c.poptions += "-I$out_pfx" "-I$src_pfx" -DBUILDING_avutil
 
 # System libraries
 sys_libs =
@@ -93,37 +94,12 @@ switch $c.target.system
   }
 }
 
-libs{avutil}: def{avutil}: include = ($c.target.system == 'win32-msvc')
-def{avutil}: libul{avutil}
-
-if ($c.target.system == 'mingw32')
-  c.loptions += -Wl,--export-all-symbols
-
 # Export options.
 #
 lib{avutil}:
 {
   c.export.poptions += "-I$out_pfx" "-I$src_pfx"
   c.export.libs = $intf_libs $sys_libs
-}
-
-if ($c.target.system == 'win32-msvc')
-{
-  liba{avutil}:
-  {
-    c.export.poptions += -Dav_export_libavutil=
-  }
-  libs{avutil}:
-  {
-    c.export.poptions += -Dav_export_libavutil=__declspec\(dllimport\)
-  }
-}
-else
-{
-  lib{avutil}:
-  {
-    c.export.poptions += -Dav_export_libavutil=
-  }
 }
 
 # For pre-releases use the complete version to make sure they cannot

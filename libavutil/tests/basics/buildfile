@@ -1,6 +1,6 @@
 import config = libconfig%lib{config}
 import libs = \
-  libavutil%lib{avutil} \
+  libavutil%liba{avutil} \
   $config
 
 requirements = [string_set] \
