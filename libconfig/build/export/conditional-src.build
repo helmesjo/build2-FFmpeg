@@ -51,24 +51,44 @@ rc_target = [string_map]                \
   # 'generic-ihex'@ihex                 \
   # 'generic-plugin'@plugin
 
-
-define [see_through] enabled_source: group
-enabled_source{~'/(.+)/'}: json{~'/.+/'} libua{~'/\1-meta/'} h{~'/.+/'}
+define config_groups: group
+config_groups{~'/(.+)/'}: h{~'/.+/'}
 {{
-  o          = [dir_path] $directory($>)
-  meta       = ($<[0])
-  json       = ($<[1])
-  config     = ($<[2])
-  config_asm = ($<[3])
-
-  lib_poptions = $c.lib_poptions($meta, obja)
-  depdb hash $lib_poptions
+  config = ($<[0])
 
   # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
   sed -n -e 's/#[ ]*define[ ]+([A-Z0-9_]+)[ ]+1$/\1/p' $path($config) \
     | set -w enabled_groups [string_set]
   sed -n -e 's/#[ ]*define[ ]+([A-Z0-9_]+)[ ]+[0-1]$/\1/p' $path($config) \
     | set -w all_groups [string_set]
+
+  depdb dyndep \
+    --dyn-target \
+    --target-cwd $directory($>) \
+    --target-what 'extracted source' \
+    --target-default-type 'file' \
+    --format lines \
+    -- echo $regex.merge(enabled_groups all_groups, '(.*)', '\1', "$\n")
+
+  diag extract $<
+
+  echo $regex.merge($enabled_groups, '(.*)', '\1', "$\n") >$path($>[1])
+  echo $regex.merge($all_groups, '(.*)', '\1', "$\n") >$path($>[2])
+}}
+
+define [see_through] enabled_source: group
+enabled_source{~'/(.+)/'}: file{enabled_groups} json{~'/.+/'} libua{~'/\1-meta/'}
+{{
+  o = [dir_path] $directory($>[0])
+
+  enabled_configs = $regex.filter_search($path($<), '.+enabled_groups')
+  meta            = [path] $regex.filter_search($path($<), '.+-meta')
+  json            = $filter($<, json)
+  config_asm      = [path] $regex.filter_search($path($<), '.+config\.asm')
+  cat $enabled_configs | set -n enabled_groups [string_set]
+
+  lib_poptions = $c.lib_poptions($meta, obja)
+  depdb hash $lib_poptions
 
   # prepend default groups
   enabled_groups += [string_set] OBJS ARCH_
@@ -77,8 +97,7 @@ enabled_source{~'/(.+)/'}: json{~'/.+/'} libua{~'/\1-meta/'} h{~'/.+/'}
   # group(s) isn't enabled
   enabled_srcs = [paths]
   skipped_srcs = [strings]
-  json = [path] $path($json)
-  for pair: [json] $json.load($json)
+  for pair: [json] $json.load($path($json))
     echo $member_name($pair)  | set -w groups [strings]
     echo $member_value($pair) | set -w srcs [paths]
 

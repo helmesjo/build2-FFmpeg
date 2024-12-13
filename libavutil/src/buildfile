@@ -17,7 +17,8 @@ import config_h = libconfig%h{autoconf}
 import config_asm = libconfig%file{config.asm}
 
 [rule_hint=c] \
-libul{avutil-meta}: $impl_libs $intf_libs
+libul{avutil-meta}: $impl_libs $intf_libs $config_asm
+config_groups{avutil}: $config_h
 libua{avutil}: enabled_source{avutil}: \
                   libua{avutil-meta} json{files.json} $config_h $config_asm \
                   libavutil/{c h}{**} libavutil/asm{**}
@@ -31,7 +32,7 @@ libul{avutil}: compat/windows/{h c}{*} \
 libul{avutil}: libavutil/aarch64/S{asm}: include = adhoc
 libavutil/aarch64/S{asm}:
 {{
-  diag copy $>
+  diag ln $>
   o = $path($>)
   s = "$src_base/$path.relative($o, $out_base)"
   ln --symbolic $s $o
@@ -42,7 +43,7 @@ for t: libavutil/c{**_template}
 {
   $t:
   {{
-    diag copy $>
+    diag ln $>
     o = $path($>)
     s = "$src_base/$path.relative($o, $out_base)"
     ln --symbolic $s $o
