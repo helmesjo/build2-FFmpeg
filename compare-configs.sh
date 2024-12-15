@@ -41,9 +41,7 @@ while IFS= read -r line; do
 
         if [[ -v rhs_defines[$lhs_var] ]]; then
             rhs_val=${rhs_defines[$lhs_var]}  # Correct syntax for indexing
-            if [ "$lhs_val" == "$rhs_val" ]; then
-                echo "Success: $lhs_var = $lhs_val"
-            else
+            if [ "$lhs_val" != "$rhs_val" ]; then
                 echo "Fail: $lhs_var = $lhs_val in LHS, $rhs_val in RHS"
             fi
         fi
