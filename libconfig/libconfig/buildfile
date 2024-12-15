@@ -45,7 +45,7 @@ have_opengl = [bool] ($c.find_system_header("GL/glx.h") != [null] || \
 have_opengles = [bool] ($c.find_system_header("ES2/gl.h") != [null])
 
 [rule_hint=c] \
-lib{config}: h{config autoconf config_components} file{config.asm}
+lib{config}: h{config autoconf config_components} file{config.asm}: update = match
 
 # extract all '#define' from input files and generate print_defines.c
 # with '#pragma message' to print values for each during pre-process.
@@ -100,6 +100,7 @@ c{print_defines}: h{config_cpu.h config}
 
 # generate the final 'autoconf.h' containing one line per '#define' and
 # it's determined value (1 or 0) by pre-processing c{print_defines}
+h{autoconf}: c{print_defines}: update = match
 h{autoconf}: c{print_defines}
 {{
   s = $path($<)
@@ -112,14 +113,14 @@ h{autoconf}: c{print_defines}
   if ($c.class == 'msvc')
     echo -nologo $c.poptions $cc.poptions $c.coptions $c.mode -c $s -Fo$o >$r &$r &$o
     # re-run in case of error to print the error output
-    $effect($c.path) "@$r" 2>&1 | set tmp [string_set] || $effect($c.path) "@$r"
+    $effect($c.path) "@$r" 2>&1 | set tmp [string_set] || $effect($c.path) "@$r" 2>&1 | grep error
     # msvc is very verbose, but luckily all lines that start with a space can be removed.
     tmp = $regex.replace($tmp, '^[ ].*$', '')
   else
     # re-run in case of error to print the error output
     $effect($c.path) $c.poptions $cc.poptions $c.coptions $c.mode -E $s 2>- \
                        | set tmp [string_set] \
-                     || $effect($c.path) $c.poptions $cc.poptions $c.coptions $c.mode -E $s
+                     || $effect($c.path) $c.poptions $cc.poptions $c.coptions $c.mode -E $s 2>&1 | grep error
   end
 
   # quotes are printed as unicode with clang
@@ -128,6 +129,8 @@ h{autoconf}: c{print_defines}
   tmp = $regex.apply($tmp, '\{(#[ ]*[a-zA-Z]+[ ]*)[\\"]{0,2}([A-Za-z0-9_]*[ ]*)[\\"]{0,2}([^\}]*)', "\1\2\3\n", format_no_copy)
   tmp = $regex.replace($tmp, '^\s+((?!#).*$)', '//\1')
   tmp = $regex.replace($tmp, '\\\"', '"')
+
+  echo $tmp | grep AS_ARCH
 
   echo '// generated' >$path($>)
   echo '#ifndef AUTOCONF_H' >>$path($>)
@@ -155,11 +158,11 @@ file{config.asm}: h{autoconf}
 
 h{config}: in{config}
 {
-  FFMPEG_CONFIGURATION                 = "\"$c.target.system\""
+  FFMPEG_CONFIGURATION                 = "\"$c.target\""
   FFMPEG_LICENSE                       = '"LGPL version 2.1 or later"'
   SWS_MAX_FILTER_SIZE                  = 256
   BUILDSUF                             = "\"\""
-  SLIBSUF                              = ($tgt_win32 ? '".dll"' : '".so"')
+  SLIBSUF                              = ($tgt_win32 ? '".dll"' : ($tgt_macos ? '".dylib"' : '".so"'))
   EXTERN_PREFIX                        = ($tgt_macos ? "\"_\"" : )
   EXTERN_ASM                           = ($tgt_macos ? _ : )
   OS_NAME                              = ($c.target.class)

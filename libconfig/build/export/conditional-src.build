@@ -51,40 +51,40 @@ rc_target = [string_map]                \
   # 'generic-ihex'@ihex                 \
   # 'generic-plugin'@plugin
 
-define config_groups: group
-config_groups{~'/(.+)/'}: h{~'/.+/'}
+file{enabled_groups}:
 {{
-  config = ($<[0])
+  d      = [dir_path] $directory($>[0])
+  o      = [dir_path] $path($>[0])
+  config = [path] $path($<[0])
 
   # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
-  sed -n -e 's/#[ ]*define[ ]+([A-Z0-9_]+)[ ]+1$/\1/p' $path($config) \
+  sed -n -e 's/#[ ]*define[ ]+([A-Z0-9_]+)[ ]+1$/\1/p' $config \
     | set -w enabled_groups [string_set]
-  sed -n -e 's/#[ ]*define[ ]+([A-Z0-9_]+)[ ]+[0-1]$/\1/p' $path($config) \
+  sed -n -e 's/#[ ]*define[ ]+([A-Z0-9_]+)[ ]+[0-1]$/\1/p' $config \
     | set -w all_groups [string_set]
 
   depdb dyndep \
     --dyn-target \
-    --target-cwd $directory($>) \
+    --target-cwd $d \
     --target-what 'extracted source' \
     --target-default-type 'file' \
     --format lines \
-    -- echo $regex.merge(enabled_groups all_groups, '(.*)', '\1', "$\n")
+    -- echo $regex.merge(enabled_groups, '(.*)', '\1', "$\n")
 
   diag extract $<
 
-  echo $regex.merge($enabled_groups, '(.*)', '\1', "$\n") >$path($>[1])
-  echo $regex.merge($all_groups, '(.*)', '\1', "$\n") >$path($>[2])
+  echo $regex.merge($enabled_groups, '(.*)', '\1', "$\n") >$o
 }}
 
 define [see_through] enabled_source: group
-enabled_source{~'/(.+)/'}: file{enabled_groups} json{~'/.+/'} libua{~'/\1-meta/'}
+enabled_source{~'/(.+)/'}: file{^'/enabled_groups/'} json{~'/.+/'} libua{~'/\1-meta/'}
 {{
-  o = [dir_path] $directory($>[0])
+  d = [dir_path] $directory($>[0])
 
-  enabled_configs = $regex.filter_search($path($<), '.+enabled_groups')
-  meta            = [path] $regex.filter_search($path($<), '.+-meta')
+  enabled_configs = [path] $path(file{enabled_groups})
+  meta            = [path] $regex.filter_search($path($filter($<, lib)), '.+-meta')
   json            = $filter($<, json)
-  config_asm      = [path] $regex.filter_search($path($<), '.+config\.asm')
+  config_asm      = [path] $regex.filter_search($path($filter($<, file)), '.+config\.asm')
   cat $enabled_configs | set -n enabled_groups [string_set]
 
   lib_poptions = $c.lib_poptions($meta, obja)
@@ -116,9 +116,15 @@ enabled_source{~'/(.+)/'}: file{enabled_groups} json{~'/.+/'} libua{~'/\1-meta/'
         end
 
         # check if group is enabled, either (eg.) 'HAVE_X86ASM', or for CPU specific 'ARCH_ARM'
-        if ((!$enabled_groups[$group] || (!$enabled_groups[$arch_dir] && !$enabled_groups[$have_dir])) || $negate)
+        if (!$enabled_groups[$group])
           enabled = false
-          skipped_srcs += "$name($src)-\($group|$arch_dir|$have_dir)"
+          skipped_srcs += "$src-\($group)"
+        elif (!$enabled_groups[$arch_dir] && !$enabled_groups[$have_dir])
+          enabled = false
+          skipped_srcs += "$src-\(!$arch_dir && !$have_dir)"
+        elif ($negate)
+          enabled = false
+          skipped_srcs += "$src-\(Negated)"
         end
       end
       if ($enabled)
@@ -133,10 +139,12 @@ enabled_source{~'/(.+)/'}: file{enabled_groups} json{~'/.+/'} libua{~'/\1-meta/'
 
   # add any header prerequisites so they also get
   # symlinked (to allow relative inclusion)
-  hdrs = [paths] $path($filter($<, h))
-  for i : $integer_sequence(2, $size($hdrs))
-    src = [path] $relative($hdrs[$i], $src_base)
-    enabled_srcs += [paths] $src
+  for h : $path($filter($<, h))
+    if ($sub_path($h, $src_base))
+      src = [path] $relative($h, $src_base)
+      enabled_srcs += [paths] $src
+      appended += [paths] $src
+    end
   end
 
   enabled_asm  = $regex.filter_search($enabled_srcs, ".+\.asm")
@@ -144,7 +152,7 @@ enabled_source{~'/(.+)/'}: file{enabled_groups} json{~'/.+/'} libua{~'/\1-meta/'
 
   depdb dyndep \
     --dyn-target \
-    --target-cwd $o \
+    --target-cwd $d \
     --target-what 'extracted source' \
     --target-extension-type 'asm=obja' \
     --format lines \
@@ -152,11 +160,9 @@ enabled_source{~'/(.+)/'}: file{enabled_groups} json{~'/.+/'} libua{~'/\1-meta/'
 
   diag enabled_src $>
 
-  for s : $skipped_srcs
-    echo "skipped: $s" >!
-  end
+  echo $regex.merge($skipped_srcs, '(.*)', '\1', "$\n") >!
 
-  for f : [paths] $path($filter($>, h c))
+  for f : [paths] $path($filter($>, h c S))
     s = [path] $src_base/$relative($f, $out_base)
     d = [path] $f
     rm -f $d
