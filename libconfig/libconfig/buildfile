@@ -50,7 +50,7 @@ lib{config}: h{config autoconf config_components} file{config.asm}: update = mat
 # extract all '#define' from input files and generate print_defines.c
 # with '#pragma message' to print values for each during pre-process.
 # NOTE: Order matters, as some config defines may depend on CPU defines
-c{print_defines}: h{config_cpu.h config}
+c{print_defines}: h{config_cpu config}
 {{
   print = [string] "#pragma message"
 
@@ -70,7 +70,7 @@ c{print_defines}: h{config_cpu.h config}
     s = [path] $path($<[$i])
     cat $s | for -n line
       if ($regex.find_match($line, '[ ]*#[ ]*define[ ]+.*$'))
-        c = $regex.apply($line, '[ ]*#[ ]*define[ ]+([a-zA-Z0-9_]+).*$', '\1', format_no_copy)
+        c = $regex.apply($line, '[ ]*#[ ]*define[ ]+([a-zA-Z0-9_]+)[ ]+.*$', '\1', format_no_copy)
         if (!$empty($c) && !$defs[$c])
           defs += $c
           tmp = [string] 'TOSTRING({#  define "DEF" VALUE(DEF)})'

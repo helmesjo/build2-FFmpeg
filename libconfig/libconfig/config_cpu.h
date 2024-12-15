@@ -85,59 +85,48 @@
     #define ARCH_LOONGARCH 0
   #endif
 
-  // examples:
-  //   armv8.2-a
-  //   armv8.6-a+crc
-  #if !defined(AS_ARCH_LEVEL) && defined(__ARM_ARCH)
+  #ifdef LIBCONFIG_PRINT_DEFINES_C
+    // figure out .arch directive value, but only while printing
+    // defines. we want to end up with a literal define, otherwise
+    // the preprocessor will mess it up during tokenization.
+    // examples of final result:
+    //   #define AS_ARCH_LEVEL armv8.2-a
+    //   #define AS_ARCH_LEVEL armv8.6-a+crc
+    #if !defined(AS_ARCH_LEVEL) && defined(__ARM_ARCH)
 
-    // Start from a baseline version:
-    #define AS_ARCH_VERSION_PREF armv
-    #define AS_ARCH_VERSION_MAJ __ARM_ARCH
-    #define AS_ARCH_VERSION_MIN 0
-    #define AS_ARCH_EXT a
+      // Start from a baseline version:
+      #define AS_ARCH_MAJOR_ __ARM_ARCH
+      #define AS_ARCH_MINOR_ 0
+      #define AS_ARCH_EXT_ a
 
-    // Upgrade baseline based on specific features:
-    #if defined(__ARM_FEATURE_FP16_SCALAR_ARITHMETIC)
-      #undef AS_ARCH_VERSION_MIN
-      #define AS_ARCH_VERSION_MIN 2 // armv8.2-a introduces FP16
+      // Upgrade baseline based on specific features:
+      #if defined(__ARM_FEATURE_FP16_SCALAR_ARITHMETIC)
+        #undef AS_ARCH_MINOR_
+        #define AS_ARCH_MINOR_ 2 // armv8.2-a introduces FP16
+      #endif
+
+      // DOTPROD introduced in armv8.4-a
+      #if defined(__ARM_FEATURE_DOTPROD)
+        #undef AS_ARCH_MINOR_
+        #define AS_ARCH_MINOR_ 4 // armv8.4-a introduces DOTPROD
+      #endif
+
+      // CRC32 support
+      #if defined(__ARM_FEATURE_CRC32)
+        #undef AS_ARCH_MINOR_
+        #define AS_ARCH_MINOR_ 6
+        #undef AS_ARCH_EXT_
+        #define AS_ARCH_EXT_ a+crc
+      #endif
+
+      #define PREF() armv
+      #define AS_ARCH_MAJOR() AS_ARCH_MAJOR_
+      #define AS_ARCH_MINOR() AS_ARCH_MINOR_
+      #define AS_ARCH_EXT() AS_ARCH_EXT_
+
+      #define CFG_CPU_H_CAT_(x, y, z) x ## y ## z
+      #define CFG_CPU_H_CAT(x, y, z) CFG_CPU_H_CAT_(x, y, z)
+      #define AS_ARCH_LEVEL PREF()AS_ARCH_MAJOR().AS_ARCH_MINOR()-AS_ARCH_EXT()
     #endif
-
-    // DOTPROD introduced in armv8.2-a
-    #if defined(__ARM_FEATURE_DOTPROD)
-      #undef AS_ARCH_VERSION_MIN
-      #define AS_ARCH_VERSION_MIN 4 // armv8.4-a introduces DOTPROD
-    #endif
-
-    // CRC32 support; we'll only update if it's not already at or beyond v8.6:
-    #if defined(__ARM_FEATURE_CRC32)
-      #undef AS_ARCH_EXT
-      #define AS_ARCH_EXT a+crc
-    #endif
-
-    // #define M_STRINGIFY(x) #x
-    // #define M_TOSTRING(x) STRINGIFY(x)
-    #define M_VALUE(v) v
-    // #define M_CONC4(A, B, C, D) M_CONC_(A, B)
-    // #define M_CONC4_(A, B, C, D) A ## B ## C ## D
-    // #define M_CONC(A, B) M_CONC_(A, B)
-    // #define M_CONC_(A, B) A ## B
-    // #define PRIMITIVE_CAT(x, y, z, w) x ## y ## z ## w
-    // #define CAT(x, y, z, w) PRIMITIVE_CAT(x, y, z, w)
-    // #define N_() 0
-    // #define N_X() 1
-    #define M() armv
-    #define M1() AS_ARCH_VERSION_MAJ
-    #define M2() M1()
-    #define MX() AS_ARCH_VERSION_MIN
-    #define M3() CATZ(M2().,MX())
-    #define MX2() AS_ARCH_EXT
-    #define M4() CATZ(M3(),MX2())
-    #define M5() CATZ(M3()-MX2(),)
-
-    #define CAT_(x, y) x ## y
-    #define CATZ(x, y) CAT_(x, y)
-    #define AS_ARCH_LEVEL CATZ(M(),M5())
-
-    // #define AS_ARCH_LEVEL M_CONC(M(), FINAL_PLEB)()
   #endif
 #endif
