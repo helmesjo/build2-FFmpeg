@@ -25,10 +25,12 @@ import config_h = libconfig%h{autoconf}
 import config_asm = libconfig%file{config.asm}
 
 [rule_hint=c] \
-libul{avcodec-meta}: $impl_libs $intf_libs
-libua{avcodec}: enabled_source{avcodec}: \
-                  libua{avcodec-meta} json{files.json} $config_h $config_asm \
-                  libavcodec/{c h}{**} libavcodec/asm{**}
+libul{avcodec-meta}: $impl_libs $intf_libs $config_asm
+libua{avcodec}: enabled_source{avcodec}
+file{enabled_defines}: $config_h: update = match
+libua{avcodec}: enabled_source{avcodec}: file{enabled_defines} libua{avcodec-meta} json{files.json} \
+                                       $config_h $config_asm libavcodec/h{**}: \
+                                       update = match
 
 libul{avcodec}:  libavcodec/c{               \
                   bsf_list                   \

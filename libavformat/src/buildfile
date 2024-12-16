@@ -24,10 +24,12 @@ import config_h = libconfig%h{autoconf}
 import config_asm = libconfig%file{config.asm}
 
 [rule_hint=c] \
-libul{avformat-meta}: $impl_libs $intf_libs
-libua{avformat}: enabled_source{avformat}: \
-                  libua{avformat-meta} json{files.json} $config_h $config_asm \
-                  libavformat/{c h}{**} libavformat/asm{**}
+libul{avformat-meta}: $impl_libs $intf_libs $config_asm
+libua{avformat}: enabled_source{avformat}
+file{enabled_defines}: $config_h: update = match
+libua{avformat}: enabled_source{avformat}: file{enabled_defines} libua{avformat-meta} json{files.json} \
+                                       $config_h $config_asm libavformat/h{**}: \
+                                       update = match
 
 libul{avformat}: libavformat/c{ \
                   protocol_list \

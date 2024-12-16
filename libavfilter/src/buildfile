@@ -27,10 +27,12 @@ import config_h = libconfig%h{autoconf}
 import config_asm = libconfig%file{config.asm}
 
 [rule_hint=c] \
-libul{avfilter-meta}: $impl_libs $intf_libs
-libua{avfilter}: enabled_source{avfilter}: \
-                  libua{avfilter-meta} json{files.json} $config_h $config_asm \
-                  libavfilter/{c h}{**} libavfilter/asm{**}
+libul{avfilter-meta}: $impl_libs $intf_libs $config_asm
+libua{avfilter}: enabled_source{avfilter}
+file{enabled_defines}: $config_h: update = match
+libua{avfilter}: enabled_source{avfilter}: file{enabled_defines} libua{avfilter-meta} json{files.json} \
+                                       $config_h $config_asm libavfilter/h{**}: \
+                                       update = match
 
 libul{avfilter}: libavfilter/c{ \
                   filter_list \
