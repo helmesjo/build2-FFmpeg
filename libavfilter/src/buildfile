@@ -34,6 +34,7 @@ libua{avfilter}: enabled_source{avfilter}: file{enabled_defines} libua{avfilter-
                                        $config_h $config_asm libavfilter/h{**}: \
                                        update = match
 
+# these c files are included, not built.
 libul{avfilter}: libavfilter/c{ \
                   filter_list \
                 }: include = adhoc

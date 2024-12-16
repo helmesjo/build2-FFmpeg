@@ -32,6 +32,7 @@ libua{avcodec}: enabled_source{avcodec}: file{enabled_defines} libua{avcodec-met
                                        $config_h $config_asm libavcodec/h{**}: \
                                        update = match
 
+# these c files are included, not built.
 libul{avcodec}:  libavcodec/c{               \
                   bsf_list                   \
                   codec_list                 \

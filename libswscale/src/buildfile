@@ -29,16 +29,7 @@ libua{swscale}: enabled_source{swscale}: file{enabled_defines} libua{swscale-met
                                        update = match
 
 # these c files are included, not built.
-for t: libswscale/c{**_template}
-{
-  $t:
-  {{
-    diag copy $>
-    o = $path($>)
-    s = "$src_base/$path.relative($o, $out_base)"
-    cp $s $o
-  }}
-}
+libul{swscale}: libswscale/c{**_template}: include = adhoc
 
 # Build options.
 #

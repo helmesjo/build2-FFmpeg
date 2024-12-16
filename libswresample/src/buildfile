@@ -29,16 +29,6 @@ libua{swresample}: enabled_source{swresample}: file{enabled_defines} libua{swres
 
 # these c files are included, not built.
 libul{swresample}: libswresample/c{**_template noise_shaping_data}: include = adhoc
-for t: libswresample/c{**_template noise_shaping_data}
-{
-  $t:
-  {{
-    diag copy $>
-    o = $path($>)
-    s = "$src_base/$path.relative($o, $out_base)"
-    cp $s $o
-  }}
-}
 
 # Build options.
 #
