@@ -35,13 +35,13 @@ libul{avformat}: libavformat/c{ \
                   muxer_list \
                 }: include = adhoc
 
-libavformat/c{protocol_list}: libavformat/c{protocols} file{enabled_groups}
+libavformat/c{protocol_list}: libavformat/c{protocols} file{enabled_defines}
 {{
   diag generate ($>)
 
   s = $path($<[0])     # Source file.
   f = $path($>)        # Target file.
-  cat $path($<[1]) | set -w enabled_groups [string_set]
+  cat $path($<[1]) | set -w enabled_defines [string_set]
   pattern = "URLProtocol"
   thing = "parser"
   struct_name = "URLProtocol"
@@ -52,20 +52,20 @@ libavformat/c{protocol_list}: libavformat/c{protocols} file{enabled_groups}
   echo "static const $struct_name * const $name[] = {" > $f
   for c: $format_LIST
     group = $string.ucase(CONFIG_$c)
-    if ($enabled_groups[$group])
+    if ($enabled_defines[$group])
       echo "    &ff_$c," >> $path($>)
     end
   end
   echo "    NULL };" >> $path($>)
 }}
 
-libavformat/c{demuxer_list}: libavformat/c{allformats} file{enabled_groups}
+libavformat/c{demuxer_list}: libavformat/c{allformats} file{enabled_defines}
 {{
   diag generate ($>)
 
   s = $path($<[0])     # Source file.
   f = $path($>)        # Target file.
-  cat $path($<[1]) | set -w enabled_groups [string_set]
+  cat $path($<[1]) | set -w enabled_defines [string_set]
   pattern = "FFInputFormat"
   thing = "demuxer"
   struct_name = "FFInputFormat"
@@ -76,20 +76,20 @@ libavformat/c{demuxer_list}: libavformat/c{allformats} file{enabled_groups}
   echo "static const $struct_name * const $name[] = {" > $f
   for c: $format_LIST
     group = $string.ucase(CONFIG_$c)
-    if ($enabled_groups[$group])
+    if ($enabled_defines[$group])
       echo "    &ff_$c," >> $path($>)
     end
   end
   echo "    NULL };" >> $path($>)
 }}
 
-libavformat/c{muxer_list}: libavformat/c{allformats} file{enabled_groups}
+libavformat/c{muxer_list}: libavformat/c{allformats} file{enabled_defines}
 {{
   diag generate ($>)
 
   s = $path($<[0])     # Source file.
   f = $path($>)        # Target file.
-  cat $path($<[1]) | set -w enabled_groups [string_set]
+  cat $path($<[1]) | set -w enabled_defines [string_set]
   pattern = "FFOutputFormat"
   thing = "parser"
   struct_name = "FFOutputFormat"
@@ -100,7 +100,7 @@ libavformat/c{muxer_list}: libavformat/c{allformats} file{enabled_groups}
   echo "static const $struct_name * const $name[] = {" > $f
   for c: $format_LIST
     group = $string.ucase(CONFIG_$c)
-    if ($enabled_groups[$group])
+    if ($enabled_defines[$group])
       echo "    &ff_$c," >> $path($>)
     end
   end

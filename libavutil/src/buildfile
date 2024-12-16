@@ -19,8 +19,8 @@ import config_asm = libconfig%file{config.asm}
 [rule_hint=c] \
 libul{avutil-meta}: $impl_libs $intf_libs $config_asm
 libua{avutil}: enabled_source{avutil}
-file{enabled_groups}: $config_h: update = match
-libua{avutil}: enabled_source{avutil}: file{enabled_groups} libua{avutil-meta} json{files.json} \
+file{enabled_defines}: $config_h: update = match
+libua{avutil}: enabled_source{avutil}: file{enabled_defines} libua{avutil-meta} json{files.json} \
                                        $config_h $config_asm libavutil/h{**}: \
                                        update = match
 

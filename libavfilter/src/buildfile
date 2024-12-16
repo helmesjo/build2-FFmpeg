@@ -36,13 +36,13 @@ libul{avfilter}: libavfilter/c{ \
                   filter_list \
                 }: include = adhoc
 
-libavfilter/c{filter_list}: libavfilter/c{allfilters} file{enabled_groups}
+libavfilter/c{filter_list}: libavfilter/c{allfilters} file{enabled_defines}
 {{
   diag generate ($>)
 
   s = $path($<[0])     # Source file.
   f = $path($>)        # Target file.
-  cat $path($<[1]) | set -w enabled_groups [string_set]
+  cat $path($<[1]) | set -w enabled_defines [string_set]
   pattern = "AVFilter"
   thing = "parser"
   struct_name = "AVFilter"
@@ -53,7 +53,7 @@ libavfilter/c{filter_list}: libavfilter/c{allfilters} file{enabled_groups}
   echo "static const $struct_name * const $name[] = {" > $f
   for c: $filter_LIST
     group = $string.ucase(CONFIG_$c)
-    if ($enabled_groups[$group])
+    if ($enabled_defines[$group])
       echo "    &ff_$c," >> $path($>)
     end
   end

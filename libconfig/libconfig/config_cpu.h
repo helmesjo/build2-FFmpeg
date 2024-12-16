@@ -99,14 +99,6 @@
       #define AS_ARCH_MINOR 0
       #define AS_ARCH_EXT -a
 
-      #if defined(__ARM_FEATURE_CRC32)
-        // - CRC32 support (ARMv8.1-A or later)
-        #undef AS_ARCH_MINOR
-        #define AS_ARCH_MINOR 1
-        #undef AS_ARCH_EXT
-        #define AS_ARCH_EXT -a+crc
-      #endif
-
       #if defined(__ARM_FEATURE_ATOMICS)
         // - Atomics support (ARMv8.1-A or later)
         #undef AS_ARCH_MINOR
@@ -121,6 +113,14 @@
         #define AS_ARCH_MINOR 1
         #undef AS_ARCH_EXT
         #define AS_ARCH_EXT -a+crypto
+      #endif
+
+      #if defined(__ARM_FEATURE_CRC32)
+        // - CRC32 support (ARMv8.1-A or later)
+        #undef AS_ARCH_MINOR
+        #define AS_ARCH_MINOR 1
+        #undef AS_ARCH_EXT
+        #define AS_ARCH_EXT -a+crc
       #endif
 
       #if defined(__ARM_FEATURE_DOTPROD)

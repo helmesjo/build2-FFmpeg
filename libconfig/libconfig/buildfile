@@ -54,7 +54,7 @@ c{print_defines}: h{config_cpu config}
 {{
   print = [string] "#pragma message"
 
-  diag gen $>
+  diag gen $< $>
 
   defs = [string_set]
   file = [strings]
@@ -108,7 +108,7 @@ h{autoconf}: c{print_defines}
   o = $path.base($path($>)).$extension($>).obj
   r = $(o).cli
 
-  diag configure ($>)
+  diag configure $< $>
 
   if ($c.class == 'msvc')
     echo -nologo $c.poptions $cc.poptions $c.coptions $c.mode -c $s -Fo$o >$r &$r &$o
@@ -130,8 +130,6 @@ h{autoconf}: c{print_defines}
   tmp = $regex.replace($tmp, '^\s+((?!#).*$)', '//\1')
   tmp = $regex.replace($tmp, '\\\"', '"')
 
-  echo $tmp | grep AS_ARCH
-
   echo '// generated' >$path($>)
   echo '#ifndef AUTOCONF_H' >>$path($>)
   echo '#define AUTOCONF_H' >>$path($>)
@@ -147,7 +145,7 @@ file{config.asm}: h{autoconf}
 {{
   s = $path($<)
 
-  diag configure ($>)
+  diag configure $< $>
 
   cat $s | set tmp [string_set]
   tmp = $regex.replace($tmp, '#[ ]*', '%')

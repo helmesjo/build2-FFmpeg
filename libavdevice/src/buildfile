@@ -35,13 +35,13 @@ libul{avdevice}: libavdevice/c{ \
                   indev_list \
                 }: include = adhoc
 
-libavdevice/c{outdev_list}: libavdevice/c{alldevices} file{enabled_groups}
+libavdevice/c{outdev_list}: libavdevice/c{alldevices} file{enabled_defines}
 {{
   diag generate ($>)
 
   s = $path($<[0])     # Source file.
   f = $path($>)        # Target file.
-  cat $path($<[1]) | set -w enabled_groups [string_set]
+  cat $path($<[1]) | set -w enabled_defines [string_set]
   pattern = "FFOutputFormat"
   thing = "outdev"
   struct_name = "FFOutputFormat"
@@ -51,20 +51,20 @@ libavdevice/c{outdev_list}: libavdevice/c{alldevices} file{enabled_groups}
   echo "static const $struct_name * const $name[] = {" > $f
   for c: $codec_LIST
     group = $string.ucase(CONFIG_$c)
-    if ($enabled_groups[$group])
+    if ($enabled_defines[$group])
       echo "    &ff_$c," >> $path($>)
     end
   end
   echo "    NULL };" >> $path($>)
 }}
   
-libavdevice/c{indev_list}: libavdevice/c{alldevices} file{enabled_groups}
+libavdevice/c{indev_list}: libavdevice/c{alldevices} file{enabled_defines}
 {{
   diag generate ($>)
 
   s = $path($<[0])     # Source file.
   f = $path($>)        # Target file.
-  cat $path($<[1]) | set -w enabled_groups [string_set]
+  cat $path($<[1]) | set -w enabled_defines [string_set]
   pattern = "FFInputFormat"
   thing = "indev"
   struct_name = "FFInputFormat"
@@ -74,7 +74,7 @@ libavdevice/c{indev_list}: libavdevice/c{alldevices} file{enabled_groups}
   echo "static const $struct_name * const $name[] = {" > $f
   for c: $codec_LIST
     group = $string.ucase(CONFIG_$c)
-    if ($enabled_groups[$group])
+    if ($enabled_defines[$group])
       echo "    &ff_$c," >> $path($>)
     end
   end

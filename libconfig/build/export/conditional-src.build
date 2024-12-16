@@ -51,7 +51,7 @@ rc_target = [string_map]                \
   # 'generic-ihex'@ihex                 \
   # 'generic-plugin'@plugin
 
-file{enabled_groups}:
+file{enabled_defines}:
 {{
   d      = [dir_path] $directory($>[0])
   o      = [dir_path] $path($>[0])
@@ -59,9 +59,9 @@ file{enabled_groups}:
 
   # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
   sed -n -e 's/#[ ]*define[ ]+([A-Z0-9_]+)[ ]+1$/\1/p' $config \
-    | set -w enabled_groups [string_set]
+    | set -w enabled_defines [string_set]
   sed -n -e 's/#[ ]*define[ ]+([A-Z0-9_]+)[ ]+[0-1]$/\1/p' $config \
-    | set -w all_groups [string_set]
+    | set -w all_defines [string_set]
 
   depdb dyndep \
     --dyn-target \
@@ -69,29 +69,30 @@ file{enabled_groups}:
     --target-what 'extracted source' \
     --target-default-type 'file' \
     --format lines \
-    -- echo $regex.merge(enabled_groups, '(.*)', '\1', "$\n")
+    -- echo $regex.merge(enabled_defines, '(.*)', '\1', "$\n")
 
-  diag extract $<
+  diag extract_defines $< $>
 
-  echo $regex.merge($enabled_groups, '(.*)', '\1', "$\n") >$o
+  echo $all_defines >!
+  echo $regex.merge($enabled_defines, '(.*)', '\1', "$\n") >$o
 }}
 
 define [see_through] enabled_source: group
-enabled_source{~'/(.+)/'}: file{^'/enabled_groups/'} json{~'/.+/'} libua{~'/\1-meta/'}
+enabled_source{~'/(.+)/'}: file{^'/enabled_defines/'} json{~'/.+/'} libua{~'/\1-meta/'}
 {{
   d = [dir_path] $directory($>[0])
 
-  enabled_configs = [path] $path(file{enabled_groups})
+  enabled_configs = [path] $path(file{enabled_defines})
   meta            = [path] $regex.filter_search($path($filter($<, lib)), '.+-meta')
   json            = $filter($<, json)
   config_asm      = [path] $regex.filter_search($path($filter($<, file)), '.+config\.asm')
-  cat $enabled_configs | set -n enabled_groups [string_set]
+  cat $enabled_configs | set -n enabled_defines [string_set]
 
   lib_poptions = $c.lib_poptions($meta, obja)
   depdb hash $lib_poptions
 
-  # prepend default groups
-  enabled_groups += [string_set] OBJS ARCH_
+  # append default groups
+  enabled_defines += [string_set] OBJS ARCH_
 
   # iterate all files and filter out if the corresponding
   # group(s) isn't enabled
@@ -116,10 +117,10 @@ enabled_source{~'/(.+)/'}: file{^'/enabled_groups/'} json{~'/.+/'} libua{~'/\1-m
         end
 
         # check if group is enabled, either (eg.) 'HAVE_X86ASM', or for CPU specific 'ARCH_ARM'
-        if (!$enabled_groups[$group])
+        if (!$enabled_defines[$group])
           enabled = false
           skipped_srcs += "$src-\($group)"
-        elif (!$enabled_groups[$arch_dir] && !$enabled_groups[$have_dir])
+        elif (!$enabled_defines[$arch_dir] && !$enabled_defines[$have_dir])
           enabled = false
           skipped_srcs += "$src-\(!$arch_dir && !$have_dir)"
         elif ($negate)
