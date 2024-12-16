@@ -83,13 +83,16 @@ enabled_source{~'/(.+)/'}: file{^'/enabled_defines/'} json{~'/.+/'} libua{~'/\1-
   d = [dir_path] $directory($>[0])
 
   enabled_configs = [path] $path(file{enabled_defines})
-  meta            = [path] $regex.filter_search($path($filter($<, lib)), '.+-meta')
+  meta            = $filter($<, libua)
   json            = $filter($<, json)
   config_asm      = [path] $regex.filter_search($path($filter($<, file)), '.+config\.asm')
   cat $enabled_configs | set -n enabled_defines [string_set]
 
   lib_poptions = $c.lib_poptions($meta, obja)
   depdb hash $lib_poptions
+
+  poptions = $c.poptions
+  depdb hash $poptions
 
   # append default groups
   enabled_defines += [string_set] OBJS ARCH_
@@ -148,13 +151,13 @@ enabled_source{~'/(.+)/'}: file{^'/enabled_defines/'} json{~'/.+/'} libua{~'/\1-
     end
   end
 
-  enabled_asm  = $regex.filter_search($enabled_srcs, ".+\.asm")
-  enabled_srcs = $regex.filter_out_search($enabled_srcs, ".+\.asm")
+  enabled_asm  = [paths] $regex.filter_search($enabled_srcs, ".+\.asm")
+  enabled_srcs = [paths] $regex.filter_out_search($enabled_srcs, ".+\.asm")
 
   depdb dyndep \
     --dyn-target \
     --target-cwd $d \
-    --target-what 'extracted source' \
+    --target-what 'enabled source' \
     --target-extension-type 'asm=obja' \
     --format lines \
     -- echo $regex.merge($enabled_srcs $enabled_asm, '(.*)', '\1', "$\n")
@@ -163,12 +166,14 @@ enabled_source{~'/(.+)/'}: file{^'/enabled_defines/'} json{~'/.+/'} libua{~'/\1-
 
   echo $regex.merge($skipped_srcs, '(.*)', '\1', "$\n") >!
 
-  for f : [paths] $path($filter($>, h c S))
+  for f : [paths] $path($filter_out($>, group))
     s = [path] $src_base/$relative($f, $out_base)
     d = [path] $f
-    rm -f $d
-    mkdir --no-cleanup --parents $directory($d)
-    ln --symbolic $s $d
+    if ($extension($s) != 'asm' && test -f $d != 0)
+      rm -f $d
+      mkdir --no-cleanup --parents $directory($d)
+      ln --symbolic $s $d
+    end
   end
 
   # TODO: Fix issue with timestamps (it constantly requires
@@ -177,10 +182,10 @@ enabled_source{~'/(.+)/'}: file{^'/enabled_defines/'} json{~'/.+/'} libua{~'/\1-
   key = [string] "$c.target.system-$c.target.cpu"
   format = [string] ($asm_format[$key])
   for f : [paths] $path($filter($>, obja))
-    s = [path] $src_base/$base($relative($f, $out_base)).asm
+    s = [path] $src_base/$relative($f, $out_base)
     d = [path] $f
     nasm -f $format "-P$path($config_asm)" \
-         $c.poptions \
+         $poptions \
          $lib_poptions \
          -o $d $s
   end
