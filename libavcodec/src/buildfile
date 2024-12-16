@@ -55,7 +55,7 @@ libul{avcodec}: libavcodec/c{ \
 
 libavcodec/c{codec_list}: libavcodec/c{allcodecs} file{enabled_defines}
 {{
-  diag generate ($>)
+  diag generate $>
 
   s = $path($<[0])     # Source file.
   f = $path($>)        # Target file.
@@ -79,7 +79,7 @@ libavcodec/c{codec_list}: libavcodec/c{allcodecs} file{enabled_defines}
 
 libavcodec/c{parser_list}: libavcodec/c{allcodecs} file{enabled_defines}
 {{
-  diag generate ($>)
+  diag generate $>
 
   s = $path($<[0])     # Source file.
   f = $path($>)        # Target file.
@@ -103,7 +103,7 @@ libavcodec/c{parser_list}: libavcodec/c{allcodecs} file{enabled_defines}
 
 libavcodec/c{bsf_list}: libavcodec/c{allcodecs} file{enabled_defines}
 {{
-  diag generate ($>)
+  diag generate $>
   s = $path($<[0])     # Source file.
   f = $path($>)        # Target file.
   cat $path($<[1]) | set -w enabled_defines [string_set]
@@ -191,7 +191,7 @@ libavcodec/c{bsf_list}: libavcodec/c{allcodecs} file{enabled_defines}
     end
   end
 
-  diag gen $>
+  diag generate $>
 
   if ($size($srcs) != $size($hdrs))
     echo "There must be one xxx_tablegen.h per xxx_tablegen.c"

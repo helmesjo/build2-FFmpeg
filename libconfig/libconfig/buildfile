@@ -54,7 +54,7 @@ c{print_defines}: h{config_cpu config}
 {{
   print = [string] "#pragma message"
 
-  diag gen $< $>
+  diag generate $>
 
   defs = [string_set]
   file = [strings]

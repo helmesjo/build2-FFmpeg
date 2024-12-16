@@ -38,7 +38,7 @@ libul{avformat}: libavformat/c{ \
 
 libavformat/c{protocol_list}: libavformat/c{protocols} file{enabled_defines}
 {{
-  diag generate ($>)
+  diag generate $>
 
   s = $path($<[0])     # Source file.
   f = $path($>)        # Target file.
@@ -62,7 +62,7 @@ libavformat/c{protocol_list}: libavformat/c{protocols} file{enabled_defines}
 
 libavformat/c{demuxer_list}: libavformat/c{allformats} file{enabled_defines}
 {{
-  diag generate ($>)
+  diag generate $>
 
   s = $path($<[0])     # Source file.
   f = $path($>)        # Target file.
@@ -86,7 +86,7 @@ libavformat/c{demuxer_list}: libavformat/c{allformats} file{enabled_defines}
 
 libavformat/c{muxer_list}: libavformat/c{allformats} file{enabled_defines}
 {{
-  diag generate ($>)
+  diag generate $>
 
   s = $path($<[0])     # Source file.
   f = $path($>)        # Target file.
