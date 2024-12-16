@@ -86,47 +86,95 @@
   #endif
 
   #ifdef LIBCONFIG_PRINT_DEFINES_C
-    // figure out .arch directive value, but only while printing
-    // defines. we want to end up with a literal define, otherwise
-    // the preprocessor will mess it up during tokenization.
-    // examples of final result:
-    //   #define AS_ARCH_LEVEL armv8.2-a
-    //   #define AS_ARCH_LEVEL armv8.6-a+crc
     #if !defined(AS_ARCH_LEVEL) && defined(__ARM_ARCH)
+      // figure out .arch directive value, but only while printing
+      // defines. we want to end up with a literal define, otherwise
+      // the preprocessor will mess it up during tokenization.
+      // examples of final result:
+      //   #define AS_ARCH_LEVEL armv8.2-a
+      //   #define AS_ARCH_LEVEL armv8.6-a+crc
 
       // Start from a baseline version:
-      #define AS_ARCH_MAJOR_ __ARM_ARCH
-      #define AS_ARCH_MINOR_ 0
-      #define AS_ARCH_EXT_ a
+      #define AS_ARCH_MAJOR __ARM_ARCH
+      #define AS_ARCH_MINOR 0
+      #define AS_ARCH_EXT -a
 
-      // Upgrade baseline based on specific features:
-      #if defined(__ARM_FEATURE_FP16_SCALAR_ARITHMETIC)
-        #undef AS_ARCH_MINOR_
-        #define AS_ARCH_MINOR_ 2 // armv8.2-a introduces FP16
-      #endif
-
-      // DOTPROD introduced in armv8.4-a
-      #if defined(__ARM_FEATURE_DOTPROD)
-        #undef AS_ARCH_MINOR_
-        #define AS_ARCH_MINOR_ 4 // armv8.4-a introduces DOTPROD
-      #endif
-
-      // CRC32 support
       #if defined(__ARM_FEATURE_CRC32)
-        #undef AS_ARCH_MINOR_
-        #define AS_ARCH_MINOR_ 6
-        #undef AS_ARCH_EXT_
-        #define AS_ARCH_EXT_ a+crc
+        // - CRC32 support (ARMv8.1-A or later)
+        #undef AS_ARCH_MINOR
+        #define AS_ARCH_MINOR 1
+        #undef AS_ARCH_EXT
+        #define AS_ARCH_EXT -a+crc
       #endif
 
-      #define PREF() armv
-      #define AS_ARCH_MAJOR() AS_ARCH_MAJOR_
-      #define AS_ARCH_MINOR() AS_ARCH_MINOR_
-      #define AS_ARCH_EXT() AS_ARCH_EXT_
+      #if defined(__ARM_FEATURE_ATOMICS)
+        // - Atomics support (ARMv8.1-A or later)
+        #undef AS_ARCH_MINOR
+        #define AS_ARCH_MINOR 1
+        // No specific extension for atomics
+      #endif
+
+      #if defined(__ARM_FEATURE_CRYPTO)
+        // - Cryptographic extensions (ARMv8.0-A with optional extensions,
+        //   mandatory from ARMv8.1-A
+        #undef AS_ARCH_MINOR
+        #define AS_ARCH_MINOR 1
+        #undef AS_ARCH_EXT
+        #define AS_ARCH_EXT -a+crypto
+      #endif
+
+      #if defined(__ARM_FEATURE_DOTPROD)
+        // - Dot Product support (ARMv8.2-A)
+        #undef AS_ARCH_MINOR
+        #define AS_ARCH_MINOR 2
+        #undef AS_ARCH_EXT
+        #define AS_ARCH_EXT -a+dotprod
+      #endif
+
+      #if defined(__ARM_FEATURE_QRDMX)
+        // - Rounding Double Multiply-Accumulate (ARMv8.2-A)
+        #undef AS_ARCH_MINOR
+        #define AS_ARCH_MINOR 2
+        // No specific extension for QRDMX
+      #endif
+
+      #if defined(__ARM_FEATURE_SVE)
+        // - Scalable Vector Extension (ARMv8.2-A, optional, but often associated with later versions)
+        #undef AS_ARCH_MINOR
+        #define AS_ARCH_MINOR 2
+        #undef AS_ARCH_EXT
+        #define AS_ARCH_EXT -a+sve
+      #endif
+
+      #if defined(__ARM_FEATURE_PAC)
+        //  - Pointer Authentication Code (ARMv8.3-A)
+        #undef AS_ARCH_MINOR
+        #define AS_ARCH_MINOR 3
+        // No specific extension for PAC
+      #endif
+
+      #if defined(__ARM_FEATURE_FRINT)
+        // - Rounding to Integer support (ARMv8.5-A)
+        #undef AS_ARCH_MINOR
+        #define AS_ARCH_MINOR 5
+        // No specific extension for FRINT
+      #endif
+
+      #if defined(__ARM_FEATURE_BTI)
+        // - Branch Target Identification (ARMv8.5-A)
+        #undef AS_ARCH_MINOR
+        #define AS_ARCH_MINOR 5
+        // No specific extension for BTI
+      #endif
+
+      #define AS_ARCH_PREF_() armv
+      #define AS_ARCH_MAJOR_() AS_ARCH_MAJOR
+      #define AS_ARCH_MINOR_() AS_ARCH_MINOR
+      #define AS_ARCH_EXT_() AS_ARCH_EXT
 
       #define CFG_CPU_H_CAT_(x, y, z) x ## y ## z
       #define CFG_CPU_H_CAT(x, y, z) CFG_CPU_H_CAT_(x, y, z)
-      #define AS_ARCH_LEVEL PREF()AS_ARCH_MAJOR().AS_ARCH_MINOR()-AS_ARCH_EXT()
+      #define AS_ARCH_LEVEL AS_ARCH_PREF_()AS_ARCH_MAJOR_().AS_ARCH_MINOR_()AS_ARCH_EXT_()
     #endif
   #endif
 #endif
