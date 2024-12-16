@@ -25,7 +25,6 @@ import config_asm = libconfig%file{config.asm}
 
 [rule_hint=c] \
 libul{avformat-meta}: $impl_libs $intf_libs $config_asm
-libua{avformat}: enabled_source{avformat}
 file{enabled_defines}: $config_h: update = match
 libua{avformat}: enabled_source{avformat}: file{enabled_defines} libua{avformat-meta} json{files.json} \
                                        $config_h $config_asm libavformat/h{**}: \

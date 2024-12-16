@@ -190,3 +190,32 @@ enabled_source{~'/(.+)/'}: file{^'/enabled_defines/'} json{~'/.+/'} libua{~'/\1-
          -o $d $s
   end
 }}
+
+
+define [see_through] adhoc_source: group
+adhoc_source{~'/(.+)/'}:
+{{
+  d  = [dir_path] $directory($>[0])
+  in = [paths] $relative($path($<), $src_base)
+
+  depdb dyndep \
+    --dyn-target \
+    --target-cwd $d \
+    --target-what 'adhoc' \
+    --adhoc \
+    --drop-cycles \
+    --format lines \
+    -- echo $regex.merge($in, '(.*)', '\1', "$\n")
+
+  diag adhoc $>
+
+  for f : [paths] $path($filter_out($>, group))
+    s = [path] $src_base/$relative($f, $out_base)
+    d = [path] $f
+    if (test -f $d != 0)
+      rm -f $d
+      mkdir --no-cleanup --parents $directory($d)
+      ln --symbolic $s $d
+    end
+  end
+}}

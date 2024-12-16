@@ -18,7 +18,6 @@ import config_asm = libconfig%file{config.asm}
 
 [rule_hint=c] \
 libul{avutil-meta}: $impl_libs $intf_libs
-libua{avutil}: enabled_source{avutil}
 file{enabled_defines}: $config_h: update = match
 libua{avutil}: enabled_source{avutil}: file{enabled_defines} libua{avutil-meta} json{files.json} \
                                        $config_h $config_asm libavutil/h{**}: \
@@ -29,9 +28,9 @@ libul{avutil}: compat/windows/{h c}{*} \
                compat/{h}{*} \
                : include = $tgt_win32
 
-# these files are included, not built.
-libul{avutil}: libavutil/aarch64/S{asm}: include = adhoc
-libul{avutil}: libavutil/c{**_template}: include = adhoc
+# these c files are included, not built.
+libul{avutil}: adhoc_source{avutil}: include = adhoc
+adhoc_source{avutil}: libavutil/c{**_template} libavutil/aarch64/S{asm}
 
 libavutil/h{avconfig}: in{avconfig}
 {

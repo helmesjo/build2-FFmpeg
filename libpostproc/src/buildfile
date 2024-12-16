@@ -23,7 +23,6 @@ import config_asm = libconfig%file{config.asm}
 
 [rule_hint=c] \
 libul{postproc-meta}: $impl_libs $intf_libs $config_asm
-libua{postproc}: enabled_source{postproc}
 file{enabled_defines}: $config_h: update = match
 libua{postproc}: enabled_source{postproc}: file{enabled_defines} libua{postproc-meta} json{files.json} \
                                        $config_h $config_asm libpostproc/h{**}: \

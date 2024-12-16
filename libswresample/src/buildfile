@@ -21,14 +21,14 @@ import config_asm = libconfig%file{config.asm}
 
 [rule_hint=c] \
 libul{swresample-meta}: $impl_libs $intf_libs $config_asm
-libua{swresample}: enabled_source{swresample}
 file{enabled_defines}: $config_h: update = match
 libua{swresample}: enabled_source{swresample}: file{enabled_defines} libua{swresample-meta} json{files.json} \
                                        $config_h $config_asm libswresample/h{**}: \
                                        update = match
 
 # these c files are included, not built.
-libul{swresample}: libswresample/c{**_template noise_shaping_data}: include = adhoc
+libul{swresample}: adhoc_source{swresample}: include = adhoc
+adhoc_source{swresample}: libswresample/c{**_template noise_shaping_data}
 
 # Build options.
 #
