@@ -101,7 +101,7 @@ c{print_defines}: h{config_cpu config}
 # generate the final 'autoconf.h' containing one line per '#define' and
 # it's determined value (1 or 0) by pre-processing c{print_defines}
 h{autoconf}: c{print_defines}: update = match
-h{autoconf}: c{print_defines}
+h{autoconf}:
 {{
   s = $path($<)
   n = $path.leaf($s)

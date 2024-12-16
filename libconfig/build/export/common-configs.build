@@ -1,5 +1,6 @@
 if (!$defined(libconfig))
   import! libconfig [metadata] = libconfig%lib{config}
+
 switch $c.target.system
 {
   case 'win32-msvc'
@@ -20,28 +21,28 @@ switch $c.target.cpu $c.id.type
 {
   case 'x86_64' 'msvc'
   {
-    if (!$config.libconfig.disable_avx2)
+    if (!$($libconfig: libconfig.disable_avx2))
       c.coptions += -arch:AVX2
-    elif (!$config.libconfig.disable_sse3)
+    elif (!$($libconfig: libconfig.disable_sse3))
       c.coptions += -arch:SSE3
-    elif (!$config.libconfig.disable_sse2)
+    elif (!$($libconfig: libconfig.disable_sse2))
       c.coptions += -arch:SSE2
-    elif (!$config.libconfig.disable_sse)
+    elif (!$($libconfig: libconfig.disable_sse))
       c.coptions += -arch:SSE
   }
   case 'x86_64' 'gcc'
   {
-    if (!$config.libconfig.disable_fma4)
+    if (!$(libconfig: libconfig.disable_fma4))
       c.coptions += -mfma4
-    elif (!$config.libconfig.disable_fma3)
+    elif (!$(libconfig: libconfig.disable_fma3))
       c.coptions += -mfma3
-    elif (!$config.libconfig.disable_avx2)
+    elif (!$(libconfig: libconfig.disable_avx2))
       c.coptions += -mavx2
-    elif (!$config.libconfig.disable_sse2)
+    elif (!$(libconfig: libconfig.disable_sse2))
       c.coptions += -msse2
-    elif (!$config.libconfig.disable_sse)
+    elif (!$(libconfig: libconfig.disable_sse))
       c.coptions += -msse
-    elif (!$config.libconfig.disable_mmx)
+    elif (!$(libconfig: libconfig.disable_mmx))
       c.coptions += -mmmx
   }
 }
