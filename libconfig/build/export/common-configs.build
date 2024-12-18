@@ -47,90 +47,85 @@ switch $c.target.cpu $c.id.type
   }
 }
 
-# see upstream ./configure
-switch $c.target.class
-{
-  case 'windows'
-  {
-    objs{**}: c.poptions += -DCONFIG_PIC=1 \
-                            -DPIC=1
-    obja{**}: c.poptions += -DCONFIG_PIC=0
+# see upstream ./configure (but it's not very sensical)
 
-    if ($ctarget.system == 'mingw32')
-    {
-      c.poptions += -U__STRICT_ANSI__ \
-                    -D__USE_MINGW_ANSI_STDIO=1 \
-                    -D_POSIX_C_SOURCE=200112 \
-                    -D_XOPEN_SOURCE=600
-    }
-    c.poptions += -DWIN32_LEAN_AND_MEAN \
-                  -D_CRT_NONSTDC_NO_WARNINGS \
-                  -D_CRT_SECURE_NO_WARNINGS \
-                  -D_USE_MATH_DEFINES
-    c.coptions += -wd4018 \
-                  -wd4133 \
-                  -wd4146 \
-                  -wd4244 \
-                  -wd4305 \
-                  -wd4333 \
-                  -wd4554
-    c.loptions += -LARGEADDRESSAWARE
-  }
-  default
+if ($c.id.variant == 'msvc')
+{
+  objs{**}: c.poptions += -DCONFIG_PIC=1 \
+                          -DPIC=1
+  obja{**}: c.poptions += -DCONFIG_PIC=0
+
+  c.poptions += -DWIN32_LEAN_AND_MEAN \
+                -D_CRT_NONSTDC_NO_WARNINGS \
+                -D_CRT_SECURE_NO_WARNINGS \
+                -D_USE_MATH_DEFINES
+  c.coptions += -wd4018 \
+                -wd4133 \
+                -wd4146 \
+                -wd4244 \
+                -wd4305 \
+                -wd4333 \
+                -wd4554
+
+  c.loptions += -LARGEADDRESSAWARE
+}
+else
+{
+  if ($c.target.system == 'win32-msvc')
   {
+    c.loptions += -LARGEADDRESSAWARE:NO
+  }
+  elif ($c.target.class == 'macos')
+  {
+    c.coptions += -mdynamic-no-pic
+    c.loptions += -Wl,-dynamic,-search_paths_first
+  }
+  else
+  {
+    c.loptions += -Wl,-Bsymbolic
+  }
+
+  c.coptions += -Wno-bool-operation \
+                -Wno-char-subscripts \
+                -Wno-deprecated-declarations \
+                -Wno-format \
+                -Wno-format-zero-length \
+                -Wno-implicit-function-declaration \
+                -Wno-incompatible-pointer-types \
+                -Wno-parentheses \
+                -Wno-pointer-sign \
+                -Wno-switch \
+                -Wno-unused-const-variable \
+                -Wno-unused-function \
+                -Wno-unused-variable
+
+  if ($c.target.class != 'windows')
+  {
+    c.coptions += -fno-math-errno \
+                  -fno-signed-zeros \
+                  -fomit-frame-pointer
+
     obj{**}:
     {
       c.poptions += -DCONFIG_PIC=1 -DPIC=1
       c.coptions += -fPIC
     }
+  }
 
-    cxx.poptions += -D__STDC_CONSTANT_MACROS
-    c.poptions +=  -D_ISOC11_SOURCE \
-                   -D_FILE_OFFSET_BITS=64 \
-                   -D_LARGEFILE_SOURCE
-    c.coptions += -fno-math-errno \
-                  -fno-signed-zeros \
-                  -fomit-frame-pointer \
-                  -Wno-bool-operation \
-                  -Wno-char-subscripts \
-                  -Wno-deprecated-declarations \
-                  -Wno-format \
-                  -Wno-format-zero-length \
-                  -Wno-implicit-function-declaration \
-                  -Wno-incompatible-pointer-types \
-                  -Wno-parentheses \
-                  -Wno-pointer-sign \
-                  -Wno-switch \
-                  -Wno-unused-const-variable \
-                  -Wno-unused-function \
-                  -Wno-unused-variable
 
-    if ($c.target.class == 'macos')
+  switch $c.id: path.match
+  {
+    case '*clang*'
     {
-      c.coptions += -mdynamic-no-pic
-      c.loptions += -Wl,-dynamic,-search_paths_first
+      c.coptions += -mstack-alignment=16 \
+                    -Wno-deprecated-pragma \
+                    -Wno-implicit-const-int-float-conversion \
+                    -Wno-shift-op-parentheses \
+                    -Wno-tautological-compare
     }
-    elif ($c.target.class != 'windows')
+    case 'gcc'
     {
-      c.poptions += -D_POSIX_C_SOURCE=200112 \
-                    -D_XOPEN_SOURCE=600
-      c.loptions += -Wl,-Bsymbolic
-    }
-
-    switch $c.id: path.match
-    {
-      case '*clang*'
-      {
-        c.coptions += -mstack-alignment=16 \
-                      -Wno-deprecated-pragma \
-                      -Wno-implicit-const-int-float-conversion \
-                      -Wno-shift-op-parentheses \
-                      -Wno-tautological-compare
-      }
-      case 'gcc'
-      {
-        c.coptions += -Wno-maybe-uninitialized
-      }
+      c.coptions += -Wno-maybe-uninitialized
     }
   }
 }
