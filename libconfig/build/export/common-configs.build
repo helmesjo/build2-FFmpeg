@@ -32,30 +32,30 @@ switch $c.target.cpu $c.id.type
   }
   case 'x86_64' 'gcc'
   {
-    if (!$(libconfig: libconfig.disable_fma4))
+    if (!$($libconfig: libconfig.disable_fma4))
       c.coptions += -mfma4
-    elif (!$(libconfig: libconfig.disable_fma3))
+    elif (!$($libconfig: libconfig.disable_fma3))
       c.coptions += -mfma3
-    elif (!$(libconfig: libconfig.disable_avx2))
+    elif (!$($libconfig: libconfig.disable_avx2))
       c.coptions += -mavx2
-    elif (!$(libconfig: libconfig.disable_sse2))
+    elif (!$($libconfig: libconfig.disable_sse2))
       c.coptions += -msse2
-    elif (!$(libconfig: libconfig.disable_sse))
+    elif (!$($libconfig: libconfig.disable_sse))
       c.coptions += -msse
-    elif (!$(libconfig: libconfig.disable_mmx))
+    elif (!$($libconfig: libconfig.disable_mmx))
       c.coptions += -mmmx
   }
 }
-
-objs{**}: c.poptions += -DCONFIG_PIC=1 \
-                        -DPIC=1
-obja{**}: c.poptions += -DCONFIG_PIC=0
 
 # see upstream ./configure
 switch $c.target.class
 {
   case 'windows'
   {
+    objs{**}: c.poptions += -DCONFIG_PIC=1 \
+                            -DPIC=1
+    obja{**}: c.poptions += -DCONFIG_PIC=0
+
     if ($ctarget.system == 'mingw32')
     {
       c.poptions += -U__STRICT_ANSI__ \
@@ -78,18 +78,19 @@ switch $c.target.class
   }
   default
   {
+    obj{**}:
+    {
+      c.poptions += -DCONFIG_PIC=1 -DPIC=1
+      c.coptions += -fPIC
+    }
+
     cxx.poptions += -D__STDC_CONSTANT_MACROS
     c.poptions +=  -D_ISOC11_SOURCE \
                    -D_FILE_OFFSET_BITS=64 \
                    -D_LARGEFILE_SOURCE
-    c.coptions += -Wall \
-                  -Wdeclaration-after-statement \
-                  -Wdisabled-optimization \
-                  -Wempty-body \
-                  -Werror=implicit-function-declaration \
-                  -Werror=missing-prototypes \
-                  -Werror=return-type \
-                  -Wmissing-prototypes \
+    c.coptions += -fno-math-errno \
+                  -fno-signed-zeros \
+                  -fomit-frame-pointer \
                   -Wno-bool-operation \
                   -Wno-char-subscripts \
                   -Wno-deprecated-declarations \
@@ -102,16 +103,7 @@ switch $c.target.class
                   -Wno-switch \
                   -Wno-unused-const-variable \
                   -Wno-unused-function \
-                  -Wno-unused-variable \
-                  -Wpointer-arith \
-                  -Wredundant-decls \
-                  -Wstrict-prototypes \
-                  -Wtype-limits \
-                  -Wundef \
-                  -Wwrite-strings \
-                  -fno-math-errno \
-                  -fno-signed-zeros \
-                  -fomit-frame-pointer
+                  -Wno-unused-variable
 
     if ($c.target.class == 'macos')
     {
@@ -120,6 +112,8 @@ switch $c.target.class
     }
     elif ($c.target.class != 'windows')
     {
+      c.poptions += -D_POSIX_C_SOURCE=200112 \
+                    -D_XOPEN_SOURCE=600
       c.loptions += -Wl,-Bsymbolic
     }
 
@@ -127,13 +121,11 @@ switch $c.target.class
     {
       case '*clang*'
       {
-        c.coptions += -Qunused-arguments \
-                      -Werror=partial-availability \
+        c.coptions += -mstack-alignment=16 \
                       -Wno-deprecated-pragma \
                       -Wno-implicit-const-int-float-conversion \
                       -Wno-shift-op-parentheses \
-                      -Wno-tautological-compare \
-                      -mstack-alignment=16
+                      -Wno-tautological-compare
       }
       case 'gcc'
       {
