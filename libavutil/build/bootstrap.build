@@ -1,0 +1,7 @@
+project = libavutil
+
+using version
+using config
+using test
+using install
+using dist

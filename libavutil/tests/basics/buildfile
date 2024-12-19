@@ -1,0 +1,3 @@
+import libs = libavutil%lib{avutil}
+
+exe{driver}: {h c}{**} $libs testscript{**}
