@@ -1,0 +1,221 @@
+define json: file
+json{*}: extension = json
+
+define asm: file
+asm{*}: extension = asm
+
+define rc: file
+rc{*}: extension = rc
+
+asm_format = [string_map]    \
+  'linux-gnu-x86_64'@elf64   \
+  'linux-gnu-i686'@elf32     \
+  'linux-musl-x86_64'@elf64  \
+  'linux-musl-i686'@elf32    \
+  'linux-gnu-elbrus'@elf64   \
+  'win32-msvc-x86_64'@win64  \
+  'win32-msvc-i686'@win32    \
+  'mingw32-x86_64'@win64     \
+  'mingw32-i686'@win32       \
+  'darwin-x86_64'@macho64    \
+  'darwin-i686'@macho32      \
+  'freebsd-x86_64'@elf64     \
+  'freebsd-i686'@elf32       \
+  'netbsd-x86_64'@elf64      \
+  'netbsd-i686'@elf32        \
+  'openbsd-x86_64'@elf64     \
+  'openbsd-i686'@elf32       \
+  'solaris-x86_64'@elf64     \
+  'solaris-i686'@elf32
+
+rc_target = [string_map]                \
+  'win32-msvc-x86_64'@pe-x86-64         \
+  'win32-msvc-i386'@pe-i386             \
+  'mingw32-x86_64'@pe-x86-64            \
+  'mingw32-i686'@pe-i386                \
+  'linux-gnu-x86_64-elf64'@elf64-x86-64 \
+  'linux-gnu-i386-elf32'@elf32-i386     \
+  'linux-musl-x86_64'@elf64-x86-64      \
+  'linux-musl-i686'@elf32-i386          \
+  'linux-iamcu-elf32'@elf32-iamcu
+  # 'generic-pdb'@pdb                   \
+  # 'generic-elf64-little'@elf64-little \
+  # 'generic-elf64-big'@elf64-big       \
+  # 'generic-elf32-little'@elf32-little \
+  # 'generic-elf32-big'@elf32-big       \
+  # 'generic-srec'@srec                 \
+  # 'generic-symbolsrec'@symbolsrec     \
+  # 'generic-verilog'@verilog           \
+  # 'generic-tekhex'@tekhex             \
+  # 'generic-binary'@binary             \
+  # 'generic-ihex'@ihex                 \
+  # 'generic-plugin'@plugin
+
+file{enabled_defines}:
+{{
+  d      = [dir_path] $directory($>[0])
+  o      = [dir_path] $path($>[0])
+  config = [path] $path($<[0])
+
+  # extract all enabled "groups" (CONFIG_XXX, HAVE_XXX)
+  sed -n -e 's/#[ ]*define[ ]+([A-Z0-9_]+)[ ]+1$/\1/p' $config \
+    | set -w enabled_defines [string_set]
+  sed -n -e 's/#[ ]*define[ ]+([A-Z0-9_]+)[ ]+[0-1]$/\1/p' $config \
+    | set -w all_defines [string_set]
+
+  depdb dyndep \
+    --dyn-target \
+    --target-cwd $d \
+    --target-what 'extracted source' \
+    --target-default-type 'file' \
+    --format lines \
+    -- echo $regex.merge(enabled_defines, '(.*)', '\1', "$\n")
+
+  diag extract_defines $< $>
+
+  echo $all_defines >!
+  echo $regex.merge($enabled_defines, '(.*)', '\1', "$\n") >$o
+}}
+
+define [see_through] enabled_source: group
+enabled_source{~'/(.+)/'}: file{^'/enabled_defines/'} json{~'/.+/'} libua{~'/\1-meta/'}
+{{
+  d = [dir_path] $directory($>[0])
+
+  enabled_configs = [path] $path(file{enabled_defines})
+  meta            = $filter($<, libua)
+  json            = $filter($<, json)
+  config_asm      = [path] $regex.filter_search($path($filter($<, file)), '.+config\.asm')
+  cat $enabled_configs | set -n enabled_defines [string_set]
+
+  lib_poptions = $c.lib_poptions($meta, obja)
+  depdb hash $lib_poptions
+
+  poptions = $c.poptions
+  depdb hash $poptions
+
+  # append default groups
+  enabled_defines += [string_set] OBJS ARCH_
+
+  # iterate all files and filter out if the corresponding
+  # group(s) isn't enabled
+  enabled_srcs = [paths]
+  skipped_srcs = [strings]
+  for pair: [json] $json.load($path($json))
+    echo $member_name($pair)  | set -w groups [strings]
+    echo $member_value($pair) | set -w srcs [paths]
+
+    filtered_srcs = [paths]
+    for src: [paths] $srcs
+      # if in an immediate subdir, treat as group 'ARCH_<DIR>', eg. 'ARCH_ARM'
+      dir = $directory($src)
+      dir = $regex.match($dir, '(.*)/', return_subs)
+      arch_dir = $string.ucase("ARCH_$dir")
+      have_dir = $string.ucase("HAVE_$dir")
+      enabled = [bool] true
+      for group: $groups
+        negate = [bool] $string.starts_with($group, '!')
+        if($negate)
+          group = $string.replace($group, '!', '')
+        end
+
+        # check if group is enabled, either (eg.) 'HAVE_X86ASM', or for CPU specific 'ARCH_ARM'
+        if (!$enabled_defines[$group])
+          enabled = false
+          skipped_srcs += "$src-\($group)"
+        elif (!$enabled_defines[$arch_dir] && !$enabled_defines[$have_dir])
+          enabled = false
+          skipped_srcs += "$src-\(!$arch_dir && !$have_dir)"
+        elif ($negate)
+          enabled = false
+          skipped_srcs += "$src-\(Negated)"
+        end
+      end
+      if ($enabled)
+        filtered_srcs += $project/$src
+      end
+    end
+
+    if (!$empty($filtered_srcs))
+      enabled_srcs += [paths] $filtered_srcs
+    end
+  end
+
+  # add any header prerequisites so they also get
+  # symlinked (to allow relative inclusion)
+  for h : $path($filter($<, h))
+    if ($sub_path($h, $src_base))
+      src = [path] $relative($h, $src_base)
+      enabled_srcs += [paths] $src
+      appended += [paths] $src
+    end
+  end
+
+  enabled_asm  = [paths] $regex.filter_search($enabled_srcs, ".+\.asm")
+  enabled_srcs = [paths] $regex.filter_out_search($enabled_srcs, ".+\.asm")
+
+  depdb dyndep \
+    --dyn-target \
+    --target-cwd $d \
+    --target-what 'enabled source' \
+    --target-extension-type 'asm=obja' \
+    --format lines \
+    -- echo $regex.merge($enabled_srcs $enabled_asm, '(.*)', '\1', "$\n")
+
+  diag enabled_src $>
+
+  echo $regex.merge($skipped_srcs, '(.*)', '\1', "$\n") >!
+
+  for f : [paths] $path($filter_out($>, group))
+    s = [path] $src_base/$relative($f, $out_base)
+    d = [path] $f
+    if ($extension($s) != 'asm' && test -f $d != 0)
+      rm -f $d
+      mkdir --no-cleanup --parents $directory($d)
+      ln --symbolic $s $d
+    end
+  end
+
+  # TODO: Fix issue with timestamps (it constantly requires
+  #       a full rebuild with this target)
+  # compile assembly files
+  key = [string] "$c.target.system-$c.target.cpu"
+  format = [string] ($asm_format[$key])
+  for f : [paths] $path($filter($>, obja))
+    s = [path] $src_base/$relative($f, $out_base)
+    d = [path] $f
+    nasm -f $format "-P$path($config_asm)" \
+         $poptions \
+         $lib_poptions \
+         -o $d $s
+  end
+}}
+
+
+define [see_through] adhoc_source: group
+adhoc_source{~'/(.+)/'}:
+{{
+  d  = [dir_path] $directory($>[0])
+  in = [paths] $relative($path($<), $src_base)
+
+  depdb dyndep \
+    --dyn-target \
+    --target-cwd $d \
+    --target-what 'adhoc' \
+    --adhoc \
+    --drop-cycles \
+    --format lines \
+    -- echo $regex.merge($in, '(.*)', '\1', "$\n")
+
+  diag adhoc_source $>
+
+  for f : [paths] $path($filter_out($>, group))
+    s = [path] $src_base/$relative($f, $out_base)
+    d = [path] $f
+    if (test -f $d != 0)
+      rm -f $d
+      mkdir --no-cleanup --parents $directory($d)
+      ln --symbolic $s $d
+    end
+  end
+}}
