@@ -1,0 +1,3 @@
+import libs = libswscale%lib{swscale}
+
+exe{driver}: {h c}{**} $libs testscript{**}
