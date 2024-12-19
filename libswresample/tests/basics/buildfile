@@ -1,0 +1,3 @@
+import libs = libswresample%lib{swresample}
+
+exe{driver}: {h c}{**} $libs testscript{**}
