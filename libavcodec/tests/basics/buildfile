@@ -1,0 +1,3 @@
+import libs = libavcodec%lib{avcodec}
+
+exe{driver}: {h c}{**} $libs testscript{**}

@@ -9,3 +9,6 @@ location: libswscale/
 
 :
 location: libswresample/
+
+:
+location: libavcodec/
