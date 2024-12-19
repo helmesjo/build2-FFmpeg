@@ -1,0 +1,7 @@
+project = libswresample
+
+using version
+using config
+using test
+using install
+using dist
