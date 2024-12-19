@@ -98,6 +98,7 @@ if ($c.id != 'msvc')
                 -Wno-format-zero-length \
                 -Wno-implicit-function-declaration \
                 -Wno-incompatible-pointer-types \
+                -Wno-int-conversion \
                 -Wno-parentheses \
                 -Wno-pointer-sign \
                 -Wno-switch \
@@ -131,6 +132,7 @@ if ($c.id != 'msvc')
     }
     case 'gcc'
     {
+      c.poptions += -U__STRICT_ANSI__
       c.coptions += -Wno-maybe-uninitialized
     }
   }
