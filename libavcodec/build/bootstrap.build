@@ -1,0 +1,7 @@
+project = libavcodec
+
+using version
+using config
+using test
+using install
+using dist
