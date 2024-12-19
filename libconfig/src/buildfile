@@ -1,0 +1,27 @@
+intf_libs = # Interface dependencies.
+#import xxxx_libs += libhello%lib{hello}
+
+lib{config}: h{**} $intf_libs
+
+# Build options.
+#
+out_pfx = [dir_path] $out_root/src/
+src_pfx = [dir_path] $src_root/src/
+
+c.poptions =+ "-I$out_pfx" "-I$src_pfx"
+
+# Export options.
+#
+lib{config}:
+{
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx"
+  c.export.libs = $intf_libs
+}
+
+# Install recreating subdirectories.
+#
+h{*}:
+{
+  install         = include/
+  install.subdirs = true
+}
