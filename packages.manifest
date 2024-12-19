@@ -6,3 +6,6 @@ location: libavutil/
 
 :
 location: libswscale/
+
+:
+location: libswresample/
