@@ -1,0 +1,7 @@
+project = libswscale
+
+using version
+using config
+using test
+using install
+using dist
