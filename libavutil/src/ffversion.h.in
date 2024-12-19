@@ -1,0 +1,3 @@
+#pragma once
+
+#define FFMPEG_VERSION "$libavutil.version.project$"
