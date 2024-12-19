@@ -3,3 +3,6 @@ location: libconfig/
 
 :
 location: libavutil/
+
+:
+location: libswscale/
